@@ -16,3 +16,24 @@ export async function runTick(request: APIRequestContext) {
   if (!res.ok()) throw new Error(`tick falhou: ${res.status()}`);
   return res.json();
 }
+
+import { createClient } from '@supabase/supabase-js';
+
+/** Cliente de serviço para preparar e limpar dados nos testes e2e. */
+export function admin() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
+}
+
+/** Cria uma marca de teste única e devolve o id; apagar no fim com cleanupBrand. */
+export async function createTestBrand(name = `E2E ${Date.now()}`) {
+  const { data, error } = await admin().from('brands').insert({ name, color: '#F0A93B' }).select('id, name').single();
+  if (error) throw error;
+  return data as { id: string; name: string };
+}
+
+export async function cleanupBrand(id: string) {
+  const db = admin();
+  const { data: posts } = await db.from('posts').select('id').eq('brand_id', id);
+  if (posts?.length) await db.from('posts').delete().in('id', posts.map((p) => p.id));
+  await db.from('brands').delete().eq('id', id);
+}
