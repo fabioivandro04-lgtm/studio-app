@@ -6,6 +6,7 @@ com várias marcas.
 - Especificação: `docs/superpowers/specs/2026-10-15-estudio-design.md`
 - Configuração (Supabase, Vercel, Meta, TikTok, Google, OpenRouter): `docs/SETUP.md`
 - Assistente de IA: `docs/superpowers/specs/2026-10-15-assistente-ia-design.md`
+- Ideias e plano com IA: `docs/superpowers/specs/2026-10-16-ideias-ia-design.md`
 
 ## Desenvolvimento
 
@@ -33,6 +34,7 @@ registado em `app_owner`.
 - `src/lib/platforms/*` — um adaptador por rede (validação, publicação, OAuth, métricas)
 - `src/lib/publishing/tick.ts` — motor de publicação (máquina de estados, um passo por minuto)
 - `src/lib/metrics/sync.ts` — recolha diária de métricas
-- `src/lib/ai/*` — assistente de IA (OpenRouter, prompts pt-PT, limite mensal, melhor hora)
+- `src/lib/ai/*` — assistente de IA (OpenRouter, prompts pt-PT, limite mensal, melhor hora, ideias e datas do plano)
+- `src/app/(app)/ideias` — página Ideias (gerar, pôr no calendário, descartar)
 - `src/app/api/cron/*` — rotas chamadas pelo pg_cron do Supabase
 - `supabase/migrations` — esquema, segurança (RLS) e funções

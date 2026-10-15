@@ -110,7 +110,18 @@ Sem auditoria da Google, os Shorts são enviados como **privados**; torne-os pú
 4. **Definições → Marcas → Assistente de IA**: escreva o contexto da empresa, gere a voz da marca a partir do
    Instagram ("✨ Criar a partir do Instagram"), reveja e escolha o objetivo (Contactos ou Alcance).
 
+5. Ainda em **Definições → Marcas → Assistente de IA**, ajuste **Posts por semana** (ex.: Unidreamity 3,
+   marca de vídeos curtos 5). É o número usado em "Planear a próxima semana".
+
 A IA só sugere texto e horários: nunca publica nem agenda sozinha.
+
+**Página Ideias** (menu **Ideias**, com uma marca escolhida no topo):
+- **💡 Ideias para um prazo** — escolha um prazo (Definições → Prazos) e recebe uma sequência de posts até essa data
+  (4, 3, 2 e 1 semana antes e no próprio dia).
+- **🎬 Ideias de vídeos curtos** — 10 ideias com gancho e guião.
+- **🗓️ Planear a próxima semana** — completa a semana seguinte até ao número de posts por semana da marca.
+- Em cada ideia, **Pôr no calendário** cria um rascunho com legenda e data sugerida; falta só juntar a foto ou o vídeo.
+  As ideias que não quer vão para **Descartadas** (pode recuperá-las).
 
 ## 7. Primeiro teste
 
