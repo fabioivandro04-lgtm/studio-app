@@ -98,7 +98,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
           <Link href={nav(-1)} className="rounded-md p-2 hover:bg-accent" aria-label="Anterior"><ChevronLeft className="size-4" /></Link>
           <h1 className="min-w-40 text-center text-lg font-semibold">{heading}</h1>
           <Link href={nav(1)} className="rounded-md p-2 hover:bg-accent" aria-label="Seguinte"><ChevronRight className="size-4" /></Link>
-          <Link href={`/calendario?vista=${view}`} className="ml-1 rounded-md border px-2 py-1 text-sm hover:bg-accent">Hoje</Link>
+          <Link href={`/calendario?vista=${view}${keep}`} className="ml-1 rounded-md border px-2 py-1 text-sm hover:bg-accent">Hoje</Link>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex rounded-md border text-sm" role="tablist" aria-label="Vista">

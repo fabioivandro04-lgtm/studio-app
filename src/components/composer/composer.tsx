@@ -13,7 +13,7 @@ import { MediaThumb } from '@/components/media/media-thumb';
 import { MediaUploader } from '@/components/media/media-uploader';
 import { MediaViewer } from '@/components/media/media-viewer';
 import type { MediaItem } from '@/lib/db/repo/media-repo';
-import { clearLocalDraft, localDraftKey, readLocalDraft, writeLocalDraft, type LocalDraft } from '@/lib/posts/local-draft';
+import { clearLocalDraft, draftAction, localDraftKey, readLocalDraft, writeLocalDraft, type LocalDraft } from '@/lib/posts/local-draft';
 import { PlatformIcon } from '@/components/platform-icon';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -71,6 +71,15 @@ export function Composer({ data }: { data: ComposerData }) {
     setServerErrors([]);
     setS((prev) => ({ ...prev, ...patch }));
   };
+  // Troca pela identidade (não pela posição): a lista visível pode não ter todos os ids.
+  const swapMedia = (a: string, b: string) => {
+    const ids = [...s.mediaIds];
+    const i = ids.indexOf(a);
+    const j = ids.indexOf(b);
+    if (i < 0 || j < 0) return;
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    update({ mediaIds: ids });
+  };
   const toggleMedia = (id: string) =>
     update({ mediaIds: s.mediaIds.includes(id) ? s.mediaIds.filter((x) => x !== id) : [...s.mediaIds, id] });
   const toggleAccount = (accountId: string) => {
@@ -96,7 +105,7 @@ export function Composer({ data }: { data: ComposerData }) {
   }, [s]);
 
   // Gravação local: as alterações ficam no navegador até serem guardadas.
-  const draftKey = localDraftKey(data.initial.id ?? null);
+  const draftKey = localDraftKey(data.initial.id ?? null, data.initial.brandId);
   const [recoverable, setRecoverable] = useState<LocalDraft<typeof s> | null>(null);
   useEffect(() => {
     // Só depois de montar: o servidor não conhece o navegador (evita diferenças na hidratação).
@@ -105,10 +114,19 @@ export function Composer({ data }: { data: ComposerData }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
-    if (ro || recoverable) return;
-    if (hasUnsavedChanges(data.initial, s)) writeLocalDraft(window.localStorage, draftKey, s, Date.now());
-    else clearLocalDraft(window.localStorage, draftKey);
-  }, [s, ro, recoverable, draftKey, data.initial]);
+    if (ro) return;
+    const action = draftAction(s, data.initial);
+    if (action === 'write') writeLocalDraft(window.localStorage, draftKey, s, Date.now());
+    else if (action === 'clear') clearLocalDraft(window.localStorage, draftKey);
+  }, [s, ro, draftKey, data.initial]);
+  // O aviso só aparece enquanto não houve edições (editar = ficar com o que está no ecrã).
+  const showRecover = recoverable && s === data.initial ? recoverable : null;
+  const recover = (d: LocalDraft<typeof s>) => {
+    // Estado, bloqueio e id vêm sempre do servidor, nunca do rascunho.
+    setS({ ...d.value, id: data.initial.id, status: data.initial.status, locked: data.initial.locked });
+    setRecoverable(null);
+    if (d.value.mediaIds.some((id) => !known.some((m) => m.id === id))) void loadLibrary();
+  };
   const forgetDraft = () => clearLocalDraft(window.localStorage, draftKey);
   const patchTargets = (fn: (targets: Target[]) => Target[]) => {
     setServerErrors([]);
@@ -202,10 +220,10 @@ export function Composer({ data }: { data: ComposerData }) {
     <div className="mx-auto grid max-w-5xl gap-6 pb-28 md:pb-20 lg:grid-cols-[1fr_300px]">
       <div className="space-y-5">
         {ro && <p role="status" className="rounded-lg bg-highlight px-3 py-2 text-sm text-highlight-foreground">Este post já começou a publicar — só de leitura.</p>}
-        {recoverable && (
+        {showRecover && (
           <div role="status" className="flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm">
-            <span className="flex-1">Tem alterações não guardadas de {new Date(recoverable.savedAt).toLocaleString('pt-PT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.</span>
-            <Button type="button" size="sm" onClick={() => { setS(recoverable.value); setRecoverable(null); }}>Recuperar</Button>
+            <span className="flex-1">Tem alterações não guardadas de {new Date(showRecover.savedAt).toLocaleString('pt-PT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.</span>
+            <Button type="button" size="sm" onClick={() => recover(showRecover)}>Recuperar</Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => { forgetDraft(); setRecoverable(null); }}>Descartar</Button>
           </div>
         )}
@@ -250,9 +268,9 @@ export function Composer({ data }: { data: ComposerData }) {
                   <MediaViewer item={m} />
                   {!ro && selectedMedia.length > 1 && (
                     <div className="flex justify-between text-xs">
-                      <button type="button" disabled={i === 0} aria-label="Mover para a esquerda" onClick={() => { const a = [...s.mediaIds]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; update({ mediaIds: a }); }}>←</button>
+                      <button type="button" disabled={i === 0} aria-label="Mover para a esquerda" onClick={() => swapMedia(m.id, selectedMedia[i - 1].id)}>←</button>
                       <span>{i + 1}</span>
-                      <button type="button" disabled={i === selectedMedia.length - 1} aria-label="Mover para a direita" onClick={() => { const a = [...s.mediaIds]; [a[i + 1], a[i]] = [a[i], a[i + 1]]; update({ mediaIds: a }); }}>→</button>
+                      <button type="button" disabled={i === selectedMedia.length - 1} aria-label="Mover para a direita" onClick={() => swapMedia(m.id, selectedMedia[i + 1].id)}>→</button>
                     </div>
                   )}
                 </li>
@@ -296,7 +314,7 @@ export function Composer({ data }: { data: ComposerData }) {
           )}
           <div className="flex flex-wrap gap-2">
             {accounts.map((a) => (
-              <label key={a.id} className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm has-[:checked]:border-brand-navy has-[:checked]:bg-brand-navy/5">
+              <label key={a.id} className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm has-[:checked]:border-primary has-[:checked]:bg-accent">
                 <input type="checkbox" disabled={ro} checked={s.targets.some((t) => t.accountId === a.id)} onChange={() => toggleAccount(a.id)} />
                 <PlatformIcon platform={a.platform} size="sm" />
                 {PLATFORM_LABEL[a.platform]} @{a.handle.replace(/^@/, '')}
@@ -345,8 +363,8 @@ export function Composer({ data }: { data: ComposerData }) {
                     <p className={`text-right text-xs ${t.caption.length > max ? 'text-destructive' : 'text-muted-foreground'}`}>{t.caption.length}/{max}</p>
                   </div>
                 )}
-                {acc.platform === 'tiktok' && <p className="text-xs text-muted-foreground">O vídeo vai para a caixa de entrada do TikTok; cola a legenda e publica com 1 toque.</p>}
-                {acc.platform === 'youtube' && <p className="text-xs text-muted-foreground">O Short é enviado como privado; torna-o público no YouTube Studio com 1 toque.</p>}
+                {acc.platform === 'tiktok' && <p className="text-xs text-muted-foreground">O vídeo vai para a caixa de entrada do TikTok: cole a legenda e publique com 1 toque.</p>}
+                {acc.platform === 'youtube' && <p className="text-xs text-muted-foreground">O Short é enviado como privado: torne-o público no YouTube Studio com 1 toque.</p>}
                 {errs.map((e) => <p key={`${e.field}${e.message}`} role="alert" className="text-sm text-destructive">{e.message}</p>)}
               </fieldset>
             );

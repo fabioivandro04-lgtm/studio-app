@@ -19,7 +19,7 @@ export const POST_STATUS_CLASS: Record<PostStatus, string> = {
   published: 'bg-[var(--st-published-bg)] text-[var(--st-published-fg)]',
   partial: 'bg-[var(--st-partial-bg)] text-[var(--st-partial-fg)]',
   failed: 'bg-[var(--st-failed-bg)] text-[var(--st-failed-fg)]',
-  cancelled: 'bg-[var(--st-cancelled-bg)] text-[var(--st-cancelled-fg)]',
+  cancelled: 'bg-[var(--st-cancelled-bg)] text-[var(--st-cancelled-fg)] line-through',
 };
 
 /** Cor do ponto de estado (o texto do estado aparece ao lado). */

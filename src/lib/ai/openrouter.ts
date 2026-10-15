@@ -33,6 +33,8 @@ export function createOpenRouter(o: { apiKey: string; appUrl: string; fetch: typ
             max_tokens: maxTokens,
             response_format: { type: 'json_schema', json_schema: { name: spec.name, strict: true, schema: spec.schema } },
             usage: { include: true },
+            // Os modelos grátis variam: exigir fornecedores que suportem o esquema JSON pedido.
+            ...(isFreeModel(model) ? { provider: { require_parameters: true } } : {}),
           }),
         });
       } catch {

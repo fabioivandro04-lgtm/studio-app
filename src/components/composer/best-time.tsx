@@ -56,7 +56,7 @@ export function BestTime({ brandId, postId, hasSlots, onPick }: { brandId: strin
                 data-date={s.date}
                 data-time={s.time}
                 onClick={() => onPick(s.date, s.time)}
-                className="max-w-64 rounded-lg border bg-background px-3 py-1.5 text-left text-sm hover:border-brand-navy"
+                className="max-w-64 rounded-lg border bg-background px-3 py-1.5 text-left text-sm hover:border-primary"
               >
                 <span className="block font-medium first-letter:uppercase">{label(s)}</span>
                 <span className="block text-xs text-muted-foreground">

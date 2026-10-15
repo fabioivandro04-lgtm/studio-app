@@ -63,6 +63,7 @@ export function AiPanel(p: AiPanelProps) {
       <div className="space-y-1">
         <Label htmlFor="ai-prompt">Sobre o que é este post?</Label>
         <Textarea
+          autoFocus
           id="ai-prompt"
           rows={2}
           maxLength={PROMPT_MAX}

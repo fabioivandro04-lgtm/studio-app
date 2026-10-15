@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clearLocalDraft, localDraftKey, readLocalDraft, writeLocalDraft } from './local-draft';
+import { clearLocalDraft, draftAction, localDraftKey, readLocalDraft, writeLocalDraft } from './local-draft';
 
 function memory() {
   const m = new Map<string, string>();
@@ -11,7 +11,7 @@ const NOW = Date.parse('2026-10-18T10:00:00Z');
 describe('rascunho local', () => {
   it('chave por post; post novo tem chave própria', () => {
     expect(localDraftKey('p1')).toBe('estudio:rascunho:p1');
-    expect(localDraftKey(null)).toBe('estudio:rascunho:novo');
+    expect(localDraftKey(null, 'b')).toBe('estudio:rascunho:novo:b');
   });
 
   it('devolve o rascunho guardado se for diferente do que está no servidor', () => {
@@ -35,5 +35,17 @@ describe('rascunho local', () => {
     writeLocalDraft(s, 'k', { ...base, internalTitle: 'X' }, NOW);
     clearLocalDraft(s, 'k');
     expect(s.m.size).toBe(0);
+  });
+});
+
+describe('quando gravar', () => {
+  it('sem edições (mesmo objeto do servidor) não grava nem apaga; com edições grava; igual ao guardado apaga', () => {
+    expect(draftAction(base, base)).toBe('skip');
+    expect(draftAction({ ...base, internalTitle: 'Novo' }, base)).toBe('write');
+    expect(draftAction({ ...base }, base)).toBe('clear');
+  });
+
+  it('post novo: chave por marca', () => {
+    expect(localDraftKey(null, 'b1')).toBe('estudio:rascunho:novo:b1');
   });
 });

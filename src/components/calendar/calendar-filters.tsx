@@ -25,7 +25,7 @@ export function CalendarFilterBar({ base, filters }: { base: { vista?: string; d
         </Link>
       ))}
       {any && (
-        <Link href={filterHref(base, { platforms: [], statuses: [] }, 'rede', '')} className="ml-1 text-xs text-muted-foreground underline">
+        <Link href={`/calendario?${new URLSearchParams({ ...(base.vista ? { vista: base.vista } : {}), ...(base.data ? { data: base.data } : {}) })}`} className="ml-1 text-xs text-muted-foreground underline">
           Limpar filtros
         </Link>
       )}

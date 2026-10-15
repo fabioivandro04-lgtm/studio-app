@@ -7,6 +7,7 @@ export function FreeSlot({ day, time, large = false }: { day: string; time: stri
   return (
     <Link
       href={`/posts/novo?data=${day}&hora=${time}`}
+      prefetch={false}
       data-testid="free-slot"
       aria-label={`Criar post em ${day} às ${time} (horário livre)`}
       className={cn(

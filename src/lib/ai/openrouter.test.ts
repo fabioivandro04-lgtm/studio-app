@@ -160,3 +160,11 @@ describe('modelo grátis', () => {
     expect(await codeOf(createOpenRouter({ apiKey: 'k', appUrl: 'https://a', fetch }).chat(req))).toBe('rate_limit');
   });
 });
+
+describe('modelo grátis — encaminhamento', () => {
+  it('pede só fornecedores que suportam o esquema JSON (e imagem, quando enviada)', async () => {
+    const fetch = fakeFetch([['POST', URL_RE, () => okBody('{"text":"ok"}')]]);
+    await createOpenRouter({ apiKey: 'k', appUrl: 'https://a', fetch }).chat({ ...req, model: 'openrouter/free' });
+    expect(fetch.calls[0].body).toMatchObject({ provider: { require_parameters: true } });
+  });
+});

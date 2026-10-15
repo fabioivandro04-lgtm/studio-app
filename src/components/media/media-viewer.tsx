@@ -29,7 +29,7 @@ export function MediaViewer({ item, showCreatePost = false, className = '' }: { 
   return (
     <Dialog onOpenChange={open}>
       <DialogTrigger asChild>
-        <button type="button" aria-label={`${item.kind === 'video' ? 'Ver vídeo' : 'Ver foto'} ${name}`} className={`block w-full rounded-lg focus-visible:ring-2 focus-visible:ring-brand-navy ${className}`}>
+        <button type="button" aria-label={`${item.kind === 'video' ? 'Ver vídeo' : 'Ver foto'} ${name}`} className={`block w-full rounded-lg focus-visible:ring-2 focus-visible:ring-ring ${className}`}>
           <MediaThumb item={item} />
         </button>
       </DialogTrigger>

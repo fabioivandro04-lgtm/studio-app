@@ -51,7 +51,7 @@ export function CalendarMobile({ weeks, month, today, posts, deadlines, freeSlot
                 'flex h-12 flex-col items-center justify-center gap-1 rounded-lg text-sm',
                 !inMonth && 'text-muted-foreground/50',
                 day === selected ? 'bg-primary text-primary-foreground' : 'hover:bg-accent',
-                day === today && day !== selected && 'font-bold text-primary ring-1 ring-brand-navy/40',
+                day === today && day !== selected && 'font-bold text-primary ring-1 ring-primary/40',
               )}
             >
               {Number(day.slice(8))}
