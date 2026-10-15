@@ -11,7 +11,7 @@ const GOAL_TEXT = {
   reach: 'Objetivo da marca: alcance máximo. Usa um gancho forte e linguagem simples para que mais pessoas vejam e partilhem.',
 } as const;
 
-function systemFor(brand: BrandAi): ChatMessage {
+export function systemFor(brand: BrandAi): ChatMessage {
   const parts = [
     `És o gestor de redes sociais da marca "${brand.name}", com público lusófono (Moçambique, Angola, Cabo Verde e Portugal).`,
     "Escreve sempre em português de Portugal (nunca do Brasil), salvo quando o pedido indicar explicitamente outra língua: usa 'tu'/'vocês', evita o gerúndio ('estou a fazer', não 'estou fazendo'), 'equipa' e não 'time', 'registo' e não 'cadastro'.",
