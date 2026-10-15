@@ -7,11 +7,12 @@ import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 import { reschedule } from '@/app/(app)/calendario/actions';
-import { POST_STATUS_CLASS, POST_STATUS_LABEL } from '@/lib/calendar/status';
+import { POST_STATUS_DOT, POST_STATUS_LABEL } from '@/lib/calendar/status';
 import { PlatformIcon } from '@/components/platform-icon';
 import { PLATFORM_LABEL, type Platform, type PostStatus } from '@/lib/platforms/types';
 import { cn } from '@/lib/utils';
 import { CalendarMobile } from './calendar-mobile';
+import { FreeSlot } from './free-slot';
 
 export interface CalendarPost {
   id: string;
@@ -42,26 +43,32 @@ export function PostCard({ p, large = false }: { p: CalendarPost; large?: boolea
       draggable={p.movable}
       onDragStart={(e) => e.dataTransfer.setData('text/post-id', p.id)}
       data-testid="post-card"
-      className={cn('block rounded-md border-l-4 bg-background shadow-sm hover:bg-accent', large ? 'border p-2.5 text-sm' : 'p-1.5 text-xs')}
-      style={{ borderLeftColor: p.brandColor }}
-      title={`${p.brandName} · ${p.platforms.map((x) => PLATFORM_LABEL[x]).join(', ')}`}
+      className={cn(
+        'group block rounded-md border bg-card shadow-xs transition hover:border-primary/40 hover:shadow-sm',
+        large ? 'p-2.5 text-sm' : 'px-1.5 py-1 text-xs',
+        p.status === 'cancelled' && 'opacity-60',
+      )}
+      style={{ borderLeft: `3px solid ${p.brandColor}` }}
+      title={`${p.brandName} · ${p.platforms.map((x) => PLATFORM_LABEL[x]).join(', ')} · ${POST_STATUS_LABEL[p.status]}`}
     >
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-start gap-2">
         {p.thumbUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.thumbUrl} alt="" className={cn('shrink-0 rounded object-cover', large ? 'size-12' : 'size-7')} />
+          <img src={p.thumbUrl} alt="" className={cn('shrink-0 rounded object-cover', large ? 'size-12' : 'size-8')} />
         )}
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium">
-            {p.time} {p.title || 'Sem título'}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold tabular-nums">{p.time}</span>
+            <span className={cn('size-1.5 shrink-0 rounded-full', POST_STATUS_DOT[p.status])} aria-hidden />
+            <span className={cn('truncate text-muted-foreground', large ? 'text-xs' : 'text-[10px]')}>{POST_STATUS_LABEL[p.status]}</span>
+          </div>
+          <p className={cn('truncate', large ? 'font-medium' : '')}>{p.title || 'Sem título'}</p>
           <div className="mt-0.5 flex items-center gap-1">
             {p.platforms.map((x) => <PlatformIcon key={x} platform={x} size="sm" />)}
             {large && <span className="ml-1 truncate text-xs text-muted-foreground">{p.brandName}</span>}
           </div>
         </div>
       </div>
-      <span className={cn('mt-1 inline-block rounded px-1', large ? 'text-xs' : 'text-[10px]', POST_STATUS_CLASS[p.status])}>{POST_STATUS_LABEL[p.status]}</span>
     </Link>
   );
 }
@@ -72,6 +79,7 @@ export function CalendarView(props: {
   today: string;
   posts: CalendarPost[];
   deadlines: CalendarDeadline[];
+  freeSlots: Record<string, string[]>;
 }) {
   return (
     <>
@@ -81,12 +89,13 @@ export function CalendarView(props: {
   );
 }
 
-function CalendarGrid({ weeks, month, today, posts, deadlines }: {
+function CalendarGrid({ weeks, month, today, posts, deadlines, freeSlots }: {
   weeks: string[][];
   month: number | null;
   today: string;
   posts: CalendarPost[];
   deadlines: CalendarDeadline[];
+  freeSlots: Record<string, string[]>;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -106,9 +115,9 @@ function CalendarGrid({ weeks, month, today, posts, deadlines }: {
 
   return (
     <div className={cn('overflow-x-auto', pending && 'opacity-60')}>
-      <div className="grid min-w-[720px] grid-cols-7 border-l border-t">
+      <div className="grid min-w-[720px] grid-cols-7 overflow-hidden rounded-lg border bg-card">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="border-b border-r bg-muted px-2 py-1 text-xs font-medium">{d}</div>
+          <div key={d} className="border-b px-2 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{d}</div>
         ))}
         {weeks.flat().map((day) => {
           const inMonth = month == null || Number(day.slice(5, 7)) === month;
@@ -121,11 +130,11 @@ function CalendarGrid({ weeks, month, today, posts, deadlines }: {
               aria-label={`Dia ${day}`}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => drop(day, e)}
-              className={cn('min-h-28 space-y-1 border-b border-r p-1', !inMonth && 'bg-muted/40 text-muted-foreground', month == null && 'min-h-64')}
+              className={cn('group/day min-h-28 space-y-1 border-b border-r p-1.5 [&:nth-child(7n)]:border-r-0', !inMonth && 'bg-muted/50 text-muted-foreground', month == null && 'min-h-72')}
             >
               <div className="flex items-center justify-between">
-                <span className={cn('text-xs', day === today && 'rounded-full bg-primary px-1.5 text-primary-foreground')}>{Number(day.slice(8))}</span>
-                <Link href={`/posts/novo?data=${day}`} className="text-xs text-muted-foreground opacity-0 hover:opacity-100 focus:opacity-100" aria-label={`Novo post em ${day}`}>+</Link>
+                <span className={cn('flex size-6 items-center justify-center rounded-full text-xs tabular-nums', day === today && 'bg-primary font-semibold text-primary-foreground')}>{Number(day.slice(8))}</span>
+                <Link href={`/posts/novo?data=${day}`} className="rounded px-1 text-xs text-muted-foreground opacity-0 hover:bg-accent group-hover/day:opacity-100 focus:opacity-100" aria-label={`Novo post em ${day}`}>+</Link>
               </div>
               {dayDeadlines.map((d) => (
                 <p key={d.id} data-testid="deadline-chip" className="truncate rounded bg-highlight px-1 text-[11px] font-medium text-highlight-foreground" title={d.title}>
@@ -133,6 +142,7 @@ function CalendarGrid({ weeks, month, today, posts, deadlines }: {
                 </p>
               ))}
               {dayPosts.map((p) => <PostCard key={p.id} p={p} />)}
+              {(freeSlots[day] ?? []).map((t) => <FreeSlot key={t} day={day} time={t} />)}
             </div>
           );
         })}

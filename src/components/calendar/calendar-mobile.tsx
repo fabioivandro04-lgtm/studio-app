@@ -4,16 +4,18 @@ import { CalendarClock, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { FreeSlot } from './free-slot';
 import { MovePost } from './move-post';
 import { PostCard, WEEKDAYS, type CalendarDeadline, type CalendarPost } from './calendar-view';
 
 /** Calendário para telemóvel: grelha pequena com pontos + lista do dia escolhido. */
-export function CalendarMobile({ weeks, month, today, posts, deadlines }: {
+export function CalendarMobile({ weeks, month, today, posts, deadlines, freeSlots }: {
   weeks: string[][];
   month: number | null;
   today: string;
   posts: CalendarPost[];
   deadlines: CalendarDeadline[];
+  freeSlots: Record<string, string[]>;
 }) {
   const days = weeks.flat();
   const firstInRange = days.find((d) => month == null || Number(d.slice(5, 7)) === month) ?? days[0];
@@ -79,7 +81,8 @@ export function CalendarMobile({ weeks, month, today, posts, deadlines }: {
             {p.movable && <MovePost postId={p.id} day={p.day} title={p.title} />}
           </div>
         ))}
-        {dayPosts.length === 0 && dayDeadlines.length === 0 && (
+        {(freeSlots[selected] ?? []).map((t) => <FreeSlot key={t} day={selected} time={t} large />)}
+        {dayPosts.length === 0 && dayDeadlines.length === 0 && !(freeSlots[selected] ?? []).length && (
           <p className="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">Nada marcado para este dia.</p>
         )}
       </section>

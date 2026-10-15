@@ -1,6 +1,10 @@
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { CalendarFilterBar } from '@/components/calendar/calendar-filters';
+import { CalendarList } from '@/components/calendar/calendar-list';
 import { CalendarView, type CalendarDeadline, type CalendarPost } from '@/components/calendar/calendar-view';
+import { applyFilters, parseFilters } from '@/lib/calendar/filters';
+import { freeSlotsByDay } from '@/lib/calendar/free-slots';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { buildMonthGrid, buildWeek, shiftDate } from '@/lib/calendar/grid';
 import { createServerClient } from '@/lib/db/clients';
@@ -9,9 +13,10 @@ import { FORMAT_PLATFORM, type Platform, type TargetFormat } from '@/lib/platfor
 import { formatInZone, localToUtc, utcToLocalParts } from '@/lib/time/zone';
 import { cn } from '@/lib/utils';
 
-export default async function CalendarioPage({ searchParams }: { searchParams: Promise<{ vista?: string; data?: string }> }) {
+export default async function CalendarioPage({ searchParams }: { searchParams: Promise<{ vista?: string; data?: string; rede?: string; estado?: string }> }) {
   const sp = await searchParams;
-  const view = sp.vista === 'semana' ? 'semana' : 'mes';
+  const view = sp.vista === 'semana' ? 'semana' : sp.vista === 'lista' ? 'lista' : 'mes';
+  const filters = parseFilters(sp);
   const db = await createServerClient();
   const brands = await listBrands(db);
   const brandId = await selectedBrandId(brands);
@@ -19,7 +24,8 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
   const today = utcToLocalParts(new Date(), displayTz).date;
   const date = sp.data && /^\d{4}-\d{2}-\d{2}$/.test(sp.data) ? sp.data : today;
 
-  const weeks = view === 'mes' ? buildMonthGrid(Number(date.slice(0, 4)), Number(date.slice(5, 7))) : [buildWeek(date)];
+  const listDays = Array.from({ length: 30 }, (_, i) => new Date(Date.parse(`${date}T12:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10));
+  const weeks = view === 'mes' ? buildMonthGrid(Number(date.slice(0, 4)), Number(date.slice(5, 7))) : view === 'lista' ? [listDays] : [buildWeek(date)];
   const first = weeks[0][0];
   const last = weeks.at(-1)!.at(-1)!;
   const from = localToUtc(first, '00:00', displayTz);
@@ -59,7 +65,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
     for (const s of data ?? []) if (s.path && s.signedUrl) signed.set(s.path, s.signedUrl);
   }
 
-  const posts: CalendarPost[] = (rows as Row[] | null ?? []).map((r, i) => {
+  const loaded: CalendarPost[] = (rows as Row[] | null ?? []).map((r, i) => {
     const b = brands.find((x) => x.id === r.brand_id)!;
     const local = utcToLocalParts(new Date(r.scheduled_at), b.timezone);
     return {
@@ -70,12 +76,18 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
       movable: r.status === 'draft' || r.status === 'scheduled',
     };
   });
+  const posts = applyFilters(loaded, filters);
+  // Horários fixos livres (só com uma marca escolhida: cada marca tem os seus).
+  const selectedBrand = brands.find((b) => b.id === brandId);
+  const busy = (rows as Row[] | null ?? []).filter((r) => r.status !== 'cancelled').map((r) => new Date(r.scheduled_at));
+  const freeSlots = selectedBrand ? freeSlotsByDay({ slots: selectedBrand.postingSlots, tz: selectedBrand.timezone, days: weeks.flat(), busy, now: new Date() }) : {};
   const deadlines: CalendarDeadline[] = (dls ?? []).map((d) => ({
     id: d.id, day: String(d.due_date).slice(0, 10), title: d.title, brandColor: brands.find((b) => b.id === d.brand_id)?.color ?? '#F0A93B',
   }));
 
-  const nav = (n: number) => `/calendario?vista=${view}&data=${shiftDate(date, view, n)}`;
-  const rawHeading = view === 'mes' ? formatInZone(localToUtc(date, '12:00', displayTz), displayTz, "MMMM 'de' yyyy") : `Semana de ${formatInZone(localToUtc(first, '12:00', displayTz), displayTz, "d 'de' MMMM")}`;
+  const keep = (filters.platforms.length ? `&rede=${filters.platforms.join(',')}` : '') + (filters.statuses.length ? `&estado=${filters.statuses.join(',')}` : '');
+  const nav = (n: number) => `/calendario?vista=${view}&data=${shiftDate(date, view === 'lista' ? 'mes' : view, n)}${keep}`;
+  const rawHeading = view === 'mes' ? formatInZone(localToUtc(date, '12:00', displayTz), displayTz, "MMMM 'de' yyyy") : view === 'lista' ? `A partir de ${formatInZone(localToUtc(first, '12:00', displayTz), displayTz, "d 'de' MMMM")}` : `Semana de ${formatInZone(localToUtc(first, '12:00', displayTz), displayTz, "d 'de' MMMM")}`;
   const heading = rawHeading.charAt(0).toUpperCase() + rawHeading.slice(1);
 
   return (
@@ -90,16 +102,21 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
         </div>
         <div className="flex items-center gap-2">
           <div className="flex rounded-md border text-sm" role="tablist" aria-label="Vista">
-            {(['semana', 'mes'] as const).map((v) => (
-              <Link key={v} role="tab" aria-selected={view === v} href={`/calendario?vista=${v}&data=${date}`} className={cn('px-3 py-1', view === v && 'bg-primary text-primary-foreground')}>
-                {v === 'semana' ? 'Semana' : 'Mês'}
+            {(['lista', 'semana', 'mes'] as const).map((v) => (
+              <Link key={v} role="tab" aria-selected={view === v} href={`/calendario?vista=${v}&data=${date}${keep}`} className={cn('px-3 py-1.5 first:rounded-l-md last:rounded-r-md', view === v ? 'bg-primary text-primary-foreground' : 'hover:bg-accent')}>
+                {v === 'semana' ? 'Semana' : v === 'mes' ? 'Mês' : 'Lista'}
               </Link>
             ))}
           </div>
           <Link href="/posts/novo" className="flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"><Plus className="size-4" /> Novo post</Link>
         </div>
       </div>
-      <CalendarView weeks={weeks} month={view === 'mes' ? Number(date.slice(5, 7)) : null} today={today} posts={posts} deadlines={deadlines} />
+      <CalendarFilterBar base={{ vista: view, data: sp.data }} filters={filters} />
+      {view === 'lista' ? (
+        <CalendarList days={listDays} today={today} posts={posts} deadlines={deadlines} freeSlots={freeSlots} />
+      ) : (
+        <CalendarView weeks={weeks} month={view === 'mes' ? Number(date.slice(5, 7)) : null} today={today} posts={posts} deadlines={deadlines} freeSlots={freeSlots} />
+      )}
     </div>
   );
 }
