@@ -2,6 +2,7 @@ import { AI_MESSAGES, AiError } from './errors';
 import type { AiProvider } from './types';
 
 const ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
+const FALLBACK_USD_PER_M = { input: 3, output: 15 };
 
 /** Extrai o JSON da resposta, tolerando um bloco ```json … ```. */
 function extractJson(content: string): unknown {
@@ -58,14 +59,11 @@ export function createOpenRouter(o: { apiKey: string; appUrl: string; fetch: typ
         throw new AiError('invalid_response', AI_MESSAGES.invalid_response);
       }
       const u = body.usage ?? {};
-      return {
-        data,
-        usage: {
-          inputTokens: Number(u.prompt_tokens ?? 0),
-          outputTokens: Number(u.completion_tokens ?? 0),
-          costUsd: Number(u.cost ?? 0),
-        },
-      };
+      const inputTokens = Number(u.prompt_tokens ?? 0);
+      const outputTokens = Number(u.completion_tokens ?? 0);
+      // Sem custo na resposta, estimar por excesso para o limite mensal continuar a valer.
+      const costUsd = typeof u.cost === 'number' ? u.cost : (inputTokens * FALLBACK_USD_PER_M.input + outputTokens * FALLBACK_USD_PER_M.output) / 1e6;
+      return { data, usage: { inputTokens, outputTokens, costUsd } };
     },
   };
 }

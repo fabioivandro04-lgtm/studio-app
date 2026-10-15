@@ -46,10 +46,11 @@ describe('createOpenRouter', () => {
     expect(r.data).toEqual({ text: 'ok' });
   });
 
-  it('custo ausente conta como 0', async () => {
-    const fetch = fakeFetch([['POST', URL_RE, () => okBody('{"text":"ok"}', { prompt_tokens: 1, completion_tokens: 2 })]]);
+  it('custo ausente é estimado por excesso (3 USD/M entrada, 15 USD/M saída) para o limite continuar a valer', async () => {
+    const fetch = fakeFetch([['POST', URL_RE, () => okBody('{"text":"ok"}', { prompt_tokens: 1000, completion_tokens: 2000 })]]);
     const r = await createOpenRouter({ apiKey: 'k', appUrl: 'https://a', fetch }).chat(req);
-    expect(r.usage).toEqual({ inputTokens: 1, outputTokens: 2, costUsd: 0 });
+    expect(r.usage.inputTokens).toBe(1000);
+    expect(r.usage.costUsd).toBeCloseTo(0.003 + 0.03, 10);
   });
 
   it.each([
