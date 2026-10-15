@@ -31,7 +31,17 @@ export async function runSuggest(
   const provider = ready(d);
   if (!i.prompt.trim()) throw invalid('Escreva sobre o que é o post.');
   if (i.targets.length === 0) throw invalid('Escolha pelo menos uma rede.');
-  const { data, usage } = await provider.chat({ model: d.model, messages: buildSuggestMessages(i), spec: SuggestionsSpec, maxTokens: 1500 });
+  const ask = (imageUrl: string | null) =>
+    provider.chat({ model: d.model, messages: buildSuggestMessages({ ...i, imageUrl }), spec: SuggestionsSpec, maxTokens: 1500 });
+  let res;
+  try {
+    res = await ask(i.imageUrl);
+  } catch (e) {
+    // Imagem grande ou formato não suportado pelo modelo: repetir só com o texto.
+    if (!(i.imageUrl && e instanceof AiError && e.code === 'bad_request')) throw e;
+    res = await ask(null);
+  }
+  const { data, usage } = res;
   await d.recordUsage({ brandId: i.brandId, kind: 'suggest', model: d.model, usage });
   return postprocessSuggestions(data, { platforms: i.targets.map((t) => t.platform), fixedHashtags: i.brand.aiHashtags });
 }

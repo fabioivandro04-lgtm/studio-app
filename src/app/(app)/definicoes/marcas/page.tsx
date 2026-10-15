@@ -2,6 +2,9 @@ import { createServerClient } from '@/lib/db/clients';
 import { listBrands } from '@/lib/db/repo/brands-repo';
 import { BrandsEditor } from './brands-editor';
 
+// Os pedidos à IA (server actions desta página) podem demorar até ~45 s.
+export const maxDuration = 60;
+
 export default async function MarcasPage() {
   const db = await createServerClient();
   const [brands, { data: ig }] = await Promise.all([

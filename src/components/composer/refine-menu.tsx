@@ -3,6 +3,7 @@
 import { Sparkles } from 'lucide-react';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
+import { callSafely } from '@/lib/ai/call-safely';
 import { refineCaption } from '@/app/(app)/ai/actions';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -22,7 +23,7 @@ export function RefineMenu({ brandId, platform, text, onReplace }: { brandId: st
   const [pending, start] = useTransition();
   const run = (action: RefineAction) =>
     start(async () => {
-      const r = await refineCaption({ brandId, platform, text, action });
+      const r = await callSafely(() => refineCaption({ brandId, platform, text, action }));
       if (r.ok) onReplace(r.text);
       else toast.error(r.error);
     });

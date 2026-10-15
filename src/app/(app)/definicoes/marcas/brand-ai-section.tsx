@@ -3,6 +3,7 @@
 import { Sparkles } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { callSafely } from '@/lib/ai/call-safely';
 import { draftVoice } from '@/app/(app)/ai/actions';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -34,14 +35,14 @@ export function BrandAiSection({ initial }: { initial: BrandAiForm }) {
 
   const save = () =>
     start(async () => {
-      const r = await saveBrandAi({ brandId: id, aiContext: context, aiVoice: voice, aiHashtags: tags.split(/[\s,]+/).filter(Boolean), goal });
+      const r = await callSafely(() => saveBrandAi({ brandId: id, aiContext: context, aiVoice: voice, aiHashtags: tags.split(/[\s,]+/).filter(Boolean), goal }));
       if (r.ok) toast.success('Definições de IA guardadas.');
       else toast.error(r.error);
     });
 
   const draft = () =>
     startDraft(async () => {
-      const r = await draftVoice({ brandId: id });
+      const r = await callSafely(() => draftVoice({ brandId: id }));
       if (r.ok) {
         setVoice(r.voice);
         toast.success('Rascunho da voz criado. Reveja e carregue em Guardar IA.');

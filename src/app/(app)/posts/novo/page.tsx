@@ -4,6 +4,9 @@ import { createServerClient } from '@/lib/db/clients';
 import { listBrands, selectedBrandId } from '@/lib/db/repo/brands-repo';
 import { loadComposer } from '../data';
 
+// Os pedidos à IA (server actions desta página) podem demorar até ~45 s.
+export const maxDuration = 60;
+
 export default async function NovoPostPage({ searchParams }: { searchParams: Promise<{ data?: string; midia?: string }> }) {
   const { data: date, midia } = await searchParams;
   const db = await createServerClient();

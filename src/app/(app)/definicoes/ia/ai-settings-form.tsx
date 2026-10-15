@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { callSafely } from '@/lib/ai/call-safely';
 import { saveAiSettings } from '@/app/(app)/ai/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +21,7 @@ export function AiSettingsForm({ initial }: { initial: { model: string; limitUsd
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     start(async () => {
-      const r = await saveAiSettings({ model: choice === OTHER ? custom.trim() : choice, limitUsd: Number(limit.replace(',', '.')) });
+      const r = await callSafely(() => saveAiSettings({ model: choice === OTHER ? custom.trim() : choice, limitUsd: Number(limit.replace(',', '.')) }));
       if (r.ok) toast.success('Definições da IA guardadas.');
       else toast.error(r.error);
     });

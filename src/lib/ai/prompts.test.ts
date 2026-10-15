@@ -86,6 +86,11 @@ describe('buildRefineMessages', () => {
     expect(t).toMatch(/[Mm]antém as hashtags/);
   });
 
+  it('english: a regra do pt-PT abre exceção para pedidos de outra língua', () => {
+    const [sys] = buildRefineMessages({ brand: brand(), platform: 'instagram', text: 'Olá', action: 'english' });
+    expect(text(sys)).toMatch(/salvo quando o pedido indicar explicitamente outra língua/);
+  });
+
   it('shorten pede para encurtar', () => {
     expect(text(buildRefineMessages({ brand: brand(), platform: 'tiktok', text: 'abc', action: 'shorten' })[1])).toMatch(/[Ee]ncurta/);
   });

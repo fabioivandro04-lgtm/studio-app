@@ -70,6 +70,33 @@ describe('runSuggest', () => {
     expect((await errOf(runSuggest(deps(), { ...input, targets: [] }))).message).toBe('Escolha pelo menos uma rede.');
   });
 
+  it('imagem recusada → tenta de novo só com texto', async () => {
+    let n = 0;
+    const seen: string[] = [];
+    const picky: AiProvider = {
+      async chat(req) {
+        n++;
+        const body = JSON.stringify(req.messages);
+        seen.push(body);
+        if (body.includes('image_url')) throw new AiError('bad_request', 'recusado');
+        return createFakeAi().chat(req);
+      },
+    };
+    const d = deps({ provider: picky });
+    const r = await runSuggest(d, { ...input, imageUrl: 'https://img/grande.jpg' });
+    expect(n).toBe(2);
+    expect(seen[1]).not.toContain('image_url');
+    expect(r.byPlatform[0].captions.length).toBeGreaterThan(0);
+    expect(d.recordUsage).toHaveBeenCalledTimes(1);
+  });
+
+  it('pedido recusado sem imagem não repete', async () => {
+    let n = 0;
+    const failing: AiProvider = { chat: async () => { n++; throw new AiError('bad_request', 'recusado'); } };
+    expect((await errOf(runSuggest(deps({ provider: failing }), input))).code).toBe('bad_request');
+    expect(n).toBe(1);
+  });
+
   it('erro da IA não regista uso', async () => {
     const failing: AiProvider = { chat: async () => { throw new AiError('unavailable', 'x'); } };
     const d = deps({ provider: failing });

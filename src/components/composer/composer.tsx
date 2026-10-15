@@ -3,7 +3,7 @@
 import { Copy } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { cancelPost, savePost } from '@/app/(app)/posts/actions';
 import type { ComposerData } from '@/app/(app)/posts/data';
@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FORMAT_PLATFORM, PLATFORM_LABEL, type MediaInfo, type Platform, type TargetFormat } from '@/lib/platforms/types';
+import { restoreCaptions, setCaption, snapshotCaptions, type CaptionSnapshot } from '@/lib/posts/caption-edits';
 import { AiPanel } from './ai-panel';
 import { BestTime } from './best-time';
 import { RefineMenu } from './refine-menu';
@@ -68,30 +69,50 @@ export function Composer({ data }: { data: ComposerData }) {
   const platformOf = (t: Target) => accounts.find((a) => a.id === t.accountId)?.platform;
   const aiPlatforms = [...new Set((s.targets.length ? s.targets.map(platformOf) : accounts.map((a) => a.platform)).filter((p): p is Platform => !!p))];
   const aiFormats = Object.fromEntries(s.targets.map((t) => [platformOf(t), t.format]).filter(([p]) => p)) as Partial<Record<Platform, TargetFormat>>;
-  const withUndo = (before: Target[], message: string) =>
-    toast.success(message, { action: { label: 'Desfazer', onClick: () => setS((prev) => ({ ...prev, targets: before })) } });
+  // As respostas da IA chegam segundos depois: aplicam-se sobre o estado atual (não sobre o do clique)
+  // e "Desfazer" repõe só as legendas que a IA mudou.
+  const latest = useRef(s);
+  useEffect(() => {
+    latest.current = s;
+  }, [s]);
+  const patchTargets = (fn: (targets: Target[]) => Target[]) => {
+    setServerErrors([]);
+    setS((prev) => ({ ...prev, targets: fn(prev.targets) }));
+  };
+  const withUndo = (snap: CaptionSnapshot, message: string) =>
+    toast.success(message, { action: { label: 'Desfazer', onClick: () => patchTargets((ts) => restoreCaptions(ts, snap)) } });
+  const idsFor = (platform: Platform) => latest.current.targets.filter((t) => platformOf(t) === platform).map((t) => t.accountId);
   const applyAiCaption = (platform: Platform, text: string) => {
-    const before = s.targets;
-    if (s.targets.some((t) => platformOf(t) === platform)) {
-      update({ targets: s.targets.map((t) => (platformOf(t) === platform ? { ...t, caption: text } : t)) });
-    } else {
-      const acc = accounts.find((a) => a.platform === platform);
-      if (!acc) return;
-      update({ targets: [...s.targets, { accountId: acc.id, format: defaultFormat(platform, selectedMedia), caption: text, title: platform === 'youtube' ? '' : null }] });
+    const ids = idsFor(platform);
+    if (ids.length) {
+      const snap = snapshotCaptions(latest.current.targets, ids);
+      patchTargets((ts) => ids.reduce((acc, id) => setCaption(acc, id, text), ts));
+      withUndo(snap, 'Legenda alterada.');
+      return;
     }
-    withUndo(before, 'Legenda alterada.');
+    const acc = accounts.find((a) => a.platform === platform);
+    if (!acc) return;
+    const added: Target = { accountId: acc.id, format: defaultFormat(platform, selectedMedia), caption: text, title: platform === 'youtube' ? '' : null };
+    patchTargets((ts) => (ts.some((t) => t.accountId === acc.id) ? setCaption(ts, acc.id, text) : [...ts, added]));
+    withUndo({ [acc.id]: null }, 'Legenda alterada.');
   };
   const addAiHashtags = (platform: Platform, tags: string[]) => {
-    const before = s.targets;
-    update({
-      targets: s.targets.map((t) => {
-        if (platformOf(t) !== platform) return t;
+    const ids = idsFor(platform);
+    const snap = snapshotCaptions(latest.current.targets, ids);
+    patchTargets((ts) =>
+      ts.map((t) => {
+        if (!ids.includes(t.accountId)) return t;
         const missing = tags.filter((h) => !t.caption.includes(h));
         if (missing.length === 0) return t;
         return { ...t, caption: `${t.caption.trimEnd()}${t.caption.trim() ? '\n\n' : ''}${missing.join(' ')}` };
       }),
-    });
-    withUndo(before, 'Hashtags adicionadas.');
+    );
+    withUndo(snap, 'Hashtags adicionadas.');
+  };
+  const replaceCaptionFromAi = (accountId: string, next: string) => {
+    const snap = snapshotCaptions(latest.current.targets, [accountId]);
+    patchTargets((ts) => setCaption(ts, accountId, next));
+    withUndo(snap, 'Legenda alterada.');
   };
 
   const submit = (intent: 'draft' | 'schedule') =>
@@ -173,9 +194,12 @@ export function Composer({ data }: { data: ComposerData }) {
             onAddHashtags={addAiHashtags}
             onUseTitle={(text) => update({ internalTitle: text })}
             onUseYoutubeTitle={(text) => {
-              const before = s.targets;
-              update({ targets: s.targets.map((t) => (platformOf(t) === 'youtube' ? { ...t, title: text } : t)) });
-              withUndo(before, 'Título do YouTube alterado.');
+              const ids = idsFor('youtube');
+              const titles = Object.fromEntries(latest.current.targets.filter((t) => ids.includes(t.accountId)).map((t) => [t.accountId, t.title]));
+              patchTargets((ts) => ts.map((t) => (ids.includes(t.accountId) ? { ...t, title: text } : t)));
+              toast.success('Título do YouTube alterado.', {
+                action: { label: 'Desfazer', onClick: () => patchTargets((ts) => ts.map((t) => (t.accountId in titles ? { ...t, title: titles[t.accountId] } : t))) },
+              });
             }}
           />
         )}
@@ -231,11 +255,7 @@ export function Composer({ data }: { data: ComposerData }) {
                         brandId={s.brandId}
                         platform={acc.platform}
                         text={t.caption}
-                        onReplace={(next) => {
-                          const before = s.targets;
-                          setTarget(i, { caption: next });
-                          withUndo(before, 'Legenda alterada.');
-                        }}
+                        onReplace={(next) => replaceCaptionFromAi(t.accountId, next)}
                       />
                     )}
                     <Textarea aria-label={`Legenda ${PLATFORM_LABEL[acc.platform]}`} disabled={ro} rows={4} value={t.caption} onChange={(e) => setTarget(i, { caption: e.target.value })}

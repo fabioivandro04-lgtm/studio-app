@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { callSafely } from '@/lib/ai/call-safely';
 import { bestTimes } from '@/app/(app)/ai/actions';
 import type { Slot } from '@/lib/ai/best-time';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ export function BestTime({ brandId, postId, onPick }: { brandId: string; postId:
   const [pending, start] = useTransition();
   const load = () =>
     start(async () => {
-      const r = await bestTimes({ brandId, excludePostId: postId });
+      const r = await callSafely(() => bestTimes({ brandId, excludePostId: postId }));
       if (r.ok) setSlots(r.slots);
       else toast.error(r.error);
     });

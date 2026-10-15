@@ -62,6 +62,15 @@ describe('createOpenRouter', () => {
     expect(await codeOf(createOpenRouter({ apiKey: 'k', appUrl: 'https://a', fetch }).chat(req))).toBe(code);
   });
 
+  it.each([400, 404, 413, 422])('HTTP %i → bad_request com mensagem própria', async (status) => {
+    const fetch = fakeFetch([['POST', URL_RE, () => jsonResponse(status, { error: { message: 'x' } })]]);
+    const p = createOpenRouter({ apiKey: 'k', appUrl: 'https://a', fetch }).chat(req);
+    expect(await codeOf(p)).toBe('bad_request');
+    await expect(createOpenRouter({ apiKey: 'k', appUrl: 'https://a', fetch }).chat(req)).rejects.toThrow(
+      'A IA recusou o pedido (modelo ou imagem não suportados). Experimente outro motor em Definições → IA.',
+    );
+  });
+
   it('mensagens de erro em pt-PT', async () => {
     const fetch = fakeFetch([['POST', URL_RE, () => jsonResponse(402, {})]]);
     await expect(createOpenRouter({ apiKey: 'k', appUrl: 'https://a', fetch }).chat(req)).rejects.toThrow(

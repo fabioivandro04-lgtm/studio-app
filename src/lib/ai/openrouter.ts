@@ -40,6 +40,7 @@ export function createOpenRouter(o: { apiKey: string; appUrl: string; fetch: typ
         clearTimeout(timer);
       }
       if (res.status === 401 || res.status === 402 || res.status === 403) throw new AiError('auth', AI_MESSAGES.auth);
+      if ([400, 404, 413, 422].includes(res.status)) throw new AiError('bad_request', AI_MESSAGES.bad_request);
       if (!res.ok) throw new AiError('unavailable', AI_MESSAGES.unavailable);
 
       let body: any;

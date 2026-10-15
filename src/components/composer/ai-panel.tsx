@@ -3,6 +3,7 @@
 import { Sparkles } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { callSafely } from '@/lib/ai/call-safely';
 import { suggestPost } from '@/app/(app)/ai/actions';
 import { PlatformIcon } from '@/components/platform-icon';
 import { Button } from '@/components/ui/button';
@@ -33,7 +34,7 @@ export function AiPanel(p: AiPanelProps) {
 
   const generate = () =>
     start(async () => {
-      const r = await suggestPost({ brandId: p.brandId, prompt, mediaId: p.mediaId, platforms: p.platforms, formats: p.formats });
+      const r = await callSafely(() => suggestPost({ brandId: p.brandId, prompt, mediaId: p.mediaId, platforms: p.platforms, formats: p.formats }));
       if (r.ok) {
         setResult(r.suggestions);
         setChosen({});

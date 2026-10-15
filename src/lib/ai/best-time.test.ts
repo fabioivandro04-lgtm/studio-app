@@ -73,6 +73,16 @@ describe('suggestSlots com histórico', () => {
     expect(slots[2].source).toBe('initial');
   });
 
+  it('não recomenda faixas abaixo da média como "melhores"', () => {
+    // 3 faixas: quinta 19h (alta), segunda 12h (média), sábado 10h (baixa, abaixo da mediana global).
+    const mixed = [
+      ...history,
+      ...['2026-08-01', '2026-08-08', '2026-08-15'].map((d) => point(localToUtc(d, '10:00', MZ), { profileVisits: 1 })),
+    ];
+    const slots = suggestSlots({ history: mixed, goal: 'contacts', tz: MZ, busy: [], now });
+    expect(slots.some((s) => s.source === 'history' && s.time === '10:00')).toBe(false);
+  });
+
   it('menos de 10 posts → tabela inicial', () => {
     const slots = suggestSlots({ history: history.slice(0, 9), goal: 'contacts', tz: MZ, busy: [], now });
     expect(slots.every((s) => s.source === 'initial')).toBe(true);

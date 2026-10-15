@@ -83,6 +83,8 @@ export function suggestSlots(o: { history: HistoryPoint[]; goal: Goal; tz: strin
     const best = [...buckets.values()]
       .filter((b) => b.scores.length >= MIN_PER_BUCKET)
       .map((b) => ({ ...b, median: median(b.scores) }))
+      // Só faixas pelo menos na média: as piores ficam para a tabela inicial.
+      .filter((b) => b.median > 0 && b.median >= overall)
       .sort((a, b) => b.median - a.median || b.scores.length - a.scores.length);
     for (const b of best) {
       const time = `${String(b.hour).padStart(2, '0')}:00`;
