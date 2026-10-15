@@ -71,6 +71,13 @@ describe('ai_usage', () => {
     expect(await db.asUser(s.strangerId).sql('select * from ai_usage')).toHaveLength(0);
   });
 
+  it('o registo de gastos não pode ser alterado nem apagado pelo dono', async () => {
+    await db.sql(`insert into ai_usage(brand_id, kind, model, input_tokens, output_tokens, cost_usd) values ($1,'suggest','m',1,1,0.5)`, [s.brand.id]);
+    await db.asUser(s.ownerId).sql('update ai_usage set cost_usd = 0');
+    await db.asUser(s.ownerId).sql('delete from ai_usage');
+    expect(await db.sql('select cost_usd from ai_usage')).toEqual([{ cost_usd: '0.500000' }]);
+  });
+
   it('kind inválido é recusado', async () => {
     await expect(db.sql(`insert into ai_usage(kind, model, input_tokens, output_tokens, cost_usd) values ('x','m',0,0,0)`)).rejects.toThrow(/check/);
   });
