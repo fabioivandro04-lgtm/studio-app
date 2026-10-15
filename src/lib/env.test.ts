@@ -27,6 +27,11 @@ describe('parseServerEnv', () => {
     expect(env.NEXT_PUBLIC_ENABLE_PASSWORD_LOGIN).toBe(false);
   });
 
+  it('OPENROUTER_API_KEY é opcional', () => {
+    expect(parseServerEnv(minimalValidEnv).OPENROUTER_API_KEY).toBeUndefined();
+    expect(parseServerEnv({ ...minimalValidEnv, OPENROUTER_API_KEY: 'sk-or-x' }).OPENROUTER_API_KEY).toBe('sk-or-x');
+  });
+
   it('PLATFORM_MODE padrão é real', () => {
     const { PLATFORM_MODE: _omit, ...rest } = minimalValidEnv;
     expect(parseServerEnv(rest).PLATFORM_MODE).toBe('real');

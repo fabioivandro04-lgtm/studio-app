@@ -21,3 +21,19 @@ export const BrandInput = z.object({
   timezone: z.enum(TZ_IDS, { message: 'Escolha um fuso horário da lista.' }).default('Africa/Maputo'),
 });
 export type BrandInput = z.infer<typeof BrandInput>;
+
+export const BrandAiInput = z.object({
+  aiContext: z.string().max(4000, 'O contexto pode ter no máximo 4000 caracteres.'),
+  aiVoice: z.string().max(2000, 'A voz da marca pode ter no máximo 2000 caracteres.'),
+  aiHashtags: z
+    .array(z.string().regex(/^#?[\p{L}\p{N}_]+$/u, 'Hashtag inválida: use só letras, números e _.'))
+    .max(10, 'No máximo 10 hashtags fixas.'),
+  goal: z.enum(['contacts', 'reach'], { message: 'Escolha o objetivo da marca.' }),
+});
+export type BrandAiInput = z.infer<typeof BrandAiInput>;
+
+export const AiSettingsInput = z.object({
+  model: z.string().trim().min(3).max(100).regex(/^[\w.-]+\/[\w.:-]+$/, 'Escreva o id do modelo do OpenRouter (ex.: anthropic/claude-sonnet-5.5).'),
+  limitUsd: z.number({ message: 'Escreva um limite em USD.' }).min(0, 'O limite não pode ser negativo.').max(1000, 'O limite máximo é 1000 USD.'),
+});
+export type AiSettingsInput = z.infer<typeof AiSettingsInput>;

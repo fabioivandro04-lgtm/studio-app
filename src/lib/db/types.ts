@@ -1,3 +1,4 @@
+import type { Goal } from '@/lib/ai/types';
 import type { Platform, PostStatus, TargetFormat, TargetStatus } from '@/lib/platforms/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -6,9 +7,13 @@ type Row = Record<string, any>;
 const date = (v: unknown): Date | null => (v == null ? null : new Date(v as string));
 const num = (v: unknown): number | null => (v == null ? null : Number(v));
 
-export interface Brand { id: string; name: string; color: string; timezone: string; createdAt: Date }
+export interface Brand {
+  id: string; name: string; color: string; timezone: string; createdAt: Date;
+  aiContext: string; aiVoice: string; aiHashtags: string[]; goal: Goal;
+}
 export const fromBrandRow = (r: Row): Brand => ({
   id: r.id, name: r.name, color: r.color, timezone: r.timezone, createdAt: new Date(r.created_at),
+  aiContext: r.ai_context ?? '', aiVoice: r.ai_voice ?? '', aiHashtags: r.ai_hashtags ?? [], goal: r.goal === 'reach' ? 'reach' : 'contacts',
 });
 
 export type AccountStatus = 'active' | 'needs_reauth' | 'disabled';

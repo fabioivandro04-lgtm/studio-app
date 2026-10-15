@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BrandInput, TIMEZONES } from './schema';
+import { AiSettingsInput, BrandAiInput, BrandInput, TIMEZONES } from './schema';
 
 describe('BrandInput', () => {
   it('padrão de fuso é Africa/Maputo', () => {
@@ -17,5 +17,48 @@ describe('BrandInput', () => {
   });
   it('inclui os fusos dos mercados da Unidreamity', () => {
     expect(TIMEZONES.map((t) => t.id)).toEqual(expect.arrayContaining(['Africa/Maputo', 'Africa/Luanda', 'Atlantic/Cape_Verde', 'Europe/Lisbon']));
+  });
+});
+
+describe('BrandAiInput', () => {
+  const ok = { aiContext: 'Consultoria de candidaturas.', aiVoice: 'Próxima e confiável.', aiHashtags: ['#unidreamity', 'estudarfora'], goal: 'contacts' };
+
+  it('aceita valores válidos', () => {
+    expect(BrandAiInput.parse(ok)).toEqual(ok);
+  });
+
+  it('recusa contexto acima de 4000', () => {
+    const r = BrandAiInput.safeParse({ ...ok, aiContext: 'a'.repeat(4001) });
+    expect(r.error?.issues[0].message).toBe('O contexto pode ter no máximo 4000 caracteres.');
+  });
+
+  it('recusa voz acima de 2000', () => {
+    const r = BrandAiInput.safeParse({ ...ok, aiVoice: 'a'.repeat(2001) });
+    expect(r.error?.issues[0].message).toBe('A voz da marca pode ter no máximo 2000 caracteres.');
+  });
+
+  it('recusa mais de 10 hashtags', () => {
+    const r = BrandAiInput.safeParse({ ...ok, aiHashtags: Array.from({ length: 11 }, (_, i) => `#t${i}`) });
+    expect(r.error?.issues[0].message).toBe('No máximo 10 hashtags fixas.');
+  });
+
+  it('recusa hashtag com espaços ou símbolos', () => {
+    expect(BrandAiInput.safeParse({ ...ok, aiHashtags: ['#a b'] }).success).toBe(false);
+    expect(BrandAiInput.safeParse({ ...ok, aiHashtags: ['#são_tomé'] }).success).toBe(true);
+  });
+
+  it('recusa objetivo desconhecido', () => {
+    expect(BrandAiInput.safeParse({ ...ok, goal: 'x' }).success).toBe(false);
+  });
+});
+
+describe('AiSettingsInput', () => {
+  it('aceita modelo e limite válidos', () => {
+    expect(AiSettingsInput.parse({ model: 'anthropic/claude-haiku-5.5', limitUsd: 5 })).toEqual({ model: 'anthropic/claude-haiku-5.5', limitUsd: 5 });
+  });
+
+  it('recusa limite negativo e modelo sem barra', () => {
+    expect(AiSettingsInput.safeParse({ model: 'anthropic/claude-haiku-5.5', limitUsd: -1 }).success).toBe(false);
+    expect(AiSettingsInput.safeParse({ model: 'claude', limitUsd: 5 }).success).toBe(false);
   });
 });

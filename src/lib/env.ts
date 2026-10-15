@@ -23,6 +23,7 @@ const base = z.object({
   TIKTOK_CLIENT_SECRET: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+  OPENROUTER_API_KEY: z.string().optional(),
   YT_UPLOAD_UNITS: z.coerce.number().int().positive().default(1600),
   YT_DAILY_UNITS: z.coerce.number().int().positive().default(10000),
   NEXT_PUBLIC_MAX_UPLOAD_MB: z.coerce.number().positive().default(50),
