@@ -1,6 +1,8 @@
 import type { Platform, TargetFormat } from '@/lib/platforms/types';
 import { assertWithinBudget } from './budget';
 import { AI_MESSAGES, AiError } from './errors';
+import { buildIdeasMessages, type IdeasMode } from './ideas-prompts';
+import { IdeasSpec, postprocessIdeas, type IdeaDraft } from './ideas-schema';
 import { buildRefineMessages, buildSuggestMessages, buildVoiceMessages } from './prompts';
 import { AI_RULES } from './rules';
 import { postprocessSuggestions, RefinedSpec, SuggestionsSpec, VoiceSpec } from './schemas';
@@ -11,7 +13,7 @@ export interface AiDeps {
   model: string;
   limitUsd: number;
   spentUsd: number;
-  recordUsage(u: { brandId: string | null; kind: 'suggest' | 'refine' | 'voice'; model: string; usage: AiUsage }): Promise<void>;
+  recordUsage(u: { brandId: string | null; kind: 'suggest' | 'refine' | 'voice' | 'ideas'; model: string; usage: AiUsage }): Promise<void>;
 }
 
 const VOICE_MAX = 2000;
@@ -74,4 +76,26 @@ export async function runDraftVoice(d: AiDeps, i: { brandId: string; brand: Bran
   const { data, usage } = await provider.chat({ model: d.model, messages: buildVoiceMessages(i), spec: VoiceSpec, maxTokens: 800 });
   await record(d, { brandId: i.brandId, kind: 'voice', model: d.model, usage });
   return data.voice.trim().slice(0, VOICE_MAX);
+}
+
+export async function runIdeas(
+  d: AiDeps,
+  i: {
+    brandId: string;
+    brand: BrandAi;
+    mode: IdeasMode;
+    count: number;
+    deadline: { title: string; dueDate: string; institution: string | null; country: string | null } | null;
+    upcomingDeadlines: { title: string; dueDate: string }[];
+    recentTitles: string[];
+    platforms: Platform[];
+  },
+): Promise<IdeaDraft[]> {
+  const provider = ready(d);
+  if (!Number.isInteger(i.count) || i.count < 1 || i.count > 21) throw invalid('Quantidade de ideias inválida.');
+  const { data, usage } = await provider.chat({ model: d.model, messages: buildIdeasMessages(i), spec: IdeasSpec, maxTokens: 3000 });
+  await record(d, { brandId: i.brandId, kind: 'ideas', model: d.model, usage });
+  const ideas = postprocessIdeas(data, { count: i.count, platforms: i.platforms });
+  if (ideas.length === 0) throw new AiError('invalid_response', AI_MESSAGES.invalid_response);
+  return ideas;
 }

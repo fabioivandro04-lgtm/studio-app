@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AiError } from './errors';
 import { createFakeAi } from './fake';
-import { runDraftVoice, runRefine, runSuggest, type AiDeps } from './service';
+import { runDraftVoice, runIdeas, runRefine, runSuggest, type AiDeps } from './service';
 import type { AiProvider, BrandAi, ChatMessage } from './types';
 
 const brand: BrandAi = { name: 'Unidreamity', aiContext: 'ctx', aiVoice: 'voz', aiHashtags: ['#unidreamity'], goal: 'contacts' };
@@ -149,5 +149,36 @@ describe('runDraftVoice', () => {
     const v = await runDraftVoice(d, { brandId: 'b1', brand, captions: ['olá'] });
     expect(v).toHaveLength(2000);
     expect(d.recordUsage).toHaveBeenCalledWith(expect.objectContaining({ kind: 'voice' }));
+  });
+});
+
+describe('runIdeas', () => {
+  const ideasInput = {
+    brandId: 'b1', brand, mode: 'shorts' as const, count: 4, deadline: null, upcomingDeadlines: [], recentTitles: [], platforms: ['instagram' as const],
+  };
+
+  it('pede N ideias, regista kind ideas e filtra redes', async () => {
+    const { provider, calls } = spyProvider();
+    const d = deps({ provider });
+    const r = await runIdeas(d, ideasInput);
+    expect(r).toHaveLength(4);
+    expect(r.every((i) => i.platforms.every((p) => p === 'instagram'))).toBe(true);
+    expect(calls[0].maxTokens).toBe(3000);
+    expect(d.recordUsage).toHaveBeenCalledWith(expect.objectContaining({ kind: 'ideas' }));
+  });
+
+  it('orçamento esgotado → budget sem chamar a IA', async () => {
+    const { provider, calls } = spyProvider();
+    expect((await errOf(runIdeas(deps({ provider, spentUsd: 9 }), ideasInput))).code).toBe('budget');
+    expect(calls).toHaveLength(0);
+  });
+
+  it('quantidade inválida → erro de entrada', async () => {
+    expect((await errOf(runIdeas(deps(), { ...ideasInput, count: 0 }))).code).toBe('invalid_input');
+  });
+
+  it('nenhuma ideia → invalid_response', async () => {
+    const empty: AiProvider = { chat: async (req) => ({ data: req.spec.parse({ ideas: [] }), usage: { inputTokens: 1, outputTokens: 1, costUsd: 0 } }) };
+    expect((await errOf(runIdeas(deps({ provider: empty }), ideasInput))).code).toBe('invalid_response');
   });
 });
