@@ -7,6 +7,7 @@ com várias marcas.
 - Configuração (Supabase, Vercel, Meta, TikTok, Google, OpenRouter): `docs/SETUP.md`
 - Assistente de IA: `docs/superpowers/specs/2026-10-15-assistente-ia-design.md`
 - Ideias e plano com IA: `docs/superpowers/specs/2026-10-16-ideias-ia-design.md`
+- Mais rápido e fluido (duplicar, grupos de hashtags, horários fixos, mover): `docs/superpowers/specs/2026-10-17-mais-rapido-design.md`
 
 ## Desenvolvimento
 
@@ -36,5 +37,6 @@ registado em `app_owner`.
 - `src/lib/metrics/sync.ts` — recolha diária de métricas
 - `src/lib/ai/*` — assistente de IA (OpenRouter, prompts pt-PT, limite mensal, melhor hora, ideias e datas do plano)
 - `src/app/(app)/ideias` — página Ideias (gerar, pôr no calendário, descartar)
+- `src/lib/schedule/slots.ts` — horários fixos (próximo horário livre, horários livres da semana)
 - `src/app/api/cron/*` — rotas chamadas pelo pg_cron do Supabase
 - `supabase/migrations` — esquema, segurança (RLS) e funções

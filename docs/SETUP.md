@@ -115,6 +115,14 @@ Sem auditoria da Google, os Shorts são enviados como **privados**; torne-os pú
 
 A IA só sugere texto e horários: nunca publica nem agenda sozinha.
 
+**Atalhos para o dia a dia:**
+- **Duplicar** (no post): cria uma cópia em rascunho e abre-a.
+- **Grupos de hashtags** (Definições → Marcas): guarde conjuntos de hashtags; no post, o botão **# Hashtags** junta-os
+  às legendas (com Desfazer).
+- **Horários fixos** (Definições → Marcas → Assistente de IA): os dias e horas em que costuma publicar. No post, o
+  botão **📅 Próximo horário livre** escolhe a data; o plano da semana nas Ideias usa os horários livres.
+- **Mover** (calendário no telemóvel): muda o dia de um post sem o abrir. No computador, arraste o post.
+
 **Página Ideias** (menu **Ideias**, com uma marca escolhida no topo):
 - **💡 Ideias para um prazo** — escolha um prazo (Definições → Prazos) e recebe uma sequência de posts até essa data
   (4, 3, 2 e 1 semana antes e no próprio dia).
