@@ -1,4 +1,4 @@
-export type AiErrorCode = 'no_key' | 'budget' | 'auth' | 'unavailable' | 'invalid_response';
+export type AiErrorCode = 'no_key' | 'budget' | 'auth' | 'unavailable' | 'invalid_response' | 'invalid_input';
 
 /** Erro da IA com mensagem pronta a mostrar ao dono (pt-PT). */
 export class AiError extends Error {
