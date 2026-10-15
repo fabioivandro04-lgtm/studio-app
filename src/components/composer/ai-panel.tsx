@@ -93,6 +93,9 @@ export function AiPanel(p: AiPanelProps) {
               <p className="flex items-center gap-2 text-sm font-medium">
                 <PlatformIcon platform={s.platform} size="sm" /> {PLATFORM_LABEL[s.platform]}
               </p>
+              {s.captions.length === 0 && (
+                <p className="rounded-lg bg-background px-3 py-2 text-sm text-muted-foreground">Sem sugestões para esta rede. Carregue em Gerar de novo.</p>
+              )}
               <ul className="grid gap-2 md:grid-cols-3">
                 {s.captions.map((c, i) => (
                   <li key={i} data-testid="ai-caption" className="flex flex-col justify-between gap-2 rounded-lg border bg-background p-2 text-sm">

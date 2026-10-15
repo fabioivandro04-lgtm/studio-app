@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FORMAT_PLATFORM, PLATFORM_LABEL, type MediaInfo, type Platform, type TargetFormat } from '@/lib/platforms/types';
-import { restoreCaptions, setCaption, snapshotCaptions, type CaptionSnapshot } from '@/lib/posts/caption-edits';
+import { aiPlatformsFor, appendHashtags, restoreCaptions, setCaption, snapshotCaptions, type CaptionSnapshot } from '@/lib/posts/caption-edits';
 import { AiPanel } from './ai-panel';
 import { BestTime } from './best-time';
 import { RefineMenu } from './refine-menu';
@@ -67,7 +67,7 @@ export function Composer({ data }: { data: ComposerData }) {
 
   // Assistente de IA: toda a alteração feita pela IA pode ser desfeita.
   const platformOf = (t: Target) => accounts.find((a) => a.id === t.accountId)?.platform;
-  const aiPlatforms = [...new Set((s.targets.length ? s.targets.map(platformOf) : accounts.map((a) => a.platform)).filter((p): p is Platform => !!p))];
+  const aiPlatforms = aiPlatformsFor(s.targets.map(platformOf).filter((p): p is Platform => !!p), accounts);
   const aiFormats = Object.fromEntries(s.targets.map((t) => [platformOf(t), t.format]).filter(([p]) => p)) as Partial<Record<Platform, TargetFormat>>;
   // As respostas da IA chegam segundos depois: aplicam-se sobre o estado atual (não sobre o do clique)
   // e "Desfazer" repõe só as legendas que a IA mudou.
@@ -90,23 +90,23 @@ export function Composer({ data }: { data: ComposerData }) {
       withUndo(snap, 'Legenda alterada.');
       return;
     }
-    const acc = accounts.find((a) => a.platform === platform);
-    if (!acc) return;
+    const acc = accounts.find((a) => a.platform === platform && a.status === 'active');
+    if (!acc) {
+      toast.error('Esta rede não está ligada (ou precisa de ser ligada de novo) para esta marca.');
+      return;
+    }
     const added: Target = { accountId: acc.id, format: defaultFormat(platform, selectedMedia), caption: text, title: platform === 'youtube' ? '' : null };
     patchTargets((ts) => (ts.some((t) => t.accountId === acc.id) ? setCaption(ts, acc.id, text) : [...ts, added]));
     withUndo({ [acc.id]: null }, 'Legenda alterada.');
   };
   const addAiHashtags = (platform: Platform, tags: string[]) => {
     const ids = idsFor(platform);
+    if (ids.length === 0) {
+      toast.error('Marque primeiro esta rede em "2. Redes e legendas" ou use uma das legendas sugeridas.');
+      return;
+    }
     const snap = snapshotCaptions(latest.current.targets, ids);
-    patchTargets((ts) =>
-      ts.map((t) => {
-        if (!ids.includes(t.accountId)) return t;
-        const missing = tags.filter((h) => !t.caption.includes(h));
-        if (missing.length === 0) return t;
-        return { ...t, caption: `${t.caption.trimEnd()}${t.caption.trim() ? '\n\n' : ''}${missing.join(' ')}` };
-      }),
-    );
+    patchTargets((ts) => ts.map((t) => (ids.includes(t.accountId) ? { ...t, caption: appendHashtags(t.caption, tags) } : t)));
     withUndo(snap, 'Hashtags adicionadas.');
   };
   const replaceCaptionFromAi = (accountId: string, next: string) => {
@@ -186,6 +186,7 @@ export function Composer({ data }: { data: ComposerData }) {
 
         {!ro && (
           <AiPanel
+            key={s.brandId}
             brandId={s.brandId}
             mediaId={s.mediaIds[0] ?? null}
             platforms={aiPlatforms}
@@ -284,7 +285,7 @@ export function Composer({ data }: { data: ComposerData }) {
             </div>
             <span className="pb-2 text-sm text-muted-foreground">Fuso: {brand?.timezone}</span>
           </div>
-          {!ro && <BestTime brandId={s.brandId} postId={s.id ?? null} onPick={(date, time) => update({ date, time })} />}
+          {!ro && <BestTime key={s.brandId} brandId={s.brandId} postId={s.id ?? null} onPick={(date, time) => update({ date, time })} />}
           {errorsFor(null).filter((e) => e.field !== 'mediaIds').map((e) => <p key={e.message} role="alert" className="text-sm text-destructive">{e.message}</p>)}
         </section>
 
