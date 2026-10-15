@@ -118,9 +118,14 @@ Portugal; fuso horário padrão Africa/Maputo; IA e automação de DMs ficam par
 - **Versão 1 usa o modo caixa de entrada** (`video.upload`): a app envia o vídeo; o TikTok
   notifica o utilizador, que conclui a publicação na app TikTok. Estado na app: "Aguarda 1 toque".
 - Transferência por `FILE_UPLOAD` (partes), porque `PULL_FROM_URL` exige domínio verificado.
+- No modo caixa de entrada a API **não aceita legenda**: a app mostra a legenda em "Ações
+  pendentes" com botão "Copiar legenda" para colar na app TikTok.
 - O TikTok não devolve logo o ID do post final → a app associa-o mais tarde via `video.list`
-  (data de criação + legenda) para obter métricas; se não conseguir, o utilizador escolhe o vídeo
-  de uma lista ("Associar vídeo").
+  (primeiro vídeo criado depois do envio e ainda não associado) e, quando o encontra, marca o
+  destino como publicado; se não conseguir, o utilizador escolhe o vídeo de uma lista
+  ("Associar vídeo").
+- YouTube: a recolha diária de métricas verifica se o vídeo já está público e, nesse caso, marca o
+  destino como publicado automaticamente.
 - Métricas (Display API): visualizações, gostos, comentários, partilhas por vídeo; seguidores.
 - Tokens: acesso 24h, renovação ~365 dias.
 - Futuro: pedir auditoria → modo `DIRECT_POST` público (a máquina de estados já o suporta por opção).
