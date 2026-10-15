@@ -9,12 +9,12 @@ import { validateTikTok } from './validate';
 
 const MiB = 1024 * 1024;
 const CHUNK = 10 * MiB;
-const MIN_CHUNK = 5 * MiB;
 const UPLOAD_URL_TTL_MIN = 55;
 
 export function planChunks(size: number): { chunkSize: number; totalChunks: number } {
-  if (size < MIN_CHUNK) return { chunkSize: size, totalChunks: 1 };
-  return { chunkSize: CHUNK, totalChunks: Math.max(1, Math.floor(size / CHUNK)) };
+  // Ficheiros que cabem numa parte usam chunk_size = video_size (exigência do TikTok).
+  if (size < CHUNK) return { chunkSize: size, totalChunks: 1 };
+  return { chunkSize: CHUNK, totalChunks: Math.floor(size / CHUNK) };
 }
 
 interface TtProgress extends Progress {
@@ -92,10 +92,6 @@ async function advance(t: TargetCtx, account: AccountCtx, deps: AdvanceDeps): Pr
     return { kind: 'progress', status: p.step === 'processing' ? 'processing' : 'uploading', progress: p };
   }
 
-  if (age > PROCESSING_TIMEOUT_MIN * 60_000) {
-    throw new PermanentError('TikTok: processamento excedeu o tempo', 'Tempo de processamento excedido no TikTok (mais de 30 minutos).');
-  }
-
   const r = await ttApi(deps.fetch, account.accessToken).post('/post/publish/status/fetch/', { publish_id: p.publishId });
   const status: string = r.data?.status;
   switch (status) {
@@ -112,6 +108,10 @@ async function advance(t: TargetCtx, account: AccountCtx, deps: AdvanceDeps): Pr
       throw new PermanentError(`TikTok FAILED: ${reason}`, FAIL_REASONS[reason] ?? `O TikTok recusou o vídeo (${reason}).`);
     }
     default:
+      // O estado é lido antes do limite de tempo: um vídeo já na caixa de entrada nunca é dado como falhado.
+      if (age > PROCESSING_TIMEOUT_MIN * 60_000) {
+        throw new PermanentError('TikTok: processamento excedeu o tempo', 'Tempo de processamento excedido no TikTok (mais de 30 minutos).');
+      }
       return { kind: 'progress', status: 'processing', progress: p };
   }
 }

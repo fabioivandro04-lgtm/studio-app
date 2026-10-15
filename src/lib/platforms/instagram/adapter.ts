@@ -10,6 +10,8 @@ const URL_TTL_S = 3600;
 
 interface IgProgress extends Progress {
   step?: 'children' | 'container';
+  /** Contentor de uma tentativa anterior (guardado por "Tentar de novo"). */
+  previousContainerId?: string;
   childIds?: string[];
   containerId?: string;
   startedAt?: string;
@@ -96,6 +98,14 @@ async function advance(cfg: IgConfig, t: TargetCtx, account: AccountCtx, deps: A
   const p = t.progress as IgProgress;
 
   if (!p.step) {
+    // Depois de "Tentar de novo": se o contentor anterior já foi publicado, recuperar em vez de publicar outra vez.
+    if (p.previousContainerId) {
+      const prev = await containerStatus(api, p.previousContainerId).catch((e) => {
+        if (e instanceof PermanentError) return null;
+        throw e;
+      });
+      if (prev === 'PUBLISHED') return recoverPublished(api, igId, t, p);
+    }
     await checkPublishingLimit(api, igId, now);
     const startedAt = now.toISOString();
     if (t.format === 'ig_carousel') {
@@ -106,13 +116,14 @@ async function advance(cfg: IgConfig, t: TargetCtx, account: AccountCtx, deps: A
     return { kind: 'progress', status: 'processing', progress: { step: 'container', containerId, startedAt } };
   }
 
-  checkTimeout(p, now);
-
   if (p.step === 'children') {
     const statuses = [];
     for (const id of p.childIds ?? []) statuses.push(await containerStatus(api, id));
     statuses.forEach(failIfBad);
-    if (statuses.some((s) => s !== 'FINISHED')) return { kind: 'progress', status: 'processing', progress: p };
+    if (statuses.some((s) => s !== 'FINISHED')) {
+      checkTimeout(p, now);
+      return { kind: 'progress', status: 'processing', progress: p };
+    }
     const parent = await api.post(`/${igId}/media`, {
       media_type: 'CAROUSEL',
       children: (p.childIds ?? []).join(','),
@@ -123,8 +134,12 @@ async function advance(cfg: IgConfig, t: TargetCtx, account: AccountCtx, deps: A
 
   const status = await containerStatus(api, p.containerId!);
   failIfBad(status);
+  // O estado é lido antes do limite de tempo: um contentor já publicado é sempre recuperado.
   if (status === 'PUBLISHED') return recoverPublished(api, igId, t, p);
-  if (status !== 'FINISHED') return { kind: 'progress', status: 'processing', progress: p };
+  if (status !== 'FINISHED') {
+    checkTimeout(p, now);
+    return { kind: 'progress', status: 'processing', progress: p };
+  }
 
   const published = await api.post(`/${igId}/media_publish`, { creation_id: p.containerId });
   const info = await api.get(`/${published.id}`, { fields: 'permalink' });

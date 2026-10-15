@@ -133,3 +133,28 @@ describe('instagramAdapter.advance', () => {
     expect(p.caption).toBeUndefined();
   });
 });
+
+describe('revisão final (I1)', () => {
+  it('contentor PUBLISHED é recuperado mesmo depois de 30 min (timeout não se aplica)', async () => {
+    fetch.routes.push(['GET', /\/c1\?/, () => ({ status_code: 'PUBLISHED' })]);
+    fetch.routes.push(['GET', /\/IG1\/media\?/, () => ({ data: [{ id: 'm9', caption: 'Olá #uni', permalink: 'p9', timestamp: '2026-10-15T10:00:00+0000' }] })]);
+    const old = new Date(NOW.getTime() - 2 * 3600_000).toISOString();
+    const r = await adapter.advance(target({ progress: { step: 'container', containerId: 'c1', startedAt: old } }), acct, deps);
+    expect(r).toMatchObject({ kind: 'published', externalPostId: 'm9' });
+  });
+
+  it('depois de "Tentar de novo", um contentor anterior já publicado é recuperado sem criar outro', async () => {
+    fetch.routes.push(['GET', /\/c0\?/, () => ({ status_code: 'PUBLISHED' })]);
+    fetch.routes.push(['GET', /\/IG1\/media\?/, () => ({ data: [{ id: 'm7', caption: 'Olá #uni', permalink: 'p7', timestamp: '2026-10-15T09:00:00+0000' }] })]);
+    const r = await adapter.advance(target({ progress: { previousContainerId: 'c0' } }), acct, deps);
+    expect(r).toMatchObject({ kind: 'published', externalPostId: 'm7' });
+    expect(fetch.calls.some((c) => c.method === 'POST')).toBe(false);
+  });
+
+  it('contentor anterior não publicado → cria um novo', async () => {
+    fetch.routes.push(['GET', /\/c0\?/, () => ({ status_code: 'ERROR' })]);
+    fetch.routes.push(['POST', /\/IG1\/media$/, () => ({ id: 'c2' })]);
+    const r = await adapter.advance(target({ progress: { previousContainerId: 'c0' } }), acct, deps);
+    expect(r).toMatchObject({ kind: 'progress', progress: { step: 'container', containerId: 'c2' } });
+  });
+});

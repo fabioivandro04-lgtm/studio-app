@@ -69,3 +69,27 @@ describe('mark_target_done', () => {
     await expect(db.asUser(s.strangerId).sql('select mark_target_done($1, null, null)', [targetId])).rejects.toThrow(/not_found/);
   });
 });
+
+describe('revisão final', () => {
+  it('C1: retry_target recusa destinos de posts cancelados', async () => {
+    await db.sql(`update posts set status='cancelled' where id=$1`, [postId]);
+    await expect(asOwner('select retry_target($1)', [targetId])).rejects.toThrow(/cancelled/);
+    expect((await db.sql('select status from posts where id=$1', [postId]))[0].status).toBe('cancelled');
+  });
+
+  it('I1: retry_target guarda o contentor anterior para recuperar publicações já feitas', async () => {
+    await db.sql(`update post_targets set progress='{"step":"container","containerId":"c1"}' where id=$1`, [targetId]);
+    await asOwner('select retry_target($1)', [targetId]);
+    expect((await db.sql('select progress from post_targets where id=$1', [targetId]))[0].progress).toEqual({ previousContainerId: 'c1' });
+  });
+});
+
+describe('I4: apagar marca com histórico', () => {
+  it('apagar primeiro os posts permite apagar a marca', async () => {
+    await db.sql(`update post_targets set status='published' where id=$1`, [targetId]);
+    await expect(db.asUser(s.ownerId).sql('delete from brands where id=$1', [s.brand.id])).rejects.toThrow(/foreign key/);
+    await db.asUser(s.ownerId).sql('delete from posts where brand_id=$1', [s.brand.id]);
+    await db.asUser(s.ownerId).sql('delete from brands where id=$1', [s.brand.id]);
+    expect(await db.sql('select * from brands')).toHaveLength(0);
+  });
+});

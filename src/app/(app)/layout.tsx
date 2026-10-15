@@ -16,7 +16,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const brands = await listBrands(db);
   const selected = await selectedBrandId(brands);
   const [{ count: pending }, { data: reauth }] = await Promise.all([
-    db.from('post_targets').select('id', { count: 'exact', head: true }).in('status', ['awaiting_user', 'failed']),
+    db
+      .from('post_targets')
+      .select('id, posts!inner(status)', { count: 'exact', head: true })
+      .in('status', ['awaiting_user', 'failed'])
+      .neq('posts.status', 'cancelled'),
     db.from('social_accounts').select('id, platform, handle, status_message').eq('status', 'needs_reauth'),
   ]);
 

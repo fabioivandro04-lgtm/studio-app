@@ -29,6 +29,9 @@ export async function deleteBrand(id: string): Promise<ActionResult> {
     .eq('brand_id', id)
     .in('status', ['scheduled', 'publishing']);
   if ((count ?? 0) > 0) return { ok: false, error: 'Esta marca tem posts agendados. Cancele-os primeiro.' };
+  // Os destinos impedem apagar contas e mídia (FK restrict); apagar primeiro os posts da marca.
+  const posts = await db.from('posts').delete().eq('brand_id', id);
+  if (posts.error) return { ok: false, error: 'Não foi possível apagar os posts da marca.' };
   const res = await db.from('brands').delete().eq('id', id);
   if (res.error) return { ok: false, error: 'Não foi possível apagar a marca.' };
   revalidatePath('/', 'layout');

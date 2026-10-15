@@ -134,3 +134,18 @@ describe('tiktokAdapter.advance', () => {
     await expect(adapter.advance(target(3_000_000, { step: 'processing', publishId: 'p', startedAt: old }), acct, deps)).rejects.toBeInstanceOf(PermanentError);
   });
 });
+
+describe('revisão final', () => {
+  it('I2: vídeo entre 5 e 10 MiB vai numa só parte', () => {
+    expect(planChunks(7 * MiB)).toEqual({ chunkSize: 7 * MiB, totalChunks: 1 });
+    expect(planChunks(5 * MiB)).toEqual({ chunkSize: 5 * MiB, totalChunks: 1 });
+    expect(planChunks(19.9 * MiB)).toEqual({ chunkSize: 10 * MiB, totalChunks: 1 });
+  });
+
+  it('I1: SEND_TO_USER_INBOX é aceite mesmo depois de 30 min', async () => {
+    fetch.routes.push(['POST', /status\/fetch/, () => ({ data: { status: 'SEND_TO_USER_INBOX' }, error: { code: 'ok' } })]);
+    const old = new Date(NOW.getTime() - 3 * 3600_000).toISOString();
+    const r = await adapter.advance(target(3_000_000, { step: 'processing', publishId: 'p', startedAt: old }), acct, deps);
+    expect(r.kind).toBe('awaiting_user');
+  });
+});

@@ -74,3 +74,12 @@ describe('requestJson', () => {
     expect(err.until.toISOString()).toBe('2026-10-16T07:00:00.000Z');
   });
 });
+
+describe('revisão final (I5)', () => {
+  it.each([4, 17, 32, 613, 1, 2])('Instagram código %i → TransientError', async (code) => {
+    await expect(requestJson(json(400, { error: { code, message: 'limit' } }), 'https://a', { platform: 'instagram' })).rejects.toBeInstanceOf(TransientError);
+  });
+  it('Instagram is_transient → TransientError', async () => {
+    await expect(requestJson(json(400, { error: { code: 100, is_transient: true } }), 'https://a', { platform: 'instagram' })).rejects.toBeInstanceOf(TransientError);
+  });
+});

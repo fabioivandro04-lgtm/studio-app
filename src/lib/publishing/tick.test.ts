@@ -148,3 +148,33 @@ describe('runTick', () => {
     expect(used).toBe('tok');
   });
 });
+
+describe('revisão final (I7)', () => {
+  it('não começa destinos depois do prazo; liberta o bloqueio', async () => {
+    repo.claims = [claimed({ id: 'a' }), claimed({ id: 'b' })];
+    let clock = NOW.getTime();
+    const seen: string[] = [];
+    await runTick({
+      repo, adapters: { instagram: adapterWith(async (t) => { seen.push(t.id); clock += 50_000; return { kind: 'progress', status: 'processing', progress: {} }; }) } as never,
+      storage: { signedUrl: async () => '', readRange: async () => new Uint8Array() },
+      fetch: (async () => new Response()) as unknown as typeof fetch, now: () => new Date(clock), decrypt: (e) => e, budgetMs: 40_000,
+    });
+    expect(seen).toEqual(['a']);
+    expect(repo.saves.find(([id]) => id === 'b')?.[1]).toEqual({ lockedUntil: null });
+  });
+
+  it('erro a gravar no catch não rebenta o tick nem salta os outros', async () => {
+    repo.claims = [claimed({ id: 'mau' }), claimed({ id: 'bom' })];
+    const orig = repo.saveTarget.bind(repo);
+    repo.saveTarget = async (id: string, p: Record<string, unknown>) => {
+      if (id === 'mau') throw new Error('db em baixo');
+      return orig(id, p);
+    };
+    const r = await run(adapterWith(async (t) => {
+      if (t.id === 'mau') throw new PermanentError('x', 'y');
+      return { kind: 'published', progress: {}, externalPostId: 'e', permalink: null };
+    }));
+    expect(repo.saves.map(([id]) => id)).toContain('bom');
+    expect(r.claimed).toBe(2);
+  });
+});

@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { createServerClient } from '@/lib/db/clients';
+import { safeNext } from '@/lib/auth/next';
 import { serverEnv } from '@/lib/env';
 
 export interface LoginState {
@@ -11,10 +12,6 @@ export interface LoginState {
   message?: string;
 }
 
-const safeNext = (v: FormDataEntryValue | null) => {
-  const s = typeof v === 'string' ? v : '';
-  return s.startsWith('/') && !s.startsWith('//') ? s : '/calendario';
-};
 
 export async function sendMagicLink(_prev: LoginState, form: FormData): Promise<LoginState> {
   const email = z.string().email().safeParse(form.get('email'));

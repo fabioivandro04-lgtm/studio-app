@@ -1,6 +1,6 @@
 -- Estúdio v1 — guardar e cancelar posts de forma atómica (RLS aplica-se: security invoker)
 
-create function public.save_post(p jsonb) returns uuid
+create or replace function public.save_post(p jsonb) returns uuid
   language plpgsql security invoker set search_path = public as $$
 declare
   v_id uuid := nullif(p->>'id', '')::uuid;
@@ -50,7 +50,7 @@ end $$;
 revoke execute on function public.save_post(jsonb) from public, anon;
 grant execute on function public.save_post(jsonb) to authenticated;
 
-create function public.cancel_post(p_id uuid) returns void
+create or replace function public.cancel_post(p_id uuid) returns void
   language plpgsql security invoker set search_path = public as $$
 begin
   update posts set status = 'cancelled', updated_at = now() where id = p_id;

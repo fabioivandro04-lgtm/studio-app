@@ -10,6 +10,8 @@ export interface HttpResult<T> {
 
 type Init = RequestInit & { platform: Platform; now?: () => Date };
 
+// Códigos da Graph API para limites de pedidos e erros temporários.
+const IG_TRANSIENT_CODES = new Set([1, 2, 4, 17, 32, 613]);
 const TIKTOK_AUTH_CODES = new Set(['access_token_invalid', 'access_token_expired', 'scope_not_authorized']);
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -49,6 +51,9 @@ export async function requestJson<T = any>(fetchFn: typeof fetch, url: string, i
 
   if (platform === 'instagram' && body?.error?.code === 190) {
     throw new AuthError(`${label} token inválido${detail}`, `A ligação ao ${label} expirou. Volte a ligar a conta.`);
+  }
+  if (platform === 'instagram' && !res.ok && (body?.error?.is_transient === true || IG_TRANSIENT_CODES.has(body?.error?.code))) {
+    throw new TransientError(`${label} limite/erro temporário${detail}`, `O ${label} está a limitar pedidos ou teve um erro temporário. Vamos tentar de novo.`);
   }
   if (platform === 'tiktok' && body?.error?.code && body.error.code !== 'ok') {
     if (TIKTOK_AUTH_CODES.has(body.error.code)) {

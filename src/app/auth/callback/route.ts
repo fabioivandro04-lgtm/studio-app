@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { safeNext } from '@/lib/auth/next';
 import { createServerClient } from '@/lib/db/clients';
 
 /** Destino do link mágico: troca o código pela sessão e segue para a página pedida. */
 export async function GET(request: NextRequest) {
   const url = request.nextUrl;
   const code = url.searchParams.get('code');
-  const nextParam = url.searchParams.get('next') ?? '/calendario';
-  const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/calendario';
+  const next = safeNext(url.searchParams.get('next'));
   if (code) {
     const supabase = await createServerClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);

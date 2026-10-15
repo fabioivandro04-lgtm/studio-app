@@ -12,6 +12,7 @@ export default async function PendentesPage() {
     .from('post_targets')
     .select('id, status, caption, last_error, external_post_id, updated_at, social_accounts(platform, handle), posts!inner(id, brand_id, internal_title, scheduled_at, post_media(position, media_assets(storage_path, thumbnail_path, kind)))')
     .in('status', ['awaiting_user', 'failed'])
+    .neq('posts.status', 'cancelled') // posts cancelados não são falhas (não oferecer "Tentar de novo")
     .order('updated_at', { ascending: false })
     .limit(100);
   const rows = ((data ?? []) as any[]).filter((r) => !brandId || r.posts.brand_id === brandId);

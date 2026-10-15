@@ -83,6 +83,11 @@ export async function runTick(deps: TickDeps): Promise<{ claimed: number; advanc
     const { target, account } = c;
     const source = `publish:${target.platform}`;
     const context = { targetId: target.id, postId: target.postId, format: target.format };
+    if (deps.now() >= deadline) {
+      // Sem tempo para mais um passo nesta execução: libertar o bloqueio para o próximo tick.
+      await repo.saveTarget(target.id, { lockedUntil: null }).catch((e) => console.error('[tick] libertar bloqueio', e));
+      continue;
+    }
     try {
       const adapter = deps.adapters[target.platform];
       const accessToken = await ensureFreshToken(account, adapter, deps);
@@ -100,6 +105,12 @@ export async function runTick(deps: TickDeps): Promise<{ claimed: number; advanc
         await repo.log({ brandId: c.brandId, level: 'info', source, message: RESULT_MESSAGE[result.kind], context });
       }
     } catch (e) {
+      await handleFailure(e).catch((inner) => console.error('[tick] erro ao registar a falha', inner));
+    } finally {
+      await repo.refreshPostStatus(target.postId).catch((e) => console.error('[tick] refreshPostStatus', e));
+    }
+
+    async function handleFailure(e: unknown) {
       const err = e as Error & { userMessage?: string };
       const userMessage = err.userMessage ?? `Erro inesperado: ${err.message}`;
       const logCtx = { ...context, error: err.message };
@@ -128,8 +139,6 @@ export async function runTick(deps: TickDeps): Promise<{ claimed: number; advanc
         }
         if (!(e instanceof TransientError)) console.error('[tick] erro inesperado', e);
       }
-    } finally {
-      await repo.refreshPostStatus(target.postId).catch((e) => console.error('[tick] refreshPostStatus', e));
     }
   }
   return { claimed: claimed.length, advanced, failed };
