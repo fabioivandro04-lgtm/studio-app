@@ -22,9 +22,11 @@ describe('tokens', () => {
   });
 
   it('texto adulterado lança', () => {
+    // Troca um carácter no meio dos dados (o último pode só mexer em bits de enchimento do base64).
     const enc = encryptToken('abc', key);
-    const last = enc.at(-1) === 'A' ? 'B' : 'A';
-    expect(() => decryptToken(enc.slice(0, -1) + last, key)).toThrow();
+    const i = enc.lastIndexOf('.') + 3;
+    const swapped = enc[i] === 'A' ? 'B' : 'A';
+    expect(() => decryptToken(enc.slice(0, i) + swapped + enc.slice(i + 1), key)).toThrow();
   });
 
   it('prefixo desconhecido lança erro de formato', () => {
