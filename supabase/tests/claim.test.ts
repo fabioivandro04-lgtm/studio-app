@@ -130,3 +130,21 @@ describe('refresh_post_status', () => {
     expect(await statusFor('draft', ['pending'])).toBe('draft');
   });
 });
+
+describe('record_api_usage', () => {
+  it('soma unidades por conta, dia e tipo', async () => {
+    const run = async (units: number) => {
+      const c = await db.connect();
+      await c.query('set role service_role');
+      await c.query('select record_api_usage($1, $2, $3)', [s.account.id, 'yt_units', units]);
+    };
+    await run(1600);
+    await run(1);
+    const [row] = await db.sql(`select count from api_usage where social_account_id=$1 and kind='yt_units' and day = (now() at time zone 'utc')::date`, [s.account.id]);
+    expect(Number(row.count)).toBe(1601);
+  });
+
+  it('authenticated não pode registar uso', async () => {
+    await expect(db.asUser(s.ownerId).sql(`select record_api_usage($1,'x',1)`, [s.account.id])).rejects.toThrow(/permission denied/);
+  });
+});
