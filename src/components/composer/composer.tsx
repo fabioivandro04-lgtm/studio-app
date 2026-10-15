@@ -23,6 +23,7 @@ import { AiPanel } from './ai-panel';
 import { BestTime } from './best-time';
 import { HashtagGroupsMenu } from './hashtag-groups-menu';
 import { RefineMenu } from './refine-menu';
+import { hasUnsavedChanges } from '@/lib/posts/dirty';
 import { checkPost, defaultFormat, FORMAT_LABEL, type PostError } from '@/lib/posts/schema';
 
 type Target = ComposerData['initial']['targets'][number];
@@ -121,7 +122,8 @@ export function Composer({ data }: { data: ComposerData }) {
     patchTargets((ts) => ts.map((t) => ({ ...t, caption: appendHashtags(t.caption, tags) })));
     withUndo(snap, 'Hashtags adicionadas.');
   };
-  const duplicate = () =>
+  const duplicate = () => {
+    if (hasUnsavedChanges(data.initial, s) && !confirm('Tem alterações por guardar. A cópia é feita a partir da versão guardada e estas alterações perdem-se. Continuar?')) return;
     start(async () => {
       const r = await callSafely(() => duplicatePost(s.id!));
       if (r.ok) {
@@ -129,6 +131,7 @@ export function Composer({ data }: { data: ComposerData }) {
         router.push(`/posts/${r.id}`);
       } else toast.error(r.error);
     });
+  };
   const replaceCaptionFromAi = (accountId: string, next: string) => {
     const snap = snapshotCaptions(latest.current.targets, [accountId]);
     patchTargets((ts) => setCaption(ts, accountId, next));
