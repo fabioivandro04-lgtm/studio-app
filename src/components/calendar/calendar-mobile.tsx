@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { MovePost } from './move-post';
 import { PostCard, WEEKDAYS, type CalendarDeadline, type CalendarPost } from './calendar-view';
 
 /** Calendário para telemóvel: grelha pequena com pontos + lista do dia escolhido. */
@@ -72,7 +73,12 @@ export function CalendarMobile({ weeks, month, today, posts, deadlines }: {
         {dayDeadlines.map((d) => (
           <p key={d.id} className="rounded-md bg-brand-amber/25 px-2 py-1.5 text-sm font-medium text-brand-navy">⏰ {d.title}</p>
         ))}
-        {dayPosts.map((p) => <PostCard key={p.id} p={p} large />)}
+        {dayPosts.map((p) => (
+          <div key={p.id} className="space-y-1">
+            <PostCard p={p} large />
+            {p.movable && <MovePost postId={p.id} day={p.day} title={p.title} />}
+          </div>
+        ))}
         {dayPosts.length === 0 && dayDeadlines.length === 0 && (
           <p className="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">Nada marcado para este dia.</p>
         )}
