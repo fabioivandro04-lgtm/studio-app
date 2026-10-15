@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TIMEZONES } from '@/lib/brands/schema';
 import { deleteBrand, saveBrand } from '../actions';
+import { BrandAiSection, type BrandAiForm } from './brand-ai-section';
 
 type BrandForm = { id?: string; name: string; color: string; timezone: string };
 const EMPTY: BrandForm = { name: '', color: '#0B1F45', timezone: 'Africa/Maputo' };
@@ -85,12 +86,15 @@ function BrandRow({ initial, onDone }: { initial: BrandForm; onDone?: () => void
   );
 }
 
-export function BrandsEditor({ brands }: { brands: BrandForm[] }) {
+export function BrandsEditor({ brands }: { brands: (BrandForm & { ai: BrandAiForm })[] }) {
   return (
     <div className="space-y-4">
       {brands.length === 0 && <p className="text-sm text-muted-foreground">Ainda não tem marcas. Crie a primeira abaixo.</p>}
-      {brands.map((b) => (
-        <BrandRow key={b.id} initial={b} />
+      {brands.map(({ ai, ...b }) => (
+        <div key={b.id} className="space-y-2">
+          <BrandRow initial={b} />
+          <BrandAiSection initial={ai} />
+        </div>
       ))}
       <h2 className="pt-2 font-medium">Nova marca</h2>
       <BrandRow initial={EMPTY} />

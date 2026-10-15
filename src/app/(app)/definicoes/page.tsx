@@ -1,9 +1,10 @@
-import { CalendarClock, ChevronRight, KeyRound, Link2, Palette, ScrollText } from 'lucide-react';
+import { CalendarClock, ChevronRight, KeyRound, Link2, Palette, ScrollText, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 const LINKS = [
-  { href: '/definicoes/marcas', label: 'Marcas', desc: 'Nome, cor e fuso horário de cada marca', icon: Palette },
+  { href: '/definicoes/marcas', label: 'Marcas', desc: 'Nome, cor, fuso, contexto e voz de cada marca', icon: Palette },
   { href: '/definicoes/contas', label: 'Contas ligadas', desc: 'Instagram, TikTok e YouTube', icon: Link2 },
+  { href: '/definicoes/ia', label: 'IA', desc: 'Motor, limite mensal e gastos', icon: Sparkles },
   { href: '/definicoes/prazos', label: 'Prazos', desc: 'Datas importantes que aparecem no calendário', icon: CalendarClock },
   { href: '/definicoes/registo', label: 'Registo de atividade', desc: 'Publicações, erros e avisos', icon: ScrollText },
   { href: '/definicoes/conta', label: 'A minha conta', desc: 'Mudar a palavra-passe', icon: KeyRound },

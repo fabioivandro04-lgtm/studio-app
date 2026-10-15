@@ -3,11 +3,21 @@ import { listBrands } from '@/lib/db/repo/brands-repo';
 import { BrandsEditor } from './brands-editor';
 
 export default async function MarcasPage() {
-  const brands = await listBrands(await createServerClient());
+  const db = await createServerClient();
+  const [brands, { data: ig }] = await Promise.all([
+    listBrands(db),
+    db.from('social_accounts').select('brand_id').eq('platform', 'instagram').eq('status', 'active'),
+  ]);
+  const withIg = new Set((ig ?? []).map((a) => a.brand_id));
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-4 text-xl font-semibold">Marcas</h1>
-      <BrandsEditor brands={brands.map(({ id, name, color, timezone }) => ({ id, name, color, timezone }))} />
+      <BrandsEditor
+        brands={brands.map((b) => ({
+          id: b.id, name: b.name, color: b.color, timezone: b.timezone,
+          ai: { brandId: b.id, aiContext: b.aiContext, aiVoice: b.aiVoice, aiHashtags: b.aiHashtags, goal: b.goal, hasInstagram: withIg.has(b.id) },
+        }))}
+      />
     </div>
   );
 }
