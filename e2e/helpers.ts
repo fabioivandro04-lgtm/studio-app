@@ -5,7 +5,7 @@ export async function loginAsOwner(page: Page) {
   const password = process.env.E2E_PASSWORD;
   if (!email || !password) throw new Error('Defina E2E_EMAIL e E2E_PASSWORD');
   await page.goto('/login');
-  await page.getByLabel('Email', { exact: true }).last().fill(email);
+  await page.getByLabel('Email', { exact: true }).first().fill(email);
   await page.getByLabel('Palavra-passe').fill(password);
   await page.getByRole('button', { name: 'Entrar com palavra-passe' }).click();
   await page.waitForURL('**/calendario');

@@ -1,4 +1,4 @@
-import { CalendarClock, ChevronRight, Link2, Palette, ScrollText } from 'lucide-react';
+import { CalendarClock, ChevronRight, KeyRound, Link2, Palette, ScrollText } from 'lucide-react';
 import Link from 'next/link';
 
 const LINKS = [
@@ -6,6 +6,7 @@ const LINKS = [
   { href: '/definicoes/contas', label: 'Contas ligadas', desc: 'Instagram, TikTok e YouTube', icon: Link2 },
   { href: '/definicoes/prazos', label: 'Prazos', desc: 'Datas importantes que aparecem no calendário', icon: CalendarClock },
   { href: '/definicoes/registo', label: 'Registo de atividade', desc: 'Publicações, erros e avisos', icon: ScrollText },
+  { href: '/definicoes/conta', label: 'A minha conta', desc: 'Mudar a palavra-passe', icon: KeyRound },
 ];
 
 export default function DefinicoesPage() {

@@ -25,6 +25,9 @@ export async function sendMagicLink(_prev: LoginState, form: FormData): Promise<
       emailRedirectTo: `${serverEnv().APP_URL}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
+  if (error?.status === 429) {
+    return { error: 'Já foram enviados muitos emails na última hora. Entre com a palavra-passe ou tente mais tarde.' };
+  }
   // Mesma resposta exista ou não a conta, para não revelar emails.
   if (error && error.status !== 400 && error.status !== 422) return { error: 'Não foi possível enviar o link. Tente de novo.' };
   return { ok: true, message: 'Se o email tiver acesso, vai receber um link para entrar. Verifique a caixa de entrada.' };
