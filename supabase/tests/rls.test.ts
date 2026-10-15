@@ -51,3 +51,12 @@ describe('RLS', () => {
     ).rejects.toThrow(/row-level security/);
   });
 });
+
+describe('endurecimento', () => {
+  it('is_owner não está no esquema público', async () => {
+    expect(await db.sql(`select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where proname='is_owner' and nspname='public'`)).toHaveLength(0);
+  });
+  it('anónimo não pode chamar is_owner', async () => {
+    await expect(db.asUser(null).sql('select private.is_owner()')).rejects.toThrow(/permission denied/);
+  });
+});
