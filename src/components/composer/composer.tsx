@@ -16,7 +16,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { FORMAT_PLATFORM, PLATFORM_LABEL, type MediaInfo, type TargetFormat } from '@/lib/platforms/types';
+import { FORMAT_PLATFORM, PLATFORM_LABEL, type MediaInfo, type Platform, type TargetFormat } from '@/lib/platforms/types';
+import { AiPanel } from './ai-panel';
+import { BestTime } from './best-time';
+import { RefineMenu } from './refine-menu';
 import { checkPost, defaultFormat, FORMAT_LABEL, type PostError } from '@/lib/posts/schema';
 
 type Target = ComposerData['initial']['targets'][number];
@@ -60,6 +63,36 @@ export function Composer({ data }: { data: ComposerData }) {
     });
   };
   const setTarget = (i: number, patch: Partial<Target>) => update({ targets: s.targets.map((t, j) => (j === i ? { ...t, ...patch } : t)) });
+
+  // Assistente de IA: toda a alteração feita pela IA pode ser desfeita.
+  const platformOf = (t: Target) => accounts.find((a) => a.id === t.accountId)?.platform;
+  const aiPlatforms = [...new Set((s.targets.length ? s.targets.map(platformOf) : accounts.map((a) => a.platform)).filter((p): p is Platform => !!p))];
+  const aiFormats = Object.fromEntries(s.targets.map((t) => [platformOf(t), t.format]).filter(([p]) => p)) as Partial<Record<Platform, TargetFormat>>;
+  const withUndo = (before: Target[], message: string) =>
+    toast.success(message, { action: { label: 'Desfazer', onClick: () => setS((prev) => ({ ...prev, targets: before })) } });
+  const applyAiCaption = (platform: Platform, text: string) => {
+    const before = s.targets;
+    if (s.targets.some((t) => platformOf(t) === platform)) {
+      update({ targets: s.targets.map((t) => (platformOf(t) === platform ? { ...t, caption: text } : t)) });
+    } else {
+      const acc = accounts.find((a) => a.platform === platform);
+      if (!acc) return;
+      update({ targets: [...s.targets, { accountId: acc.id, format: defaultFormat(platform, selectedMedia), caption: text, title: platform === 'youtube' ? '' : null }] });
+    }
+    withUndo(before, 'Legenda alterada.');
+  };
+  const addAiHashtags = (platform: Platform, tags: string[]) => {
+    const before = s.targets;
+    update({
+      targets: s.targets.map((t) => {
+        if (platformOf(t) !== platform) return t;
+        const missing = tags.filter((h) => !t.caption.includes(h));
+        if (missing.length === 0) return t;
+        return { ...t, caption: `${t.caption.trimEnd()}${t.caption.trim() ? '\n\n' : ''}${missing.join(' ')}` };
+      }),
+    });
+    withUndo(before, 'Hashtags adicionadas.');
+  };
 
   const submit = (intent: 'draft' | 'schedule') =>
     start(async () => {
@@ -130,6 +163,23 @@ export function Composer({ data }: { data: ComposerData }) {
           {errorsFor(null).filter((e) => e.field === 'mediaIds').map((e) => <p key={e.message} className="text-sm text-destructive">{e.message}</p>)}
         </section>
 
+        {!ro && (
+          <AiPanel
+            brandId={s.brandId}
+            mediaId={s.mediaIds[0] ?? null}
+            platforms={aiPlatforms}
+            formats={aiFormats}
+            onUseCaption={applyAiCaption}
+            onAddHashtags={addAiHashtags}
+            onUseTitle={(text) => update({ internalTitle: text })}
+            onUseYoutubeTitle={(text) => {
+              const before = s.targets;
+              update({ targets: s.targets.map((t) => (platformOf(t) === 'youtube' ? { ...t, title: text } : t)) });
+              withUndo(before, 'Título do YouTube alterado.');
+            }}
+          />
+        )}
+
         <section className="space-y-3" aria-label="Redes">
           <h2 className="font-medium">2. Redes e legendas</h2>
           {accounts.length === 0 && (
@@ -176,6 +226,18 @@ export function Composer({ data }: { data: ComposerData }) {
                 )}
                 {t.format !== 'ig_story' && (
                   <div className="space-y-1">
+                    {!ro && (
+                      <RefineMenu
+                        brandId={s.brandId}
+                        platform={acc.platform}
+                        text={t.caption}
+                        onReplace={(next) => {
+                          const before = s.targets;
+                          setTarget(i, { caption: next });
+                          withUndo(before, 'Legenda alterada.');
+                        }}
+                      />
+                    )}
                     <Textarea aria-label={`Legenda ${PLATFORM_LABEL[acc.platform]}`} disabled={ro} rows={4} value={t.caption} onChange={(e) => setTarget(i, { caption: e.target.value })}
                       placeholder={acc.platform === 'youtube' ? 'Descrição' : 'Legenda'} />
                     <p className={`text-right text-xs ${t.caption.length > max ? 'text-destructive' : 'text-muted-foreground'}`}>{t.caption.length}/{max}</p>
@@ -202,6 +264,7 @@ export function Composer({ data }: { data: ComposerData }) {
             </div>
             <span className="pb-2 text-sm text-muted-foreground">Fuso: {brand?.timezone}</span>
           </div>
+          {!ro && <BestTime brandId={s.brandId} postId={s.id ?? null} onPick={(date, time) => update({ date, time })} />}
           {errorsFor(null).filter((e) => e.field !== 'mediaIds').map((e) => <p key={e.message} role="alert" className="text-sm text-destructive">{e.message}</p>)}
         </section>
 

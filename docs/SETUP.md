@@ -101,7 +101,18 @@ Na versão 1 os vídeos vão para a **caixa de entrada** da app TikTok; abre a n
 Sem auditoria da Google, os Shorts são enviados como **privados**; torne-os públicos no YouTube Studio
 (botão em Pendentes). A auditoria pede-se no formulário "YouTube API Services – Audit and Quota Extension".
 
-## 6. Primeiro teste
+## 6. IA (OpenRouter)
+
+1. Crie conta em **openrouter.ai**, carregue crédito (ex.: 5 USD) e, em **Keys**, crie uma chave.
+2. Vercel → **Settings → Environment Variables**: `OPENROUTER_API_KEY` (marcar como *Sensitive*). Faça *Redeploy*.
+3. Na app, **Definições → IA**: escolha o motor (Normal ≈ 2 cêntimos por geração; Económico ≈ 0,2 cêntimos) e o
+   limite mensal. Ao chegar ao limite, a IA pausa até ao mês seguinte.
+4. **Definições → Marcas → Assistente de IA**: escreva o contexto da empresa, gere a voz da marca a partir do
+   Instagram ("✨ Criar a partir do Instagram"), reveja e escolha o objetivo (Contactos ou Alcance).
+
+A IA só sugere texto e horários: nunca publica nem agenda sozinha.
+
+## 7. Primeiro teste
 
 1. Entre na app com o link enviado para o seu email.
 2. **Definições → Marcas**: crie "Unidreamity" (fuso Maputo) e a marca dos shorts.

@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { unstable_rethrow } from 'next/navigation';
 import { suggestSlots, type Slot } from '@/lib/ai/best-time';
 import { AiError } from '@/lib/ai/errors';
 import { createFakeAi } from '@/lib/ai/fake';
@@ -24,6 +25,7 @@ const UNEXPECTED = 'Ocorreu um erro inesperado. Tente de novo.';
 const IMAGE_URL_TTL_S = 600;
 
 function fail(e: unknown): Fail {
+  unstable_rethrow(e); // deixa passar os sinais internos do Next (render dinâmico, redirect…)
   if (e instanceof AiError) return { ok: false, error: e.message };
   console.error('[ai]', e);
   return { ok: false, error: UNEXPECTED };
