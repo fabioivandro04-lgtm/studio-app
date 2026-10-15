@@ -69,26 +69,31 @@ describe('Instagram métricas', () => {
     expect(r.m2).toBeUndefined();
   });
 
-  it('insights extra: profile_visits e follows', async () => {
+  const ALL = 'reach,views,likes,comments,saved,shares,profile_visits,follows';
+  const BASE = 'reach,views,likes,comments,saved,shares';
+
+  it('post normal: um só pedido com visitas ao perfil e seguidores', async () => {
     const fetch = fakeFetch([
-      ['GET', /\/m1\/insights/, (c) =>
-        c.params.metric === 'profile_visits,follows'
-          ? { data: [{ name: 'profile_visits', values: [{ value: 7 }] }, { name: 'follows', values: [{ value: 2 }] }] }
-          : { data: [{ name: 'reach', values: [{ value: 100 }] }] }],
+      ['GET', /\/m1\/insights/, (c) => {
+        expect(c.params.metric).toBe(ALL);
+        return { data: [{ name: 'reach', values: [{ value: 100 }] }, { name: 'profile_visits', values: [{ value: 7 }] }, { name: 'follows', values: [{ value: 2 }] }] };
+      }],
     ]);
     const r = await adapter.fetchPostMetrics(acct, ['m1'], { fetch });
     expect(r.m1).toMatchObject({ reach: 100, profileVisits: 7, follows: 2 });
+    expect(fetch.calls).toHaveLength(1);
   });
 
-  it('insights extra falham → campos nulos e métricas base mantêm-se', async () => {
+  it('Reel (sem visitas ao perfil): repete só com as métricas base → campos nulos', async () => {
     const fetch = fakeFetch([
       ['GET', /\/m1\/insights/, (c) =>
-        c.params.metric === 'profile_visits,follows'
+        c.params.metric === ALL
           ? new Response(JSON.stringify({ error: { message: 'unsupported metric' } }), { status: 400 })
-          : { data: [{ name: 'reach', values: [{ value: 100 }] }] }],
+          : (expect(c.params.metric).toBe(BASE), { data: [{ name: 'reach', values: [{ value: 100 }] }] })],
     ]);
     const r = await adapter.fetchPostMetrics(acct, ['m1'], { fetch });
     expect(r.m1).toMatchObject({ reach: 100, profileVisits: null, follows: null });
+    expect(fetch.calls).toHaveLength(2);
   });
 
   it('listRecentPosts filtra pela data', async () => {

@@ -8,6 +8,9 @@ export async function igAccountMetrics(cfg: IgConfig, account: AccountCtx, fetch
   return { followers: me.followers_count ?? null, views: null, raw: me };
 }
 
+const BASE_METRICS = 'reach,views,likes,comments,saved,shares';
+const CONTACT_METRICS = 'profile_visits,follows';
+
 export async function igPostMetrics(
   cfg: IgConfig,
   account: AccountCtx,
@@ -16,31 +19,27 @@ export async function igPostMetrics(
 ): Promise<Record<string, PostMetrics>> {
   const api = igApi(cfg, fetchFn, account.accessToken);
   const out: Record<string, PostMetrics> = {};
-  for (const id of ids) {
-    let res: any;
+  // Tenta tudo num só pedido; mídia sem métricas de "contactos" (ex.: Reels) recusa-o → repete só com as base.
+  const tryGet = async (id: string, metric: string) => {
     try {
-      res = await api.get(`/${id}/insights`, { metric: 'reach,views,likes,comments,saved,shares' });
+      return await api.get(`/${id}/insights`, { metric });
     } catch (e) {
-      if (e instanceof PermanentError) continue; // ex.: métrica não suportada para este tipo de mídia
+      if (e instanceof PermanentError) return null; // métrica não suportada para este tipo de mídia
       throw e;
     }
-    // Métricas de "contactos": nem todos os tipos de mídia as têm, por isso pedem-se à parte e ignora-se qualquer erro.
-    let extra: any = null;
-    try {
-      extra = await api.get(`/${id}/insights`, { metric: 'profile_visits,follows' });
-    } catch {
-      extra = null;
-    }
-    const pick = (src: any, name: string): number | null => {
-      const item = (src?.data ?? []).find((d: any) => d.name === name);
+  };
+  for (const id of ids) {
+    const res: any = (await tryGet(id, `${BASE_METRICS},${CONTACT_METRICS}`)) ?? (await tryGet(id, BASE_METRICS));
+    if (!res) continue;
+    const v = (name: string): number | null => {
+      const item = (res.data ?? []).find((d: any) => d.name === name);
       const value = item?.values?.[0]?.value ?? item?.total_value?.value;
       return typeof value === 'number' ? value : null;
     };
-    const v = (name: string) => pick(res, name);
     out[id] = {
       views: v('views'), reach: v('reach'), likes: v('likes'), comments: v('comments'), shares: v('shares'),
-      saves: v('saved'), watchTimeS: null, isPublic: true, raw: extra ? { ...res, extra } : res,
-      profileVisits: pick(extra, 'profile_visits'), follows: pick(extra, 'follows'),
+      saves: v('saved'), watchTimeS: null, isPublic: true, raw: res,
+      profileVisits: v('profile_visits'), follows: v('follows'),
     };
   }
   return out;
