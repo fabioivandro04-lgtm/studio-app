@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Estúdio
 
-## Getting Started
+App pessoal para organizar, agendar, publicar e medir conteúdo em Instagram, TikTok e YouTube Shorts,
+com várias marcas.
 
-First, run the development server:
+- Especificação: `docs/superpowers/specs/2026-10-15-estudio-design.md`
+- Configuração (Supabase, Vercel, Meta, TikTok, Google): `docs/SETUP.md`
+
+## Desenvolvimento
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # preencher; PLATFORM_MODE=fake não contacta as redes
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Testes
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm test            # unitários (Vitest)
+npm run test:db     # base de dados: Postgres 16 local temporário (precisa de /usr/lib/postgresql/16/bin)
+npm run e2e         # ponta a ponta (Playwright) contra o Supabase de .env.local, com PLATFORM_MODE=fake
+npm run typecheck && npm run lint && npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Os testes e2e precisam em `.env.local` de `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`,
+`NEXT_PUBLIC_ENABLE_PASSWORD_LOGIN=true` e de um utilizador de teste (`E2E_EMAIL`, `E2E_PASSWORD`)
+registado em `app_owner`.
 
-## Learn More
+## Estrutura
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/lib/platforms/*` — um adaptador por rede (validação, publicação, OAuth, métricas)
+- `src/lib/publishing/tick.ts` — motor de publicação (máquina de estados, um passo por minuto)
+- `src/lib/metrics/sync.ts` — recolha diária de métricas
+- `src/app/api/cron/*` — rotas chamadas pelo pg_cron do Supabase
+- `supabase/migrations` — esquema, segurança (RLS) e funções
