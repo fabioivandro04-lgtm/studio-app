@@ -2,6 +2,8 @@ import { captionMax, isJpeg, isVideo, noMedia, videoDuration } from '../rules';
 import type { MediaInfo, TargetDraft, ValidationError } from '../types';
 
 const JPEG_MSG = 'O Instagram só aceita imagens JPEG. Converta a imagem para JPEG.';
+const VIDEO_MSG = 'O Instagram só aceita vídeos MP4 ou MOV.';
+const IG_VIDEO = new Set(['video/mp4', 'video/quicktime']);
 
 export function validateInstagram(draft: TargetDraft, media: MediaInfo[]): ValidationError[] {
   const errors: ValidationError[] = [...noMedia(media)];
@@ -28,6 +30,8 @@ export function validateInstagram(draft: TargetDraft, media: MediaInfo[]): Valid
     default:
       errors.push({ field: 'format', message: 'Formato não suportado no Instagram.' });
   }
+
+  if (media.some((m) => isVideo(m) && !IG_VIDEO.has(m.mime))) errors.push({ field: 'media', message: VIDEO_MSG });
 
   if (draft.format !== 'ig_story') {
     errors.push(...captionMax(draft.caption, 2200));

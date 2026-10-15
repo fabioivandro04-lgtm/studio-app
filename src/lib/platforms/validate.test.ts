@@ -97,3 +97,9 @@ describe('YouTube Shorts', () => {
 it('sem mídia dá erro', () => {
   expect(validateTarget(d('ig_image'), [])).toContainEqual(expect.objectContaining({ field: 'media' }));
 });
+
+it('Instagram recusa vídeo WebM (só MP4/MOV)', () => {
+  const webm = m({ kind: 'video', mime: 'video/webm', durationS: 10, width: 1080, height: 1920 });
+  expect(validateTarget(d('ig_reel'), [webm])).toContainEqual(expect.objectContaining({ message: expect.stringMatching(/MP4 ou MOV/) }));
+  expect(validateTarget(d('tiktok_video'), [webm])).toEqual([]);
+});
