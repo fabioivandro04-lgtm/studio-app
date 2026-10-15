@@ -1,7 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { BrandInput } from '@/lib/brands/schema';
+import { normalizeHashtag } from '@/lib/ai/schemas';
+import { BrandAiInput, BrandInput } from '@/lib/brands/schema';
 import { createServerClient, createServiceClient } from '@/lib/db/clients';
 import { countOpenTargets } from '@/lib/db/repo/accounts-repo';
 
@@ -17,6 +18,26 @@ export async function saveBrand(input: { id?: string; name: string; color: strin
     ? await db.from('brands').update(parsed.data).eq('id', input.id)
     : await db.from('brands').insert(parsed.data);
   if (res.error) return { ok: false, error: 'Não foi possível guardar a marca.' };
+  revalidatePath('/', 'layout');
+  return { ok: true };
+}
+
+export async function saveBrandAi(input: {
+  brandId: string;
+  aiContext: string;
+  aiVoice: string;
+  aiHashtags: string[];
+  goal: 'contacts' | 'reach';
+}): Promise<ActionResult> {
+  const parsed = BrandAiInput.safeParse(input);
+  if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
+  const hashtags = [...new Set(parsed.data.aiHashtags.map(normalizeHashtag).filter((h): h is string => !!h))];
+  const db = await createServerClient();
+  const { error } = await db
+    .from('brands')
+    .update({ ai_context: parsed.data.aiContext.trim(), ai_voice: parsed.data.aiVoice.trim(), ai_hashtags: hashtags, goal: parsed.data.goal })
+    .eq('id', input.brandId);
+  if (error) return { ok: false, error: 'Não foi possível guardar as definições de IA da marca.' };
   revalidatePath('/', 'layout');
   return { ok: true };
 }
