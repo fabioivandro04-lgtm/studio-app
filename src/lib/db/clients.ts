@@ -24,6 +24,9 @@ export async function createServerClient(): Promise<SupabaseClient> {
 /** Cliente de serviço (ignora RLS). Só no servidor: cron, OAuth e operações com tokens. */
 export function createServiceClient(): SupabaseClient {
   const env = serverEnv();
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY em falta: adicione-a nas variáveis de ambiente (ver docs/SETUP.md).');
+  }
   return createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

@@ -8,7 +8,7 @@ const bool = z
 const base = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   APP_URL: z.string().url(),
   CRON_SECRET: z.string().min(1),
   TOKEN_ENC_KEY: z
@@ -29,15 +29,6 @@ const base = z.object({
   NEXT_PUBLIC_ENABLE_PASSWORD_LOGIN: bool,
 });
 
-const PLATFORM_CREDENTIALS = [
-  'IG_APP_ID',
-  'IG_APP_SECRET',
-  'TIKTOK_CLIENT_KEY',
-  'TIKTOK_CLIENT_SECRET',
-  'GOOGLE_CLIENT_ID',
-  'GOOGLE_CLIENT_SECRET',
-] as const;
-
 export type ServerEnv = z.infer<typeof base>;
 
 export function parseServerEnv(raw: Record<string, string | undefined>): ServerEnv {
@@ -46,10 +37,6 @@ export function parseServerEnv(raw: Record<string, string | undefined>): ServerE
   const problems: string[] = result.success
     ? []
     : result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
-  const mode = cleaned.PLATFORM_MODE ?? 'real';
-  if (mode === 'real') {
-    for (const k of PLATFORM_CREDENTIALS) if (!cleaned[k]) problems.push(`${k}: em falta`);
-  }
   if (problems.length > 0 || !result.success) {
     throw new Error(`Configuração inválida:\n${problems.join('\n')}`);
   }

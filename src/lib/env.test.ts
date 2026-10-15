@@ -29,16 +29,19 @@ describe('parseServerEnv', () => {
 
   it('PLATFORM_MODE padrão é real', () => {
     const { PLATFORM_MODE: _omit, ...rest } = minimalValidEnv;
-    expect(() => parseServerEnv(rest)).toThrow(/IG_APP_ID/);
+    expect(parseServerEnv(rest).PLATFORM_MODE).toBe('real');
   });
 
   it('rejeita TOKEN_ENC_KEY que não tem 32 bytes', () => {
     expect(() => parseServerEnv({ ...minimalValidEnv, TOKEN_ENC_KEY: 'abc' })).toThrow(/TOKEN_ENC_KEY/);
   });
 
-  it('em modo real exige as credenciais das redes', () => {
-    expect(() => parseServerEnv({ ...minimalValidEnv, PLATFORM_MODE: 'real' })).toThrow(
-      /IG_APP_ID[\s\S]*TIKTOK_CLIENT_KEY[\s\S]*GOOGLE_CLIENT_ID/,
-    );
+  it('em modo real as credenciais das redes são opcionais (cada rede fica "por configurar")', () => {
+    expect(parseServerEnv({ ...minimalValidEnv, PLATFORM_MODE: 'real' }).IG_APP_ID).toBeUndefined();
+  });
+
+  it('a chave de serviço do Supabase é opcional para a app arrancar', () => {
+    const { SUPABASE_SERVICE_ROLE_KEY: _k, ...rest } = minimalValidEnv;
+    expect(parseServerEnv(rest).SUPABASE_SERVICE_ROLE_KEY).toBeUndefined();
   });
 });

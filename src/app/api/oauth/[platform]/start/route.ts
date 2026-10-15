@@ -26,7 +26,13 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ platfor
   const env = serverEnv();
   const state = createOAuthState(brand.id, platform as Platform, env.TOKEN_ENC_KEY);
   const redirectUri = `${env.APP_URL}/api/oauth/${platform}/callback`;
-  const res = NextResponse.redirect(getAdapters(env)[platform as Platform].authorizeUrl(state, redirectUri));
+  let authorizeUrl: string;
+  try {
+    authorizeUrl = getAdapters(env)[platform as Platform].authorizeUrl(state, redirectUri);
+  } catch (e) {
+    return back((e as { userMessage?: string }).userMessage ?? 'Não foi possível iniciar a ligação.');
+  }
+  const res = NextResponse.redirect(authorizeUrl);
   res.cookies.set('oauth_state', state, { httpOnly: true, secure: env.APP_URL.startsWith('https'), sameSite: 'lax', path: '/', maxAge: 600 });
   return res;
 }
