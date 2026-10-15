@@ -1,58 +1,24 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { unstable_rethrow } from 'next/navigation';
 import { suggestSlots, type Slot } from '@/lib/ai/best-time';
+import { aiSetup, fail, toBrandAi, type Fail } from '@/lib/ai/context';
 import { AiError } from '@/lib/ai/errors';
-import { createFakeAi } from '@/lib/ai/fake';
 import { RefineInput, SuggestInput } from '@/lib/ai/inputs';
-import { createOpenRouter } from '@/lib/ai/openrouter';
-import { runDraftVoice, runRefine, runSuggest, type AiDeps } from '@/lib/ai/service';
-import type { BrandAi, RefineAction, Suggestions } from '@/lib/ai/types';
+import { runDraftVoice, runRefine, runSuggest } from '@/lib/ai/service';
+import type { RefineAction, Suggestions } from '@/lib/ai/types';
 import { AiSettingsInput } from '@/lib/brands/schema';
 import { decryptToken } from '@/lib/crypto/tokens';
 import { createServerClient, createServiceClient } from '@/lib/db/clients';
-import { bestTimeInputs, insertUsage, loadAiSettings, monthSpend } from '@/lib/db/repo/ai-repo';
+import { bestTimeInputs, loadAiSettings, monthSpend } from '@/lib/db/repo/ai-repo';
 import { listBrands } from '@/lib/db/repo/brands-repo';
 import { createTickRepo } from '@/lib/db/repo/tick-repo';
-import type { Brand } from '@/lib/db/types';
 import { serverEnv } from '@/lib/env';
 import { getAdapters } from '@/lib/platforms/registry';
 import type { Platform, TargetFormat } from '@/lib/platforms/types';
 import { ensureFreshToken } from '@/lib/publishing/tokens';
 
-type Fail = { ok: false; error: string };
-const UNEXPECTED = 'Ocorreu um erro inesperado. Tente de novo.';
 const IMAGE_URL_TTL_S = 600;
-
-function fail(e: unknown): Fail {
-  unstable_rethrow(e); // deixa passar os sinais internos do Next (render dinâmico, redirect…)
-  if (e instanceof AiError) return { ok: false, error: e.message };
-  console.error('[ai]', e);
-  return { ok: false, error: UNEXPECTED };
-}
-
-const toBrandAi = (b: Brand): BrandAi => ({ name: b.name, aiContext: b.aiContext, aiVoice: b.aiVoice, aiHashtags: b.aiHashtags, goal: b.goal });
-
-/** Cliente do dono, marca (via RLS) e dependências da IA. */
-async function setup(brandId: string) {
-  const db = await createServerClient();
-  const brand = (await listBrands(db)).find((b) => b.id === brandId);
-  if (!brand) throw new AiError('invalid_input', 'Marca não encontrada.');
-  const env = serverEnv();
-  const [settings, spend] = await Promise.all([loadAiSettings(db), monthSpend(db, new Date())]);
-  const provider =
-    env.PLATFORM_MODE === 'fake'
-      ? createFakeAi()
-      : env.OPENROUTER_API_KEY
-        ? createOpenRouter({ apiKey: env.OPENROUTER_API_KEY, appUrl: env.APP_URL, fetch })
-        : null;
-  const deps: AiDeps = {
-    provider, model: settings.model, limitUsd: settings.limitUsd, spentUsd: spend.usd,
-    recordUsage: (u) => insertUsage(db, u),
-  };
-  return { db, brand, deps };
-}
 
 export async function suggestPost(i: {
   brandId: string;
@@ -64,7 +30,7 @@ export async function suggestPost(i: {
   const parsed = SuggestInput.safeParse(i);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Pedido inválido.' };
   try {
-    const { db, brand, deps } = await setup(i.brandId);
+    const { db, brand, deps } = await aiSetup(i.brandId);
     let imageUrl: string | null = null;
     if (i.mediaId) {
       const { data: m } = await db.from('media_assets').select('storage_path, thumbnail_path, kind').eq('id', i.mediaId).maybeSingle();
@@ -88,7 +54,7 @@ export async function refineCaption(i: { brandId: string; platform: Platform; te
   const parsed = RefineInput.safeParse(i);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Pedido inválido.' };
   try {
-    const { brand, deps } = await setup(i.brandId);
+    const { brand, deps } = await aiSetup(i.brandId);
     return { ok: true, text: await runRefine(deps, { ...i, brand: toBrandAi(brand) }) };
   } catch (e) {
     return fail(e);
@@ -97,7 +63,7 @@ export async function refineCaption(i: { brandId: string; platform: Platform; te
 
 export async function draftVoice(i: { brandId: string }): Promise<{ ok: true; voice: string } | Fail> {
   try {
-    const { db, brand, deps } = await setup(i.brandId);
+    const { db, brand, deps } = await aiSetup(i.brandId);
     // RLS confirma que a conta é do dono; só depois se lê o token com o cliente de serviço.
     const { data: acc } = await db
       .from('social_accounts')
