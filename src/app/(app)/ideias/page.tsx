@@ -49,7 +49,7 @@ export default async function IdeiasPage({ searchParams }: { searchParams: Promi
     <div className="mx-auto max-w-3xl space-y-4">
       <div>
         <h1 className="text-xl font-semibold">Ideias</h1>
-        <p className="mt-1 text-sm text-muted-foreground">A IA propõe temas, ganchos e guiões. Escolhe os que queres e põe-nos no calendário.</p>
+        <p className="mt-1 text-sm text-muted-foreground">A IA propõe temas, ganchos e guiões. Escolha as que quer e ponha-as no calendário.</p>
       </div>
       <GenerateBar brandId={brand?.id ?? null} deadlines={deadlines.map(({ id, title, dueDate }) => ({ id, title, dueDate }))} />
       <nav aria-label="Estado" className="flex gap-2">
