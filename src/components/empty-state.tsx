@@ -10,7 +10,7 @@ export function EmptyState({ icon: Icon, title, text, action }: {
 }) {
   return (
     <div className="flex flex-col items-center rounded-xl border border-dashed px-6 py-10 text-center">
-      <span className="mb-3 flex size-12 items-center justify-center rounded-full bg-brand-amber/20 text-brand-navy">
+      <span className="mb-3 flex size-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
         <Icon className="size-6" aria-hidden />
       </span>
       <p className="font-medium">{title}</p>

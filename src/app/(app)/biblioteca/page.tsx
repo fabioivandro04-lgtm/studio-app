@@ -19,7 +19,7 @@ export default async function BibliotecaPage({ searchParams }: { searchParams: P
     const q = new URLSearchParams(Object.entries({ tipo, etiqueta, ...params }).filter(([, v]) => v) as [string, string][]);
     return `/biblioteca${q.size ? `?${q}` : ''}`;
   };
-  const chip = (active: boolean) => cn('rounded-full border px-3 py-1 text-sm', active ? 'border-brand-navy bg-brand-navy text-white' : 'hover:bg-accent');
+  const chip = (active: boolean) => cn('rounded-md border px-3 py-1 text-sm', active ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-accent');
 
   return (
     <div className="space-y-4">

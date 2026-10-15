@@ -123,11 +123,11 @@ function CalendarGrid({ weeks, month, today, posts, deadlines }: {
               className={cn('min-h-28 space-y-1 border-b border-r p-1', !inMonth && 'bg-muted/40 text-muted-foreground', month == null && 'min-h-64')}
             >
               <div className="flex items-center justify-between">
-                <span className={cn('text-xs', day === today && 'rounded-full bg-brand-navy px-1.5 text-white')}>{Number(day.slice(8))}</span>
+                <span className={cn('text-xs', day === today && 'rounded-full bg-primary px-1.5 text-primary-foreground')}>{Number(day.slice(8))}</span>
                 <Link href={`/posts/novo?data=${day}`} className="text-xs text-muted-foreground opacity-0 hover:opacity-100 focus:opacity-100" aria-label={`Novo post em ${day}`}>+</Link>
               </div>
               {dayDeadlines.map((d) => (
-                <p key={d.id} data-testid="deadline-chip" className="truncate rounded bg-brand-amber/25 px-1 text-[11px] font-medium text-brand-navy" title={d.title}>
+                <p key={d.id} data-testid="deadline-chip" className="truncate rounded bg-highlight px-1 text-[11px] font-medium text-highlight-foreground" title={d.title}>
                   ⏰ {d.title}
                 </p>
               ))}

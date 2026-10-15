@@ -56,7 +56,7 @@ export default async function IdeiasPage({ searchParams }: { searchParams: Promi
             key={t.key}
             href={`/ideias?estado=${t.param}`}
             aria-current={t.key === tab.key ? 'page' : undefined}
-            className={cn('rounded-full border px-3 py-1 text-sm', t.key === tab.key ? 'border-brand-navy bg-brand-navy text-white' : 'hover:bg-accent')}
+            className={cn('rounded-md border px-3 py-1 text-sm', t.key === tab.key ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-accent')}
           >
             {t.label} ({counts[t.key]})
           </Link>

@@ -168,7 +168,7 @@ export function Composer({ data }: { data: ComposerData }) {
   return (
     <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
-        {ro && <p role="status" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-950">Este post já começou a publicar — só de leitura.</p>}
+        {ro && <p role="status" className="rounded-lg bg-highlight px-3 py-2 text-sm text-highlight-foreground">Este post já começou a publicar — só de leitura.</p>}
 
         <section className="space-y-2" aria-label="Marca e título">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -247,9 +247,9 @@ export function Composer({ data }: { data: ComposerData }) {
             {!ro && <HashtagGroupsMenu key={s.brandId} groups={data.hashtagGroups.filter((g) => g.brandId === s.brandId)} onPick={addGroupHashtags} />}
           </div>
           {accounts.length === 0 && (
-            <p className="rounded-lg bg-brand-amber/15 px-3 py-2 text-sm">
+            <p className="rounded-lg bg-highlight px-3 py-2 text-sm text-highlight-foreground">
               Esta marca ainda não tem redes ligadas.{' '}
-              <Link href="/definicoes/contas" className="font-medium text-brand-navy underline">Ligar agora</Link>
+              <Link href="/definicoes/contas" className="font-medium text-primary underline">Ligar agora</Link>
             </p>
           )}
           <div className="flex flex-wrap gap-2">
@@ -279,7 +279,7 @@ export function Composer({ data }: { data: ComposerData }) {
                   <div className="flex flex-wrap gap-1" role="radiogroup" aria-label="Formato">
                     {formats.map((f) => (
                       <button key={f} type="button" disabled={ro} role="radio" aria-checked={t.format === f} onClick={() => setTarget(i, { format: f })}
-                        className={`rounded-full border px-3 py-0.5 text-xs ${t.format === f ? 'border-brand-navy bg-brand-navy text-white' : ''}`}>
+                        className={`rounded-md border px-2.5 py-0.5 text-xs ${t.format === f ? 'border-primary bg-primary text-primary-foreground' : ''}`}>
                         {FORMAT_LABEL[f]}
                       </button>
                     ))}

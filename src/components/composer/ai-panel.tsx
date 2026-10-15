@@ -44,7 +44,7 @@ export function AiPanel(p: AiPanelProps) {
   const key = (platform: Platform, tag: string) => `${platform}:${tag}`;
 
   return (
-    <section aria-label="Assistente" className="space-y-3 rounded-xl border border-brand-amber/50 bg-brand-amber/5 p-3">
+    <section aria-label="Assistente" className="space-y-3 rounded-lg border bg-card p-4 shadow-xs">
       <h2 className="flex items-center gap-2 font-medium">
         <Sparkles className="size-4 text-brand-amber" aria-hidden /> Assistente
       </h2>
@@ -112,7 +112,7 @@ export function AiPanel(p: AiPanelProps) {
                       type="button"
                       aria-pressed={!!chosen[key(s.platform, h)]}
                       onClick={() => setChosen((prev) => ({ ...prev, [key(s.platform, h)]: !prev[key(s.platform, h)] }))}
-                      className={cn('rounded-full border px-2 py-0.5 text-xs', chosen[key(s.platform, h)] ? 'border-brand-navy bg-brand-navy text-white' : 'bg-background')}
+                      className={cn('rounded-md border px-2 py-0.5 text-xs', chosen[key(s.platform, h)] ? 'border-primary bg-primary text-primary-foreground' : 'bg-background')}
                     >
                       {h}
                     </button>

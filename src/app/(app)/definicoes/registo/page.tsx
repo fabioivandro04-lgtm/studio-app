@@ -6,7 +6,7 @@ import { formatInZone } from '@/lib/time/zone';
 import { cn } from '@/lib/utils';
 
 const LEVELS = { info: 'Info', warn: 'Aviso', error: 'Erro' } as const;
-const LEVEL_CLASS = { info: 'bg-slate-100 text-slate-700', warn: 'bg-amber-100 text-amber-950', error: 'bg-red-100 text-red-900' } as const;
+const LEVEL_CLASS = { info: 'bg-[var(--st-draft-bg)] text-[var(--st-draft-fg)]', warn: 'bg-[var(--st-action-bg)] text-[var(--st-action-fg)]', error: 'bg-[var(--st-failed-bg)] text-[var(--st-failed-fg)]' } as const;
 
 export default async function RegistoPage({ searchParams }: { searchParams: Promise<{ nivel?: string }> }) {
   const { nivel } = await searchParams;
@@ -25,9 +25,9 @@ export default async function RegistoPage({ searchParams }: { searchParams: Prom
     <div className="mx-auto max-w-3xl space-y-4">
       <h1 className="text-xl font-semibold">Registo de atividade</h1>
       <nav aria-label="Nível" className="flex gap-2 text-sm">
-        <Link href="/definicoes/registo" className={cn('rounded-full border px-3 py-1', !level && 'bg-brand-navy text-white')}>Tudo</Link>
+        <Link href="/definicoes/registo" className={cn('rounded-md border px-3 py-1', !level && 'bg-primary text-primary-foreground')}>Tudo</Link>
         {(Object.keys(LEVELS) as (keyof typeof LEVELS)[]).map((l) => (
-          <Link key={l} href={`/definicoes/registo?nivel=${l}`} className={cn('rounded-full border px-3 py-1', level === l && 'bg-brand-navy text-white')}>{LEVELS[l]}</Link>
+          <Link key={l} href={`/definicoes/registo?nivel=${l}`} className={cn('rounded-md border px-3 py-1', level === l && 'bg-primary text-primary-foreground')}>{LEVELS[l]}</Link>
         ))}
       </nav>
       <ul className="divide-y rounded-xl border">

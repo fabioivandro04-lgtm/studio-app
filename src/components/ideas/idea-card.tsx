@@ -60,7 +60,7 @@ export function IdeaCard({ idea }: { idea: IdeaCardData }) {
         <span>{idea.whenLabel ?? 'Sem data'}</span>
         {idea.format && <span>· {FORMAT_LABEL[idea.format]}</span>}
         <span className="flex gap-1">{idea.platforms.map((p) => <PlatformIcon key={p} platform={p} size="sm" />)}</span>
-        {idea.deadlineTitle && <span className="rounded bg-brand-amber/25 px-1.5 text-brand-navy">⏰ {idea.deadlineTitle}</span>}
+        {idea.deadlineTitle && <span className="rounded bg-highlight px-1.5 text-highlight-foreground">⏰ {idea.deadlineTitle}</span>}
         <span className="ml-auto">{idea.brandName}</span>
       </div>
       <p className="font-medium">{idea.title}</p>

@@ -29,22 +29,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-dvh flex-col md:flex-row">
       <AppNav pendingCount={pending ?? 0} />
       <div className="flex min-w-0 flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-brand-navy px-4 py-2.5 text-white shadow-sm">
-          <Link href="/calendario" className="flex items-center gap-2 font-semibold">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-brand-amber text-sm font-bold text-brand-navy" aria-hidden>E</span>
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b bg-card/95 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+          <Link href="/calendario" className="flex items-center gap-2 font-bold tracking-tight text-primary">
+            <span className="flex size-7 items-center justify-center rounded-md bg-brand-navy text-sm font-bold text-white ring-1 ring-brand-amber/60" aria-hidden>E</span>
             Estúdio
           </Link>
           <div className="flex items-center gap-2">
             <BrandSwitcher brands={brands} selected={selected} />
             <form action={signOut}>
-              <button type="submit" className="rounded-md p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Sair">
+              <button type="submit" className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Sair">
                 <LogOut className="size-4" aria-hidden />
               </button>
             </form>
           </div>
         </header>
         <ReauthBanner accounts={reauth ?? []} />
-        <main className="flex-1 px-4 py-4 md:px-6">{children}</main>
+        <main className="flex-1 px-4 py-5 md:px-8 md:py-6">{children}</main>
       </div>
       <Toaster richColors position="top-center" />
     </div>

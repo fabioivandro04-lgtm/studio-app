@@ -43,7 +43,7 @@ export function SetupChecklist({ progress }: { progress: SetupProgress }) {
           );
         })}
       </ol>
-      <Link href={next.href} className="mt-3 inline-block rounded-md bg-brand-amber px-3 py-1.5 text-sm font-medium text-brand-navy hover:opacity-90">
+      <Link href={next.href} className="mt-3 inline-block rounded-md bg-brand-amber px-3 py-1.5 text-sm font-medium text-[#0B1F45] hover:opacity-90">
         Continuar →
       </Link>
     </section>

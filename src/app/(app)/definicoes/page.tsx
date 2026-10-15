@@ -18,7 +18,7 @@ export default function DefinicoesPage() {
         {LINKS.map(({ href, label, desc, icon: Icon }) => (
           <li key={href}>
             <Link href={href} className="flex items-center gap-3 px-4 py-3 hover:bg-accent">
-              <Icon className="size-5 text-brand-navy" aria-hidden />
+              <Icon className="size-5 text-primary" aria-hidden />
               <span className="flex-1">
                 <span className="block font-medium">{label}</span>
                 <span className="block text-sm text-muted-foreground">{desc}</span>

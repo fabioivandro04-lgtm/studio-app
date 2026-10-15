@@ -18,7 +18,7 @@ export function MediaGrid({ items, selected, onToggle }: { items: MediaItem[]; s
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center rounded-xl border border-dashed px-6 py-10 text-center">
-        <span className="mb-3 flex size-12 items-center justify-center rounded-full bg-brand-amber/20 text-brand-navy">
+        <span className="mb-3 flex size-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
           <ImagePlus className="size-6" aria-hidden />
         </span>
         <p className="font-medium">Ainda sem ficheiros</p>
@@ -45,7 +45,7 @@ export function MediaGrid({ items, selected, onToggle }: { items: MediaItem[]; s
               >
                 <MediaThumb item={m} />
                 {order >= 0 && (
-                  <span className="absolute left-1 top-1 flex size-6 items-center justify-center rounded-full bg-brand-amber text-xs font-semibold text-brand-navy">
+                  <span className="absolute left-1 top-1 flex size-6 items-center justify-center rounded-full bg-brand-amber text-xs font-semibold text-[#0B1F45]">
                     {selected!.length > 1 ? order + 1 : <Check className="size-4" aria-hidden />}
                   </span>
                 )}
@@ -60,7 +60,7 @@ export function MediaGrid({ items, selected, onToggle }: { items: MediaItem[]; s
               {m.mime === 'image/jpeg' ? 'JPEG' : m.mime.split('/')[1]?.toUpperCase()} · {(m.sizeBytes / 1024 / 1024).toFixed(1)} MB
               {m.width && m.height ? ` · ${m.width}×${m.height}` : ''}
             </p>
-            {m.tags.length > 0 && <p className="truncate text-xs text-brand-navy">{m.tags.map((t) => `#${t}`).join(' ')}</p>}
+            {m.tags.length > 0 && <p className="truncate text-xs text-primary">{m.tags.map((t) => `#${t}`).join(' ')}</p>}
             {!selecting && (
               <div className="flex gap-1">
                 <Link href={`/posts/novo?midia=${m.id}`} className="rounded px-1.5 py-0.5 text-xs underline hover:bg-accent">

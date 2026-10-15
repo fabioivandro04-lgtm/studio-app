@@ -77,7 +77,7 @@ export default async function MetricasPage({ searchParams }: { searchParams: Pro
         <h1 className="text-xl font-semibold">Métricas</h1>
         <nav aria-label="Período" className="flex rounded-md border text-sm">
           {PERIODS.map((p) => (
-            <Link key={p} href={`/metricas?dias=${p}`} aria-current={days === p ? 'page' : undefined} className={cn('px-3 py-1', days === p && 'bg-brand-navy text-white')}>
+            <Link key={p} href={`/metricas?dias=${p}`} aria-current={days === p ? 'page' : undefined} className={cn('px-3 py-1', days === p && 'bg-primary text-primary-foreground')}>
               {p} dias
             </Link>
           ))}

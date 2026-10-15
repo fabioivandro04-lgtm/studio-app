@@ -91,7 +91,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
         <div className="flex items-center gap-2">
           <div className="flex rounded-md border text-sm" role="tablist" aria-label="Vista">
             {(['semana', 'mes'] as const).map((v) => (
-              <Link key={v} role="tab" aria-selected={view === v} href={`/calendario?vista=${v}&data=${date}`} className={cn('px-3 py-1', view === v && 'bg-brand-navy text-white')}>
+              <Link key={v} role="tab" aria-selected={view === v} href={`/calendario?vista=${v}&data=${date}`} className={cn('px-3 py-1', view === v && 'bg-primary text-primary-foreground')}>
                 {v === 'semana' ? 'Semana' : 'Mês'}
               </Link>
             ))}

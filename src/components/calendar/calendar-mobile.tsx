@@ -48,8 +48,8 @@ export function CalendarMobile({ weeks, month, today, posts, deadlines }: {
               className={cn(
                 'flex h-12 flex-col items-center justify-center gap-1 rounded-lg text-sm',
                 !inMonth && 'text-muted-foreground/50',
-                day === selected ? 'bg-brand-navy text-white' : 'hover:bg-accent',
-                day === today && day !== selected && 'font-bold text-brand-navy ring-1 ring-brand-navy/40',
+                day === selected ? 'bg-primary text-primary-foreground' : 'hover:bg-accent',
+                day === today && day !== selected && 'font-bold text-primary ring-1 ring-brand-navy/40',
               )}
             >
               {Number(day.slice(8))}
@@ -71,7 +71,7 @@ export function CalendarMobile({ weeks, month, today, posts, deadlines }: {
           </Link>
         </div>
         {dayDeadlines.map((d) => (
-          <p key={d.id} className="rounded-md bg-brand-amber/25 px-2 py-1.5 text-sm font-medium text-brand-navy">⏰ {d.title}</p>
+          <p key={d.id} className="rounded-md bg-highlight px-2 py-1.5 text-sm font-medium text-highlight-foreground">⏰ {d.title}</p>
         ))}
         {dayPosts.map((p) => (
           <div key={p.id} className="space-y-1">

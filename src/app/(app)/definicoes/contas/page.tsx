@@ -25,8 +25,8 @@ export default async function ContasPage({ searchParams }: { searchParams: Promi
         <h1 className="text-xl font-semibold">Contas ligadas</h1>
         <p className="mt-1 text-sm text-muted-foreground">Ligue as redes de cada marca. A app só publica nas contas que ligar aqui.</p>
       </div>
-      {ligada && <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">Conta {PLATFORM_LABEL[ligada as Platform] ?? ''} ligada com sucesso.</p>}
-      {erro && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-900">{erro}</p>}
+      {ligada && <p role="status" className="rounded-lg bg-[var(--st-published-bg)] px-3 py-2 text-sm text-[var(--st-published-fg)]">Conta {PLATFORM_LABEL[ligada as Platform] ?? ''} ligada com sucesso.</p>}
+      {erro && <p role="alert" className="rounded-lg bg-[var(--st-failed-bg)] px-3 py-2 text-sm text-[var(--st-failed-fg)]">{erro}</p>}
       {brands.length === 0 && (
         <p className="text-sm text-muted-foreground">
           Crie primeiro uma marca em <a className="underline" href="/definicoes/marcas">Definições → Marcas</a>.
@@ -46,7 +46,7 @@ export default async function ContasPage({ searchParams }: { searchParams: Promi
                   <PlatformIcon platform={a.platform} />
                   <span className="font-medium">{PLATFORM_LABEL[a.platform]}</span>
                   <span>@{a.handle.replace(/^@/, '')}</span>
-                  <span className={a.status === 'active' ? 'text-emerald-700' : 'text-amber-700'}>· {STATUS_LABEL[a.status]}</span>
+                  <span className={a.status === 'active' ? 'text-success' : 'text-warning'}>· {STATUS_LABEL[a.status]}</span>
                   {a.tokenExpiresAt && a.status === 'active' && (
                     <span className="text-muted-foreground">· acesso válido até {formatInZone(a.tokenExpiresAt, b.timezone, 'd MMM yyyy')}</span>
                   )}

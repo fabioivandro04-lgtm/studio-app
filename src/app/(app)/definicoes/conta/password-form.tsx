@@ -16,7 +16,7 @@ export function PasswordForm() {
       <Label htmlFor="confirm">Repetir nova palavra-passe</Label>
       <Input id="confirm" name="confirm" type="password" autoComplete="new-password" minLength={10} required />
       <Button type="submit" disabled={pending}>{pending ? 'A guardar…' : 'Guardar palavra-passe'}</Button>
-      {state.ok && <p role="status" className="text-sm text-green-700">Palavra-passe mudada.</p>}
+      {state.ok && <p role="status" className="text-sm text-success">Palavra-passe mudada.</p>}
       {state.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
     </form>
   );

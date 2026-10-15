@@ -48,9 +48,9 @@ export function PendingItem({ item }: { item: PendingItemData }) {
             <span className="text-muted-foreground">· {PLATFORM_LABEL[item.platform]} @{item.handle.replace(/^@/, '')} · {item.when}</span>
           </p>
           {item.status === 'awaiting_user' ? (
-            <p className="mt-1 font-medium text-amber-800">Aguarda 1 toque</p>
+            <p className="mt-1 font-medium text-warning">Aguarda 1 toque</p>
           ) : (
-            <p className="mt-1 text-red-700">Falhou: {item.lastError ?? 'erro desconhecido'}</p>
+            <p className="mt-1 text-destructive">Falhou: {item.lastError ?? 'erro desconhecido'}</p>
           )}
           {item.caption && <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground">{item.caption}</p>}
         </div>

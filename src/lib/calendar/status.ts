@@ -12,12 +12,24 @@ export const POST_STATUS_LABEL: Record<PostStatus, string> = {
 };
 
 export const POST_STATUS_CLASS: Record<PostStatus, string> = {
-  draft: 'bg-slate-100 text-slate-700',
-  scheduled: 'bg-blue-100 text-blue-900',
-  publishing: 'bg-indigo-100 text-indigo-900',
-  needs_action: 'bg-amber-100 text-amber-950',
-  published: 'bg-emerald-100 text-emerald-900',
-  partial: 'bg-orange-100 text-orange-900',
-  failed: 'bg-red-100 text-red-900',
-  cancelled: 'bg-slate-100 text-slate-500 line-through',
+  draft: 'bg-[var(--st-draft-bg)] text-[var(--st-draft-fg)]',
+  scheduled: 'bg-[var(--st-scheduled-bg)] text-[var(--st-scheduled-fg)]',
+  publishing: 'bg-[var(--st-publishing-bg)] text-[var(--st-publishing-fg)]',
+  needs_action: 'bg-[var(--st-action-bg)] text-[var(--st-action-fg)]',
+  published: 'bg-[var(--st-published-bg)] text-[var(--st-published-fg)]',
+  partial: 'bg-[var(--st-partial-bg)] text-[var(--st-partial-fg)]',
+  failed: 'bg-[var(--st-failed-bg)] text-[var(--st-failed-fg)]',
+  cancelled: 'bg-[var(--st-cancelled-bg)] text-[var(--st-cancelled-fg)]',
+};
+
+/** Cor do ponto de estado (o texto do estado aparece ao lado). */
+export const POST_STATUS_DOT: Record<PostStatus, string> = {
+  draft: 'bg-[var(--st-draft-fg)]',
+  scheduled: 'bg-[var(--st-scheduled-fg)]',
+  publishing: 'bg-[var(--st-publishing-fg)]',
+  needs_action: 'bg-[var(--st-action-fg)]',
+  published: 'bg-[var(--st-published-fg)]',
+  partial: 'bg-[var(--st-partial-fg)]',
+  failed: 'bg-[var(--st-failed-fg)]',
+  cancelled: 'bg-[var(--st-cancelled-fg)]',
 };
