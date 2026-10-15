@@ -1,6 +1,6 @@
 'use client';
 
-import { Sparkles } from 'lucide-react';
+import { PenLine } from 'lucide-react';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 import { callSafely } from '@/lib/ai/call-safely';
@@ -18,7 +18,7 @@ const ACTIONS: { action: RefineAction; label: string }[] = [
   { action: 'english', label: 'Traduzir para inglês' },
 ];
 
-/** Menu ✨ junto à legenda: só substitui o texto quando a IA responde com sucesso. */
+/** Menu "Reescrever" junto à legenda: só substitui o texto quando a IA responde com sucesso. */
 export function RefineMenu({ brandId, platform, text, onReplace }: { brandId: string; platform: Platform; text: string; onReplace(next: string): void }) {
   const [pending, start] = useTransition();
   const run = (action: RefineAction) =>
@@ -31,7 +31,7 @@ export function RefineMenu({ brandId, platform, text, onReplace }: { brandId: st
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button type="button" variant="ghost" size="sm" disabled={pending} aria-label={`Reescrever com IA — ${PLATFORM_LABEL[platform]}`}>
-          <Sparkles className="size-4 text-brand-amber" aria-hidden /> {pending ? 'A melhorar…' : 'Melhorar'}
+          <PenLine className="size-4" aria-hidden /> {pending ? 'A reescrever…' : 'Reescrever'}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">

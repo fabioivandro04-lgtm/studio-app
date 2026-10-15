@@ -1,6 +1,6 @@
 'use client';
 
-import { Sparkles } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { callSafely } from '@/lib/ai/call-safely';
@@ -25,7 +25,7 @@ export interface AiPanelProps {
   onUseYoutubeTitle(text: string): void;
 }
 
-/** Painel "✨ Assistente": uma frase + a imagem → legendas, títulos e hashtags. */
+/** Painel "Sugerir com IA": uma frase + a imagem → legendas, títulos e hashtags. */
 export function AiPanel(p: AiPanelProps) {
   const [prompt, setPrompt] = useState('');
   const [result, setResult] = useState<Suggestions | null>(null);
@@ -46,7 +46,7 @@ export function AiPanel(p: AiPanelProps) {
   return (
     <section aria-label="Assistente" className="space-y-3 rounded-lg border bg-card p-4 shadow-xs">
       <h2 className="flex items-center gap-2 font-medium">
-        <Sparkles className="size-4 text-brand-amber" aria-hidden /> Assistente
+        <Bot className="size-4 text-muted-foreground" aria-hidden /> Sugerir com IA
       </h2>
       <div className="space-y-1">
         <Label htmlFor="ai-prompt">Sobre o que é este post?</Label>

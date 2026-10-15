@@ -1,5 +1,6 @@
 'use client';
 
+import { CalendarCheck, Clock } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { callSafely } from '@/lib/ai/call-safely';
@@ -12,7 +13,7 @@ const label = (s: Pick<Slot, 'date' | 'time'>) => {
   return `${d} · ${s.time}`;
 };
 
-/** Botão "🕐 Melhor hora": 3 sugestões que preenchem a data e a hora. */
+/** Botão "Melhor hora": 3 sugestões que preenchem a data e a hora. */
 export function BestTime({ brandId, postId, hasSlots, onPick }: { brandId: string; postId: string | null; hasSlots: boolean; onPick(date: string, time: string): void }) {
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [pending, start] = useTransition();
@@ -37,11 +38,11 @@ export function BestTime({ brandId, postId, hasSlots, onPick }: { brandId: strin
       <div className="flex flex-wrap gap-2">
         {hasSlots && (
           <Button type="button" variant="outline" size="sm" disabled={pending} onClick={fill}>
-            <span aria-hidden>📅</span> Próximo horário livre
+            <CalendarCheck className="size-4" aria-hidden /> Próximo horário livre
           </Button>
         )}
         <Button type="button" variant="outline" size="sm" disabled={pending} onClick={load}>
-          {pending ? 'A calcular…' : '🕐 Melhor hora'}
+          <Clock className="size-4" aria-hidden /> {pending ? 'A calcular…' : 'Melhor hora'}
         </Button>
       </div>
       {slots && slots.length === 0 && <p className="text-sm text-muted-foreground">Sem horários livres nos próximos 7 dias.</p>}

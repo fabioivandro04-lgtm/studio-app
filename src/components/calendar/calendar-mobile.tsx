@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { CalendarClock, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -71,7 +71,7 @@ export function CalendarMobile({ weeks, month, today, posts, deadlines }: {
           </Link>
         </div>
         {dayDeadlines.map((d) => (
-          <p key={d.id} className="rounded-md bg-highlight px-2 py-1.5 text-sm font-medium text-highlight-foreground">⏰ {d.title}</p>
+          <p key={d.id} className="rounded-md bg-highlight px-2 py-1.5 text-sm font-medium text-highlight-foreground"><CalendarClock className="mr-1 inline size-3.5 align-[-2px]" aria-hidden />{d.title}</p>
         ))}
         {dayPosts.map((p) => (
           <div key={p.id} className="space-y-1">

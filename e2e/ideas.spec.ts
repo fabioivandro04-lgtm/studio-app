@@ -17,7 +17,7 @@ test.describe('com marca escolhida', () => {
 
   test('vídeos curtos: 10 ideias, descartar e recuperar', async ({ page }) => {
     await page.goto('/ideias');
-    await page.getByRole('button', { name: /Ideias de vídeos curtos/ }).click();
+    await page.getByRole('button', { name: /Vídeos curtos/ }).click();
     await expect(page.getByTestId('idea-card')).toHaveCount(10);
 
     await page.getByTestId('idea-card').first().getByRole('button', { name: 'Descartar' }).click();
@@ -51,5 +51,5 @@ test('"Todas as marcas" pede uma marca', async ({ page, context }) => {
   await loginAsOwner(page);
   await page.goto('/ideias');
   await expect(page.getByText('Escolha uma marca no topo para gerar ideias.')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Ideias de vídeos curtos/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Vídeos curtos/ })).toHaveCount(0);
 });

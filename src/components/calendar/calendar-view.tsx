@@ -1,5 +1,6 @@
 'use client';
 
+import { CalendarClock } from 'lucide-react';
 import Link from 'next/link';
 import { PrefetchKind } from 'next/dist/client/components/router-reducer/router-reducer-types';
 import { useRouter } from 'next/navigation';
@@ -128,7 +129,7 @@ function CalendarGrid({ weeks, month, today, posts, deadlines }: {
               </div>
               {dayDeadlines.map((d) => (
                 <p key={d.id} data-testid="deadline-chip" className="truncate rounded bg-highlight px-1 text-[11px] font-medium text-highlight-foreground" title={d.title}>
-                  ⏰ {d.title}
+                  <CalendarClock className="mr-1 inline size-3.5 align-[-2px]" aria-hidden />{d.title}
                 </p>
               ))}
               {dayPosts.map((p) => <PostCard key={p.id} p={p} />)}

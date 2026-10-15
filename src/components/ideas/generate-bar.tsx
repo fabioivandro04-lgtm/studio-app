@@ -1,5 +1,6 @@
 'use client';
 
+import { CalendarClock, CalendarRange, Clapperboard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -35,9 +36,9 @@ export function GenerateBar({ brandId, deadlines }: { brandId: string | null; de
   return (
     <section aria-label="Gerar ideias" className="space-y-3 rounded-lg border bg-card p-4 shadow-xs">
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" disabled={pending} onClick={() => setPicking((v) => !v)}><span aria-hidden>💡</span> Ideias para um prazo</Button>
-        <Button type="button" variant="outline" disabled={pending} onClick={() => run(() => generateShortsIdeas({ brandId }))}><span aria-hidden>🎬</span> Ideias de vídeos curtos</Button>
-        <Button type="button" variant="outline" disabled={pending} onClick={() => run(() => planNextWeek({ brandId }))}><span aria-hidden>🗓️</span> Planear a próxima semana</Button>
+        <Button type="button" variant="outline" disabled={pending} onClick={() => setPicking((v) => !v)}><CalendarClock className="size-4" aria-hidden /> Ideias para um prazo</Button>
+        <Button type="button" variant="outline" disabled={pending} onClick={() => run(() => generateShortsIdeas({ brandId }))}><Clapperboard className="size-4" aria-hidden /> Vídeos curtos</Button>
+        <Button type="button" variant="outline" disabled={pending} onClick={() => run(() => planNextWeek({ brandId }))}><CalendarRange className="size-4" aria-hidden /> Planear a próxima semana</Button>
       </div>
       {picking && (
         deadlines.length === 0 ? (

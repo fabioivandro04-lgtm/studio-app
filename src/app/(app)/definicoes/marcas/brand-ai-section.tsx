@@ -1,6 +1,6 @@
 'use client';
 
-import { Sparkles } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { callSafely } from '@/lib/ai/call-safely';
@@ -58,7 +58,7 @@ export function BrandAiSection({ initial }: { initial: BrandAiForm }) {
   return (
     <details className="rounded-xl border bg-muted/30 px-4 py-3" aria-label="Assistente de IA">
       <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium">
-        <Sparkles className="size-4 text-brand-amber" aria-hidden /> Assistente de IA
+        <Bot className="size-4 text-muted-foreground" aria-hidden /> Assistente de IA
       </summary>
       <div className="mt-3 space-y-3">
         <div className="space-y-1">
@@ -87,7 +87,7 @@ export function BrandAiSection({ initial }: { initial: BrandAiForm }) {
             placeholder="Tom, tratamento (tu/vocês), chamada para ação, palavras a evitar."
           />
           <Button type="button" variant="outline" size="sm" disabled={!initial.hasInstagram || drafting} onClick={draft}>
-            {drafting ? 'A ler o Instagram…' : '✨ Criar a partir do Instagram'}
+            {drafting ? 'A ler o Instagram…' : 'Criar a partir do Instagram'}
           </Button>
           {!initial.hasInstagram && <p className="text-xs text-muted-foreground">Ligue o Instagram desta marca primeiro.</p>}
         </div>

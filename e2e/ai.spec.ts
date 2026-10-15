@@ -81,7 +81,7 @@ test('limite mensal atingido → continua com o modelo grátis', async ({ page }
 
 test('melhor hora preenche data e hora', async ({ page }) => {
   await page.goto('/posts/novo');
-  await page.getByRole('button', { name: '🕐 Melhor hora' }).click();
+  await page.getByRole('button', { name: 'Melhor hora' }).click();
   const slot = page.getByTestId('best-time-slot').first();
   await expect(slot).toBeVisible();
   await expect(page.getByText('sugestão inicial').first()).toBeVisible();
@@ -96,7 +96,7 @@ test('sem Instagram ligado, o rascunho da voz está desativado', async ({ page }
   await page.goto('/definicoes/marcas');
   const section = aiSectionOf(page);
   await section.locator('summary').click();
-  await expect(section.getByRole('button', { name: '✨ Criar a partir do Instagram' })).toBeDisabled();
+  await expect(section.getByRole('button', { name: 'Criar a partir do Instagram' })).toBeDisabled();
   await expect(section.getByText('Ligue o Instagram desta marca primeiro.')).toBeVisible();
 });
 
@@ -117,7 +117,7 @@ test('voz da marca rascunhada a partir do Instagram e guardada', async ({ page }
   await page.goto('/definicoes/marcas');
   const section = aiSectionOf(page);
   await section.locator('summary').click();
-  await section.getByRole('button', { name: '✨ Criar a partir do Instagram' }).click();
+  await section.getByRole('button', { name: 'Criar a partir do Instagram' }).click();
   await expect(section.getByLabel('Voz da marca')).toHaveValue(/Tom próximo/);
   await section.getByRole('button', { name: 'Guardar IA' }).click();
   await expect(page.getByText('Definições de IA guardadas.')).toBeVisible();
