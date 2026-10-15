@@ -46,7 +46,7 @@ function median(xs: number[]): number {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
-const weekdayOf = (date: string) => new Date(`${date}T12:00:00Z`).getUTCDay();
+export const weekdayOf = (date: string) => new Date(`${date}T12:00:00Z`).getUTCDay();
 
 interface Candidate { date: string; time: string; at: Date; reason: string; source: Slot['source'] }
 
@@ -60,6 +60,32 @@ function nextLocalDates(now: Date, tz: string): string[] {
   });
 }
 
+export interface Bucket { weekday: number; hour: number; median: number; count: number }
+
+/** Faixas (dia da semana, hora) pelo menos na média, da melhor para a pior; vazio com menos de 10 posts. */
+export function bestBuckets(history: HistoryPoint[], goal: Goal, tz: string): { best: Bucket[]; overall: number } {
+  if (history.length < MIN_HISTORY) return { best: [], overall: 0 };
+  const scores = history.map((p) => scorePoint(p, goal));
+  const overall = median(scores);
+  const buckets = new Map<string, { weekday: number; hour: number; scores: number[] }>();
+  history.forEach((p, i) => {
+    const local = utcToLocalParts(p.publishedAt, tz);
+    const weekday = weekdayOf(local.date);
+    const hour = Number(local.time.slice(0, 2));
+    const key = `${weekday}-${hour}`;
+    const b = buckets.get(key) ?? { weekday, hour, scores: [] };
+    b.scores.push(scores[i]);
+    buckets.set(key, b);
+  });
+  const best = [...buckets.values()]
+    .filter((b) => b.scores.length >= MIN_PER_BUCKET)
+    .map((b) => ({ weekday: b.weekday, hour: b.hour, median: median(b.scores), count: b.scores.length }))
+    // Só faixas pelo menos na média: as piores ficam para a tabela inicial.
+    .filter((b) => b.median > 0 && b.median >= overall)
+    .sort((a, b) => b.median - a.median || b.count - a.count);
+  return { best, overall };
+}
+
 export function suggestSlots(o: { history: HistoryPoint[]; goal: Goal; tz: string; busy: Date[]; now: Date }): Slot[] {
   const dates = nextLocalDates(o.now, o.tz);
   const ok = (at: Date) =>
@@ -67,35 +93,16 @@ export function suggestSlots(o: { history: HistoryPoint[]; goal: Goal; tz: strin
   const label = o.goal === 'contacts' ? 'contactos' : 'alcance';
 
   const ranked: Candidate[] = [];
-  if (o.history.length >= MIN_HISTORY) {
-    const scores = o.history.map((p) => scorePoint(p, o.goal));
-    const overall = median(scores);
-    const buckets = new Map<string, { weekday: number; hour: number; scores: number[] }>();
-    o.history.forEach((p, i) => {
-      const local = utcToLocalParts(p.publishedAt, o.tz);
-      const weekday = weekdayOf(local.date);
-      const hour = Number(local.time.slice(0, 2));
-      const key = `${weekday}-${hour}`;
-      const b = buckets.get(key) ?? { weekday, hour, scores: [] };
-      b.scores.push(scores[i]);
-      buckets.set(key, b);
-    });
-    const best = [...buckets.values()]
-      .filter((b) => b.scores.length >= MIN_PER_BUCKET)
-      .map((b) => ({ ...b, median: median(b.scores) }))
-      // Só faixas pelo menos na média: as piores ficam para a tabela inicial.
-      .filter((b) => b.median > 0 && b.median >= overall)
-      .sort((a, b) => b.median - a.median || b.scores.length - a.scores.length);
-    for (const b of best) {
-      const time = `${String(b.hour).padStart(2, '0')}:00`;
-      const ratio = overall > 0 ? b.median / overall : 0;
-      const reason =
-        ratio > 1.1
-          ? `Os teus posts de ${WEEKDAYS[b.weekday]} às ${time} tiveram ${ratio.toLocaleString('pt-PT', { maximumFractionDigits: 1 })}× mais ${label}`
-          : `Uma das horas com melhores resultados dos teus posts (${WEEKDAYS[b.weekday]} às ${time})`;
-      for (const date of dates.filter((d) => weekdayOf(d) === b.weekday)) {
-        ranked.push({ date, time, at: localToUtc(date, time, o.tz), reason, source: 'history' });
-      }
+  const { best, overall } = bestBuckets(o.history, o.goal, o.tz);
+  for (const b of best) {
+    const time = `${String(b.hour).padStart(2, '0')}:00`;
+    const ratio = overall > 0 ? b.median / overall : 0;
+    const reason =
+      ratio > 1.1
+        ? `Os teus posts de ${WEEKDAYS[b.weekday]} às ${time} tiveram ${ratio.toLocaleString('pt-PT', { maximumFractionDigits: 1 })}× mais ${label}`
+        : `Uma das horas com melhores resultados dos teus posts (${WEEKDAYS[b.weekday]} às ${time})`;
+    for (const date of dates.filter((d) => weekdayOf(d) === b.weekday)) {
+      ranked.push({ date, time, at: localToUtc(date, time, o.tz), reason, source: 'history' });
     }
   }
   for (const date of dates) {
