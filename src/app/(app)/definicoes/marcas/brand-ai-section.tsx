@@ -16,6 +16,7 @@ export interface BrandAiForm {
   aiVoice: string;
   aiHashtags: string[];
   goal: 'contacts' | 'reach';
+  postsPerWeek: number;
   hasInstagram: boolean;
 }
 
@@ -29,13 +30,14 @@ export function BrandAiSection({ initial }: { initial: BrandAiForm }) {
   const [voice, setVoice] = useState(initial.aiVoice);
   const [tags, setTags] = useState(initial.aiHashtags.join(' '));
   const [goal, setGoal] = useState(initial.goal);
+  const [ppw, setPpw] = useState(String(initial.postsPerWeek));
   const [pending, start] = useTransition();
   const [drafting, startDraft] = useTransition();
   const id = initial.brandId;
 
   const save = () =>
     start(async () => {
-      const r = await callSafely(() => saveBrandAi({ brandId: id, aiContext: context, aiVoice: voice, aiHashtags: tags.split(/[\s,]+/).filter(Boolean), goal }));
+      const r = await callSafely(() => saveBrandAi({ brandId: id, aiContext: context, aiVoice: voice, aiHashtags: tags.split(/[\s,]+/).filter(Boolean), goal, postsPerWeek: ppw.trim() === '' ? Number.NaN : Number(ppw) }));
       if (r.ok) toast.success('Definições de IA guardadas.');
       else toast.error(r.error);
     });
@@ -107,6 +109,20 @@ export function BrandAiSection({ initial }: { initial: BrandAiForm }) {
             <option value="contacts">Contactos</option>
             <option value="reach">Alcance</option>
           </select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor={`ppw-${id}`}>Posts por semana</Label>
+          <input
+            id={`ppw-${id}`}
+            type="number"
+            min={1}
+            max={21}
+            inputMode="numeric"
+            value={ppw}
+            onChange={(e) => setPpw(e.target.value)}
+            className="h-9 w-24 rounded-md border bg-background px-3 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">Usado para planear a semana nas Ideias.</p>
         </div>
         <Button type="button" onClick={save} disabled={pending}>
           {pending ? 'A guardar…' : 'Guardar IA'}

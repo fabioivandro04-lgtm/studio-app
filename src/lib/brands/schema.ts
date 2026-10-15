@@ -22,6 +22,8 @@ export const BrandInput = z.object({
 });
 export type BrandInput = z.infer<typeof BrandInput>;
 
+const PPW_MSG = 'Entre 1 e 21 posts por semana.';
+
 export const BrandAiInput = z.object({
   aiContext: z.string().max(4000, 'O contexto pode ter no máximo 4000 caracteres.'),
   aiVoice: z.string().max(2000, 'A voz da marca pode ter no máximo 2000 caracteres.'),
@@ -29,6 +31,7 @@ export const BrandAiInput = z.object({
     .array(z.string().regex(/^#?[\p{L}\p{N}_]+$/u, 'Hashtag inválida: use só letras, números e _.'))
     .max(10, 'No máximo 10 hashtags fixas.'),
   goal: z.enum(['contacts', 'reach'], { message: 'Escolha o objetivo da marca.' }),
+  postsPerWeek: z.number({ message: PPW_MSG }).int(PPW_MSG).min(1, PPW_MSG).max(21, PPW_MSG),
 });
 export type BrandAiInput = z.infer<typeof BrandAiInput>;
 

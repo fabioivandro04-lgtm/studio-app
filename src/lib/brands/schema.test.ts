@@ -21,7 +21,7 @@ describe('BrandInput', () => {
 });
 
 describe('BrandAiInput', () => {
-  const ok = { aiContext: 'Consultoria de candidaturas.', aiVoice: 'Próxima e confiável.', aiHashtags: ['#unidreamity', 'estudarfora'], goal: 'contacts' };
+  const ok = { aiContext: 'Consultoria de candidaturas.', aiVoice: 'Próxima e confiável.', aiHashtags: ['#unidreamity', 'estudarfora'], goal: 'contacts', postsPerWeek: 3 };
 
   it('aceita valores válidos', () => {
     expect(BrandAiInput.parse(ok)).toEqual(ok);
@@ -45,6 +45,13 @@ describe('BrandAiInput', () => {
   it('recusa hashtag com espaços ou símbolos', () => {
     expect(BrandAiInput.safeParse({ ...ok, aiHashtags: ['#a b'] }).success).toBe(false);
     expect(BrandAiInput.safeParse({ ...ok, aiHashtags: ['#são_tomé'] }).success).toBe(true);
+  });
+
+  it('posts por semana entre 1 e 21', () => {
+    expect(BrandAiInput.safeParse({ ...ok, postsPerWeek: 5 }).success).toBe(true);
+    for (const n of [0, 22, 2.5]) {
+      expect(BrandAiInput.safeParse({ ...ok, postsPerWeek: n }).error?.issues[0].message).toBe('Entre 1 e 21 posts por semana.');
+    }
   });
 
   it('recusa objetivo desconhecido', () => {

@@ -18,7 +18,7 @@ export default async function MarcasPage() {
       <BrandsEditor
         brands={brands.map((b) => ({
           id: b.id, name: b.name, color: b.color, timezone: b.timezone,
-          ai: { brandId: b.id, aiContext: b.aiContext, aiVoice: b.aiVoice, aiHashtags: b.aiHashtags, goal: b.goal, hasInstagram: withIg.has(b.id) },
+          ai: { brandId: b.id, aiContext: b.aiContext, aiVoice: b.aiVoice, aiHashtags: b.aiHashtags, goal: b.goal, postsPerWeek: b.postsPerWeek, hasInstagram: withIg.has(b.id) },
         }))}
       />
     </div>
