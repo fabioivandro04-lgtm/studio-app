@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { cancelPost, duplicatePost, savePost } from '@/app/(app)/posts/actions';
+import { cancelPost, deletePost, duplicatePost, savePost } from '@/app/(app)/posts/actions';
 import type { ComposerData } from '@/app/(app)/posts/data';
 import { MediaGrid } from '@/components/media/media-grid';
 import { MediaThumb } from '@/components/media/media-thumb';
@@ -129,6 +129,18 @@ export function Composer({ data }: { data: ComposerData }) {
       if (r.ok) {
         toast.success('Cópia criada.');
         router.push(`/posts/${r.id}`);
+      } else toast.error(r.error);
+    });
+  };
+  // Apagar do Estúdio: publicados, cancelados, falhados e rascunhos (não mexe nas redes).
+  const deletable = !!s.id && ['draft', 'published', 'partial', 'failed', 'cancelled'].includes(s.status ?? 'draft');
+  const remove = () => {
+    if (!confirm('Apagar este post do Estúdio? Sai do calendário e das métricas. Não apaga nada no Instagram, TikTok ou YouTube.')) return;
+    start(async () => {
+      const r = await callSafely(() => deletePost(s.id!));
+      if (r.ok) {
+        toast.success('Post apagado do Estúdio.');
+        router.push('/calendario');
       } else toast.error(r.error);
     });
   };
@@ -316,8 +328,9 @@ export function Composer({ data }: { data: ComposerData }) {
         </section>
 
         {ro && s.id && (
-          <div className="border-t pt-4">
+          <div className="flex flex-wrap gap-2 border-t pt-4">
             <Button type="button" variant="outline" disabled={pending} onClick={duplicate}>Duplicar</Button>
+            {deletable && <Button type="button" variant="ghost" className="text-destructive" disabled={pending} onClick={remove}>Apagar do Estúdio</Button>}
           </div>
         )}
         {!ro && (
@@ -334,6 +347,7 @@ export function Composer({ data }: { data: ComposerData }) {
                 });
               }}>Cancelar post</Button>
             )}
+            {deletable && s.status === 'draft' && <Button type="button" variant="ghost" className="text-destructive" disabled={pending} onClick={remove}>Apagar do Estúdio</Button>}
           </div>
         )}
       </div>

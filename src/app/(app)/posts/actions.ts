@@ -1,8 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 import { createServerClient } from '@/lib/db/clients';
 import { toMediaInfo } from '@/lib/db/repo/tick-repo';
+import { canDeletePost } from '@/lib/posts/delete-rules';
 import { checkPost, PostInput, type PostError, type PostInputT } from '@/lib/posts/schema';
 
 export type SaveResult = { ok: true; id: string } | { ok: false; errors: PostError[] };
@@ -68,4 +70,23 @@ export async function duplicatePost(id: string): Promise<{ ok: true; id: string 
   if (error) return { ok: false, error: 'Não foi possível duplicar o post.' };
   revalidatePath('/calendario');
   return { ok: true, id: newId as string };
+}
+
+/** Apaga o post do Estúdio (com redes, métricas e ligação às ideias). Não mexe nas redes sociais. */
+export async function deletePost(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!z.guid().safeParse(id).success) return { ok: false, error: 'Post não encontrado.' };
+  const db = await createServerClient();
+  const [{ data: post }, { data: targets }] = await Promise.all([
+    db.from('posts').select('status').eq('id', id).maybeSingle(),
+    db.from('post_targets').select('status').eq('post_id', id),
+  ]);
+  if (!post) return { ok: false, error: 'Post não encontrado.' };
+  if (!canDeletePost(post.status, (targets ?? []).map((t) => t.status))) {
+    return { ok: false, error: post.status === 'scheduled' ? 'Cancele o post antes de o apagar.' : 'Este post está a ser publicado. Tente mais tarde.' };
+  }
+  const { data, error } = await db.from('posts').delete().eq('id', id).select('id');
+  if (error || !data?.length) return { ok: false, error: 'Não foi possível apagar o post.' };
+  revalidatePath('/calendario');
+  revalidatePath('/metricas');
+  return { ok: true };
 }
