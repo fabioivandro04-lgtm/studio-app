@@ -26,6 +26,18 @@ export function createFakeAi(): AiProvider {
       else if (spec.name === 'refined') {
         const caption = lastUserText(messages).split('Legenda:\n')[1] ?? '';
         raw = { text: `Versão melhorada: ${caption.slice(0, 80)}` };
+      } else if (spec.name === 'ideas') {
+        const n = Number(lastUserText(messages).match(/Quantidade: (\d+)/)?.[1] ?? 3);
+        raw = {
+          ideas: Array.from({ length: n }, (_, i) => ({
+            title: `Ideia ${i + 1}: prazos de candidatura`,
+            hook: 'Sabias que faltam poucas semanas?',
+            outline: '- O que é\n- Documentos\n- Como a Unidreamity ajuda',
+            caption: `Ideia ${i + 1}: as candidaturas estão abertas. Fala connosco!`,
+            format: 'ig_reel',
+            platforms: ['instagram', 'tiktok'],
+          })),
+        };
       } else raw = { voice: '- Tom próximo e confiável\n- Trata o público por tu\n- Termina com convite para falar connosco' };
       return { data: spec.parse(raw), usage };
     },
