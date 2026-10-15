@@ -56,6 +56,18 @@ describe('postprocessSuggestions', () => {
     expect(r.byPlatform[0].hashtags).toEqual(fixed);
   });
 
+  it('separa hashtags coladas numa só string', () => {
+    const raw = base({ byPlatform: [{ platform: 'instagram', captions: ['a'], hashtags: ['#bolsas #estudar', '#angola#mocambique'] }] });
+    const r = postprocessSuggestions(raw, { platforms: ['instagram'], fixedHashtags: [] });
+    expect(r.byPlatform[0].hashtags).toEqual(['#bolsas', '#estudar', '#angola', '#mocambique']);
+  });
+
+  it('rede pedida sem resposta aparece vazia (para a UI avisar)', () => {
+    const r = postprocessSuggestions(base(), { platforms: ['instagram', 'tiktok'], fixedHashtags: ['#uni'] });
+    expect(r.byPlatform.map((p) => p.platform)).toEqual(['instagram', 'tiktok']);
+    expect(r.byPlatform[1]).toEqual({ platform: 'tiktok', captions: [], hashtags: ['#uni'] });
+  });
+
   it('YouTube: título cortado a 100; sem YouTube → null', () => {
     const raw = base({ youtubeTitle: 't'.repeat(150), byPlatform: [{ platform: 'youtube', captions: ['d'], hashtags: [] }] });
     expect(postprocessSuggestions(raw, { platforms: ['youtube'], fixedHashtags: [] }).youtubeTitle).toHaveLength(100);

@@ -97,6 +97,21 @@ describe('runSuggest', () => {
     expect(n).toBe(1);
   });
 
+  it('IA sem nenhuma legenda → invalid_response', async () => {
+    const empty: AiProvider = {
+      chat: async (req) => ({ data: req.spec.parse({ internalTitle: 'x', youtubeTitle: null, byPlatform: [] }), usage: { inputTokens: 1, outputTokens: 1, costUsd: 0.001 } }),
+    };
+    const d = deps({ provider: empty });
+    expect((await errOf(runSuggest(d, input))).code).toBe('invalid_response');
+    expect(d.recordUsage).toHaveBeenCalledTimes(1); // foi pago, fica registado
+  });
+
+  it('falha a registar o uso não perde o resultado pago', async () => {
+    const d = deps({ recordUsage: vi.fn(async () => { throw new Error('db down'); }) });
+    const r = await runSuggest(d, input);
+    expect(r.byPlatform[0].captions.length).toBeGreaterThan(0);
+  });
+
   it('erro da IA não regista uso', async () => {
     const failing: AiProvider = { chat: async () => { throw new AiError('unavailable', 'x'); } };
     const d = deps({ provider: failing });

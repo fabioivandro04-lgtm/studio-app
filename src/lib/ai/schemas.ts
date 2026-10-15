@@ -52,16 +52,21 @@ export function normalizeHashtag(s: string): string | null {
   return body ? `#${body}` : null;
 }
 
-/** Limita, normaliza e filtra a resposta da IA às redes pedidas. */
+/** "#bolsas #estudar" ou "#a#b" → várias hashtags; uma frase sem # continua a ser uma só. */
+function splitHashtags(s: string): string[] {
+  return (s.match(/#/g)?.length ?? 0) > 1 ? s.split('#').filter((x) => x.trim()) : [s];
+}
+
+/** Limita, normaliza e filtra a resposta da IA às redes pedidas (redes sem resposta ficam vazias). */
 export function postprocessSuggestions(raw: Suggestions, o: { platforms: Platform[]; fixedHashtags: string[] }): Suggestions {
   const fixed = o.fixedHashtags.map(normalizeHashtag).filter((h): h is string => !!h);
-  const byPlatform = raw.byPlatform
-    .filter((p) => o.platforms.includes(p.platform))
-    .filter((p, i, all) => all.findIndex((q) => q.platform === p.platform) === i)
+  const byPlatform = o.platforms
+    .filter((p, i, all) => all.indexOf(p) === i)
+    .map((platform) => raw.byPlatform.find((q) => q.platform === platform) ?? { platform, captions: [], hashtags: [] })
     .map((p) => {
       const rules = AI_RULES[p.platform];
       const seen = new Set<string>();
-      const hashtags = [...fixed, ...p.hashtags.map(normalizeHashtag)]
+      const hashtags = [...fixed, ...p.hashtags.flatMap(splitHashtags).map(normalizeHashtag)]
         .filter((h): h is string => !!h)
         .filter((h) => (seen.has(h.toLowerCase()) ? false : (seen.add(h.toLowerCase()), true)))
         .slice(0, Math.max(rules.hashtagsMax, fixed.length));

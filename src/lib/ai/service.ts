@@ -42,8 +42,19 @@ export async function runSuggest(
     res = await ask(null);
   }
   const { data, usage } = res;
-  await d.recordUsage({ brandId: i.brandId, kind: 'suggest', model: d.model, usage });
-  return postprocessSuggestions(data, { platforms: i.targets.map((t) => t.platform), fixedHashtags: i.brand.aiHashtags });
+  await record(d, { brandId: i.brandId, kind: 'suggest', model: d.model, usage });
+  const out = postprocessSuggestions(data, { platforms: i.targets.map((t) => t.platform), fixedHashtags: i.brand.aiHashtags });
+  if (out.byPlatform.every((p) => p.captions.length === 0)) throw new AiError('invalid_response', AI_MESSAGES.invalid_response);
+  return out;
+}
+
+/** Regista o custo; uma falha aqui não deita fora uma resposta já paga. */
+async function record(d: AiDeps, u: Parameters<AiDeps['recordUsage']>[0]) {
+  try {
+    await d.recordUsage(u);
+  } catch (e) {
+    console.error('[ai] falha a registar uso', e);
+  }
 }
 
 export async function runRefine(
@@ -53,7 +64,7 @@ export async function runRefine(
   const provider = ready(d);
   if (!i.text.trim()) throw invalid('Escreva primeiro uma legenda.');
   const { data, usage } = await provider.chat({ model: d.model, messages: buildRefineMessages(i), spec: RefinedSpec, maxTokens: 600 });
-  await d.recordUsage({ brandId: i.brandId, kind: 'refine', model: d.model, usage });
+  await record(d, { brandId: i.brandId, kind: 'refine', model: d.model, usage });
   return data.text.trim().slice(0, AI_RULES[i.platform].captionMax);
 }
 
@@ -61,6 +72,6 @@ export async function runDraftVoice(d: AiDeps, i: { brandId: string; brand: Bran
   const provider = ready(d);
   if (!i.captions.some((c) => c.trim())) throw invalid('Não há legendas no Instagram para analisar.');
   const { data, usage } = await provider.chat({ model: d.model, messages: buildVoiceMessages(i), spec: VoiceSpec, maxTokens: 800 });
-  await d.recordUsage({ brandId: i.brandId, kind: 'voice', model: d.model, usage });
+  await record(d, { brandId: i.brandId, kind: 'voice', model: d.model, usage });
   return data.voice.trim().slice(0, VOICE_MAX);
 }
