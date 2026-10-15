@@ -1,0 +1,33 @@
+import type { AiProvider, ChatMessage, Suggestions } from './types';
+
+const SUGGESTIONS: Suggestions = {
+  internalTitle: 'Prazos de candidatura',
+  youtubeTitle: 'Prazos para estudar em Portugal em 2027',
+  byPlatform: (['instagram', 'tiktok', 'youtube'] as const).map((platform) => ({
+    platform,
+    captions: [1, 2, 3].map((n) => `Sugestão ${n} para ${platform}: as candidaturas estão abertas. Fala connosco!`),
+    hashtags: ['#estudarfora', '#bolsasdeestudo', '#candidaturas'],
+  })),
+};
+
+const lastUserText = (messages: ChatMessage[]): string => {
+  const m = [...messages].reverse().find((x) => x.role === 'user');
+  if (!m) return '';
+  return typeof m.content === 'string' ? m.content : m.content.map((p) => (p.type === 'text' ? p.text : '')).join('\n');
+};
+
+/** Fornecedor falso para testes e modo PLATFORM_MODE=fake: respostas fixas e custo 0. */
+export function createFakeAi(): AiProvider {
+  return {
+    async chat({ messages, spec }) {
+      const usage = { inputTokens: 0, outputTokens: 0, costUsd: 0 };
+      let raw: unknown;
+      if (spec.name === 'suggestions') raw = SUGGESTIONS;
+      else if (spec.name === 'refined') {
+        const caption = lastUserText(messages).split('Legenda:\n')[1] ?? '';
+        raw = { text: `Versão melhorada: ${caption.slice(0, 80)}` };
+      } else raw = { voice: '- Tom próximo e confiável\n- Trata o público por tu\n- Termina com convite para falar connosco' };
+      return { data: spec.parse(raw), usage };
+    },
+  };
+}
