@@ -27,6 +27,7 @@ export function AppNav({ pendingCount = 0 }: { pendingCount?: number }) {
           <Link
             key={href}
             href={href}
+            prefetch
             aria-current={active ? 'page' : undefined}
             className={cn(
               'relative flex flex-1 flex-col items-center gap-0.5 px-1 py-2 text-xs md:flex-none md:flex-row md:gap-3 md:rounded-lg md:px-3 md:text-sm',

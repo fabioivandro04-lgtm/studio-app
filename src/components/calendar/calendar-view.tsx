@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { PrefetchKind } from 'next/dist/client/components/router-reducer/router-reducer-types';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
@@ -28,9 +29,15 @@ export interface CalendarDeadline { id: string; day: string; title: string; bran
 export const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
 export function PostCard({ p, large = false }: { p: CalendarPost; large?: boolean }) {
+  const router = useRouter();
+  // Pré-carrega o editor quando o dedo ou o rato chega ao cartão: ao clicar já está (quase) pronto.
+  const warm = () => router.prefetch(`/posts/${p.id}`, { kind: PrefetchKind.FULL });
   return (
     <Link
       href={`/posts/${p.id}`}
+      onMouseEnter={warm}
+      onTouchStart={warm}
+      onFocus={warm}
       draggable={p.movable}
       onDragStart={(e) => e.dataTransfer.setData('text/post-id', p.id)}
       data-testid="post-card"
