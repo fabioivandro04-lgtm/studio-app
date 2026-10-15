@@ -1,19 +1,23 @@
 'use client';
 
-import { Copy } from 'lucide-react';
+import { Copy, MoreHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { listBrandMedia } from '@/app/(app)/biblioteca/actions';
 import { cancelPost, deletePost, duplicatePost, savePost } from '@/app/(app)/posts/actions';
 import type { ComposerData } from '@/app/(app)/posts/data';
 import { MediaGrid } from '@/components/media/media-grid';
 import { MediaThumb } from '@/components/media/media-thumb';
 import { MediaUploader } from '@/components/media/media-uploader';
 import { MediaViewer } from '@/components/media/media-viewer';
+import type { MediaItem } from '@/lib/db/repo/media-repo';
+import { clearLocalDraft, localDraftKey, readLocalDraft, writeLocalDraft, type LocalDraft } from '@/lib/posts/local-draft';
 import { PlatformIcon } from '@/components/platform-icon';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -39,8 +43,19 @@ export function Composer({ data }: { data: ComposerData }) {
 
   const brand = data.brands.find((b) => b.id === s.brandId);
   const accounts = data.accounts.filter((a) => a.brandId === s.brandId);
-  const brandMedia = data.media.filter((m) => m.brandId === s.brandId);
-  const selectedMedia = s.mediaIds.map((id) => data.media.find((m) => m.id === id)).filter((m) => !!m);
+  // A biblioteca só é pedida ao abrir "Escolher ficheiros"; as mídias do post já vêm com a página.
+  const [library, setLibrary] = useState<MediaItem[] | null>(null);
+  const [libraryBrand, setLibraryBrand] = useState<string | null>(null);
+  const loadLibrary = async () => {
+    const r = await callSafely(() => listBrandMedia(s.brandId));
+    if (r.ok) {
+      setLibrary(r.items);
+      setLibraryBrand(s.brandId);
+    } else toast.error(r.error);
+  };
+  const known = [...(library ?? []), ...data.media];
+  const brandMedia = libraryBrand === s.brandId ? (library ?? []) : [];
+  const selectedMedia = s.mediaIds.map((id) => known.find((m) => m.id === id)).filter((m) => !!m);
   const mediaInfo: MediaInfo[] = selectedMedia.map((m) => ({
     id: m.id, kind: m.kind, mime: m.mime, sizeBytes: m.sizeBytes, width: m.width, height: m.height, durationS: m.durationS, storagePath: m.storagePath,
   }));
@@ -79,6 +94,22 @@ export function Composer({ data }: { data: ComposerData }) {
   useEffect(() => {
     latest.current = s;
   }, [s]);
+
+  // Gravação local: as alterações ficam no navegador até serem guardadas.
+  const draftKey = localDraftKey(data.initial.id ?? null);
+  const [recoverable, setRecoverable] = useState<LocalDraft<typeof s> | null>(null);
+  useEffect(() => {
+    // Só depois de montar: o servidor não conhece o navegador (evita diferenças na hidratação).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!ro) setRecoverable(readLocalDraft(window.localStorage, draftKey, data.initial, Date.now()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (ro || recoverable) return;
+    if (hasUnsavedChanges(data.initial, s)) writeLocalDraft(window.localStorage, draftKey, s, Date.now());
+    else clearLocalDraft(window.localStorage, draftKey);
+  }, [s, ro, recoverable, draftKey, data.initial]);
+  const forgetDraft = () => clearLocalDraft(window.localStorage, draftKey);
   const patchTargets = (fn: (targets: Target[]) => Target[]) => {
     setServerErrors([]);
     setS((prev) => ({ ...prev, targets: fn(prev.targets) }));
@@ -140,6 +171,7 @@ export function Composer({ data }: { data: ComposerData }) {
     start(async () => {
       const r = await callSafely(() => deletePost(s.id!));
       if (r.ok) {
+        forgetDraft();
         toast.success('Post apagado do Estúdio.');
         router.push('/calendario');
       } else toast.error(r.error);
@@ -155,6 +187,7 @@ export function Composer({ data }: { data: ComposerData }) {
     start(async () => {
       const r = await savePost({ ...s, intent });
       if (r.ok) {
+        forgetDraft();
         toast.success(intent === 'draft' ? 'Rascunho guardado.' : 'Post agendado.');
         router.push('/calendario');
       } else {
@@ -166,11 +199,19 @@ export function Composer({ data }: { data: ComposerData }) {
   if (data.brands.length === 0) return <p className="text-sm text-muted-foreground">Crie primeiro uma marca em Definições → Marcas.</p>;
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1fr_320px]">
-      <div className="space-y-6">
+    <div className="mx-auto grid max-w-5xl gap-6 pb-28 md:pb-20 lg:grid-cols-[1fr_300px]">
+      <div className="space-y-5">
         {ro && <p role="status" className="rounded-lg bg-highlight px-3 py-2 text-sm text-highlight-foreground">Este post já começou a publicar — só de leitura.</p>}
+        {recoverable && (
+          <div role="status" className="flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm">
+            <span className="flex-1">Tem alterações não guardadas de {new Date(recoverable.savedAt).toLocaleString('pt-PT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.</span>
+            <Button type="button" size="sm" onClick={() => { setS(recoverable.value); setRecoverable(null); }}>Recuperar</Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => { forgetDraft(); setRecoverable(null); }}>Descartar</Button>
+          </div>
+        )}
 
-        <section className="space-y-2" aria-label="Marca e título">
+        <section className="space-y-4 rounded-lg border bg-card p-4 shadow-xs md:p-5" aria-label="Conteúdo">
+          <h2 className="font-semibold">1. Conteúdo</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="brand">Marca</Label>
@@ -183,18 +224,19 @@ export function Composer({ data }: { data: ComposerData }) {
               <Input id="title" disabled={ro} value={s.internalTitle} maxLength={120} onChange={(e) => update({ internalTitle: e.target.value })} placeholder="Ex.: Prazos Portugal 2027" />
             </div>
           </div>
-        </section>
-
-        <section className="space-y-2" aria-label="Mídia">
-          <div className="flex items-center justify-between">
-            <h2 className="font-medium">1. Mídia</h2>
+          <div className="flex items-center justify-between" aria-label="Mídia" role="group">
+            <h3 className="text-sm font-medium">Fotos e vídeos</h3>
             {!ro && (
-              <Dialog>
+              <Dialog onOpenChange={(o) => { if (o && libraryBrand !== s.brandId) void loadLibrary(); }}>
                 <DialogTrigger asChild><Button type="button" variant="outline" size="sm">Escolher ficheiros</Button></DialogTrigger>
                 <DialogContent className="max-h-[85dvh] max-w-3xl overflow-y-auto">
                   <DialogHeader><DialogTitle>Biblioteca — {brand?.name}</DialogTitle></DialogHeader>
-                  <MediaUploader brands={brand ? [brand] : []} defaultBrandId={s.brandId} onUploaded={(ids) => update({ mediaIds: [...s.mediaIds, ...ids] })} />
-                  <MediaGrid items={brandMedia} selected={s.mediaIds} onToggle={toggleMedia} />
+                  <MediaUploader brands={brand ? [brand] : []} defaultBrandId={s.brandId} onUploaded={(ids) => { update({ mediaIds: [...s.mediaIds, ...ids] }); void loadLibrary(); }} />
+                  {libraryBrand === s.brandId ? (
+                    <MediaGrid items={brandMedia} selected={s.mediaIds} onToggle={toggleMedia} />
+                  ) : (
+                    <p role="status" className="py-8 text-center text-sm text-muted-foreground">A abrir a biblioteca…</p>
+                  )}
                 </DialogContent>
               </Dialog>
             )}
@@ -241,9 +283,9 @@ export function Composer({ data }: { data: ComposerData }) {
           />
         )}
 
-        <section className="space-y-3" aria-label="Redes">
+        <section className="space-y-4 rounded-lg border bg-card p-4 shadow-xs md:p-5" aria-label="Redes">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-medium">2. Redes e legendas</h2>
+            <h2 className="font-semibold">2. Redes e legendas</h2>
             {!ro && <HashtagGroupsMenu key={s.brandId} groups={data.hashtagGroups.filter((g) => g.brandId === s.brandId)} onPick={addGroupHashtags} />}
           </div>
           {accounts.length === 0 && (
@@ -311,8 +353,8 @@ export function Composer({ data }: { data: ComposerData }) {
           })}
         </section>
 
-        <section className="space-y-2" aria-label="Quando">
-          <h2 className="font-medium">3. Quando</h2>
+        <section className="space-y-4 rounded-lg border bg-card p-4 shadow-xs md:p-5" aria-label="Quando">
+          <h2 className="font-semibold">3. Quando</h2>
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-1">
               <Label htmlFor="date">Data</Label>
@@ -328,39 +370,44 @@ export function Composer({ data }: { data: ComposerData }) {
           {errorsFor(null).filter((e) => e.field !== 'mediaIds').map((e) => <p key={e.message} role="alert" className="text-sm text-destructive">{e.message}</p>)}
         </section>
 
-        {ro && s.id && (
-          <div className="flex flex-wrap gap-2 border-t pt-4">
-            <Button type="button" variant="outline" disabled={pending} onClick={duplicate}>Duplicar</Button>
-            {deletable && <Button type="button" variant="ghost" className="text-destructive" disabled={pending} onClick={remove}>Apagar do Estúdio</Button>}
-          </div>
-        )}
-        {!ro && (
-          <div className="flex flex-wrap gap-2 border-t pt-4">
-            <Button type="button" disabled={pending} onClick={() => submit('schedule')}>Agendar</Button>
-            <Button type="button" variant="outline" disabled={pending} onClick={() => submit('draft')}>Guardar rascunho</Button>
-            {s.id && <Button type="button" variant="outline" disabled={pending} onClick={duplicate}>Duplicar</Button>}
+        <div className="fixed inset-x-0 bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-30 border-t bg-card/95 px-4 py-3 backdrop-blur md:sticky md:bottom-0 md:mx-0 md:rounded-lg md:border md:px-4">
+          <div className="mx-auto flex max-w-5xl items-center gap-2">
+            {!ro && <Button type="button" disabled={pending} onClick={() => submit('schedule')}>Agendar</Button>}
+            {!ro && <Button type="button" variant="outline" disabled={pending} onClick={() => submit('draft')}>Guardar rascunho</Button>}
             {s.id && (
-              <Button type="button" variant="ghost" disabled={pending} onClick={() => {
-                if (!confirm('Cancelar este post?')) return;
-                start(async () => {
-                  const r = await cancelPost(s.id!);
-                  if (r.ok) { toast.success('Post cancelado.'); router.push('/calendario'); } else toast.error(r.error);
-                });
-              }}>Cancelar post</Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button type="button" variant="ghost" disabled={pending} className="ml-auto" aria-label="Mais ações">
+                    <MoreHorizontal className="size-4" aria-hidden /> Mais
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={duplicate}>Duplicar</DropdownMenuItem>
+                  {!ro && (
+                    <DropdownMenuItem onSelect={() => {
+                      if (!confirm('Cancelar este post?')) return;
+                      start(async () => {
+                        const r = await cancelPost(s.id!);
+                        if (r.ok) { forgetDraft(); toast.success('Post cancelado.'); router.push('/calendario'); } else toast.error(r.error);
+                      });
+                    }}>Cancelar post</DropdownMenuItem>
+                  )}
+                  {deletable && (ro || s.status === 'draft') && <DropdownMenuItem variant="destructive" onSelect={remove}>Apagar do Estúdio</DropdownMenuItem>}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
-            {deletable && s.status === 'draft' && <Button type="button" variant="ghost" className="text-destructive" disabled={pending} onClick={remove}>Apagar do Estúdio</Button>}
           </div>
-        )}
+        </div>
       </div>
 
-      <aside aria-label="Pré-visualização" className="space-y-3">
-        <h2 className="font-medium">Pré-visualização</h2>
+      <aside aria-label="Pré-visualização" className="space-y-3 lg:sticky lg:top-20 lg:self-start">
+        <h2 className="font-semibold">Pré-visualização</h2>
         {s.targets.length === 0 && <p className="text-sm text-muted-foreground">Escolha uma rede para ver a pré-visualização.</p>}
         {s.targets.map((t) => {
           const acc = accounts.find((a) => a.id === t.accountId);
           if (!acc) return null;
           return (
-            <div key={t.accountId} className="space-y-2 rounded-xl border p-3">
+            <div key={t.accountId} className="space-y-2 rounded-lg border bg-card p-3 shadow-xs">
               <p className="text-xs font-medium">{PLATFORM_LABEL[acc.platform]} · {FORMAT_LABEL[t.format]}</p>
               {selectedMedia[0] && <MediaThumb item={selectedMedia[0]} className={t.format === 'ig_image' || t.format === 'ig_carousel' ? '' : 'aspect-[9/16]'} />}
               {t.title && <p className="text-sm font-semibold">{t.title}</p>}

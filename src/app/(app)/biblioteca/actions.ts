@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createServerClient } from '@/lib/db/clients';
+import { listMedia, type MediaItem } from '@/lib/db/repo/media-repo';
 import type { ActionResult } from '../definicoes/actions';
 
 export async function tagMedia(id: string, tags: string[]): Promise<ActionResult> {
@@ -38,4 +39,14 @@ export async function mediaFileUrl(id: string): Promise<{ ok: true; url: string 
   const { data, error } = await db.storage.from('media').createSignedUrl(media.storage_path, 3600);
   if (error || !data?.signedUrl) return { ok: false, error: 'Não foi possível abrir o ficheiro.' };
   return { ok: true, url: data.signedUrl };
+}
+
+/** Biblioteca de uma marca para o editor de posts (carregada só quando se abre "Escolher ficheiros"). */
+export async function listBrandMedia(brandId: string): Promise<{ ok: true; items: MediaItem[] } | { ok: false; error: string }> {
+  if (!/^[0-9a-f-]{36}$/i.test(brandId)) return { ok: false, error: 'Marca não encontrada.' };
+  try {
+    return { ok: true, items: await listMedia(await createServerClient(), { brandId, limit: 300 }) };
+  } catch {
+    return { ok: false, error: 'Não foi possível abrir a biblioteca.' };
+  }
 }

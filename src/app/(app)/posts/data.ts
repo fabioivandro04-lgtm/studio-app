@@ -32,31 +32,33 @@ function tomorrowAt9(tz: string): { date: string; time: string } {
 
 export async function loadComposer(
   db: SupabaseClient,
-  opts: { postId?: string; brandId?: string | null; date?: string; mediaId?: string },
+  opts: { postId?: string; brandId?: string | null; date?: string; time?: string; mediaId?: string },
 ): Promise<ComposerData | null> {
-  // Consultas independentes em paralelo (antes eram em fila).
-  const [allBrands, { data: acc }, media, hashtagGroups] = await Promise.all([
+  // Consultas independentes em paralelo. A biblioteca completa só carrega ao abrir "Escolher ficheiros";
+  // aqui vêm apenas as mídias do post (ou a escolhida na Biblioteca).
+  const postMedia = opts.postId
+    ? db.from('post_media').select('media_id').eq('post_id', opts.postId).order('position').then(({ data }) => (data ?? []).map((m) => m.media_id as string))
+    : Promise.resolve(opts.mediaId && /^[0-9a-f-]{36}$/i.test(opts.mediaId) ? [opts.mediaId] : []);
+  const [allBrands, { data: acc }, mediaIds, hashtagGroups] = await Promise.all([
     listBrands(db),
     db.from('social_accounts').select('id, brand_id, platform, handle, status').neq('status', 'disabled').order('created_at'),
-    listMedia(db, { limit: 300 }),
+    postMedia,
     listHashtagGroups(db),
   ]);
+  const media = mediaIds.length ? await listMedia(db, { ids: mediaIds }) : [];
   const brands = allBrands.map(({ id, name, color, timezone, postingSlots }) => ({ id, name, color, timezone, hasSlots: postingSlots.length > 0 }));
   const accounts = (acc ?? []).map((a) => ({ id: a.id, brandId: a.brand_id, platform: a.platform, handle: a.handle, status: a.status }));
 
   if (opts.postId) {
     const { data: post } = await db.from('posts').select('*').eq('id', opts.postId).single();
     if (!post) return null;
-    const [{ data: pm }, { data: targets }] = await Promise.all([
-      db.from('post_media').select('media_id').eq('post_id', post.id).order('position'),
-      db.from('post_targets').select('social_account_id, format, caption, title, status').eq('post_id', post.id),
-    ]);
+    const { data: targets } = await db.from('post_targets').select('social_account_id, format, caption, title, status').eq('post_id', post.id);
     const tz = brands.find((b) => b.id === post.brand_id)?.timezone ?? 'Africa/Maputo';
     const when = post.scheduled_at ? utcToLocalParts(new Date(post.scheduled_at), tz) : tomorrowAt9(tz);
     return {
       brands, accounts, media, hashtagGroups,
       initial: {
-        id: post.id, brandId: post.brand_id, internalTitle: post.internal_title, mediaIds: (pm ?? []).map((m) => m.media_id), ...when,
+        id: post.id, brandId: post.brand_id, internalTitle: post.internal_title, mediaIds, ...when,
         targets: (targets ?? []).map((t) => ({ accountId: t.social_account_id, format: t.format, caption: t.caption, title: t.title })),
         locked: !['draft', 'scheduled'].includes(post.status) || (targets ?? []).some((t) => t.status !== 'pending'),
         status: post.status,
@@ -72,7 +74,8 @@ export async function loadComposer(
     brands, accounts, media, hashtagGroups,
     initial: {
       brandId, internalTitle: '', mediaIds: fromMedia ? [fromMedia.id] : [], targets: [], locked: false,
-      date: opts.date && /^\d{4}-\d{2}-\d{2}$/.test(opts.date) ? opts.date : when.date, time: when.time,
+      date: opts.date && /^\d{4}-\d{2}-\d{2}$/.test(opts.date) ? opts.date : when.date,
+      time: opts.time && /^([01]\d|2[0-3]):[0-5]\d$/.test(opts.time) ? opts.time : when.time,
     },
   };
 }

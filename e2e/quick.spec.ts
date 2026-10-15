@@ -37,7 +37,8 @@ test.afterEach(async () => {
 test('duplicar abre a cópia', async ({ page }) => {
   const id = await draft(page, 'Original');
   await page.goto(`/posts/${id}`);
-  await page.getByRole('button', { name: 'Duplicar' }).click();
+  await page.getByRole('button', { name: 'Mais ações' }).click();
+  await page.getByRole('menuitem', { name: 'Duplicar' }).click();
   await page.waitForURL((u) => /\/posts\/[0-9a-f-]{36}$/.test(u.pathname) && !u.pathname.endsWith(id));
   await expect(page.getByLabel('Título interno (só para si)')).toHaveValue('Original (cópia)');
 });

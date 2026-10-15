@@ -17,6 +17,7 @@ async function openComposerWithInstagram(page: Page) {
 }
 
 async function generate(page: Page) {
+  await page.getByRole('button', { name: 'Sugerir com IA' }).click();
   const panel = page.getByRole('region', { name: 'Assistente' });
   await panel.getByLabel('Sobre o que é este post?').fill('prazos Lisboa 2027, vagas para Angola');
   await panel.getByRole('button', { name: 'Gerar' }).click();

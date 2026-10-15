@@ -7,11 +7,11 @@ import { loadComposer } from '../data';
 // Os pedidos à IA (server actions desta página) podem demorar até ~45 s.
 export const maxDuration = 60;
 
-export default async function NovoPostPage({ searchParams }: { searchParams: Promise<{ data?: string; midia?: string }> }) {
-  const { data: date, midia } = await searchParams;
+export default async function NovoPostPage({ searchParams }: { searchParams: Promise<{ data?: string; hora?: string; midia?: string }> }) {
+  const { data: date, hora, midia } = await searchParams;
   const db = await createServerClient();
   const brandId = await selectedBrandId(await listBrands(db));
-  const data = await loadComposer(db, { brandId, date, mediaId: midia });
+  const data = await loadComposer(db, { brandId, date, time: hora, mediaId: midia });
   if (!data) notFound();
   return (
     <>

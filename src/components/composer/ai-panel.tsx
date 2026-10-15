@@ -31,6 +31,7 @@ export function AiPanel(p: AiPanelProps) {
   const [result, setResult] = useState<Suggestions | null>(null);
   const [chosen, setChosen] = useState<Record<string, boolean>>({});
   const [pending, start] = useTransition();
+  const [open, setOpen] = useState(false);
 
   const generate = () =>
     start(async () => {
@@ -43,11 +44,22 @@ export function AiPanel(p: AiPanelProps) {
 
   const key = (platform: Platform, tag: string) => `${platform}:${tag}`;
 
+  if (!open) {
+    return (
+      <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)} aria-expanded={false}>
+        <Bot className="size-4" aria-hidden /> Sugerir com IA
+      </Button>
+    );
+  }
+
   return (
     <section aria-label="Assistente" className="space-y-3 rounded-lg border bg-card p-4 shadow-xs">
-      <h2 className="flex items-center gap-2 font-medium">
-        <Bot className="size-4 text-muted-foreground" aria-hidden /> Sugerir com IA
-      </h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 font-semibold">
+          <Bot className="size-4 text-muted-foreground" aria-hidden /> Sugerir com IA
+        </h2>
+        <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)} aria-expanded>Fechar</Button>
+      </div>
       <div className="space-y-1">
         <Label htmlFor="ai-prompt">Sobre o que é este post?</Label>
         <Textarea
