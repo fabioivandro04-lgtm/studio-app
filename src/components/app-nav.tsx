@@ -1,12 +1,13 @@
 'use client';
 
-import { BarChart3, CalendarDays, Images, Inbox, Settings } from 'lucide-react';
+import { BarChart3, CalendarDays, Images, Inbox, Lightbulb, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 const ITEMS = [
   { href: '/calendario', label: 'Calendário', icon: CalendarDays },
+  { href: '/ideias', label: 'Ideias', icon: Lightbulb },
   { href: '/biblioteca', label: 'Biblioteca', icon: Images },
   { href: '/pendentes', label: 'Pendentes', icon: Inbox },
   { href: '/metricas', label: 'Métricas', icon: BarChart3 },
