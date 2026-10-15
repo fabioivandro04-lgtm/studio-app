@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { cancelPost, savePost } from '@/app/(app)/posts/actions';
+import { cancelPost, duplicatePost, savePost } from '@/app/(app)/posts/actions';
 import type { ComposerData } from '@/app/(app)/posts/data';
 import { MediaGrid } from '@/components/media/media-grid';
 import { MediaThumb } from '@/components/media/media-thumb';
@@ -18,8 +18,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FORMAT_PLATFORM, PLATFORM_LABEL, type MediaInfo, type Platform, type TargetFormat } from '@/lib/platforms/types';
 import { aiPlatformsFor, appendHashtags, restoreCaptions, setCaption, snapshotCaptions, type CaptionSnapshot } from '@/lib/posts/caption-edits';
+import { callSafely } from '@/lib/ai/call-safely';
 import { AiPanel } from './ai-panel';
 import { BestTime } from './best-time';
+import { HashtagGroupsMenu } from './hashtag-groups-menu';
 import { RefineMenu } from './refine-menu';
 import { checkPost, defaultFormat, FORMAT_LABEL, type PostError } from '@/lib/posts/schema';
 
@@ -109,6 +111,24 @@ export function Composer({ data }: { data: ComposerData }) {
     patchTargets((ts) => ts.map((t) => (ids.includes(t.accountId) ? { ...t, caption: appendHashtags(t.caption, tags) } : t)));
     withUndo(snap, 'Hashtags adicionadas.');
   };
+  const addGroupHashtags = (tags: string[]) => {
+    const ids = latest.current.targets.map((t) => t.accountId);
+    if (ids.length === 0) {
+      toast.error('Escolha primeiro uma rede.');
+      return;
+    }
+    const snap = snapshotCaptions(latest.current.targets, ids);
+    patchTargets((ts) => ts.map((t) => ({ ...t, caption: appendHashtags(t.caption, tags) })));
+    withUndo(snap, 'Hashtags adicionadas.');
+  };
+  const duplicate = () =>
+    start(async () => {
+      const r = await callSafely(() => duplicatePost(s.id!));
+      if (r.ok) {
+        toast.success('Cópia criada.');
+        router.push(`/posts/${r.id}`);
+      } else toast.error(r.error);
+    });
   const replaceCaptionFromAi = (accountId: string, next: string) => {
     const snap = snapshotCaptions(latest.current.targets, [accountId]);
     patchTargets((ts) => setCaption(ts, accountId, next));
@@ -206,7 +226,10 @@ export function Composer({ data }: { data: ComposerData }) {
         )}
 
         <section className="space-y-3" aria-label="Redes">
-          <h2 className="font-medium">2. Redes e legendas</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-medium">2. Redes e legendas</h2>
+            {!ro && <HashtagGroupsMenu key={s.brandId} groups={data.hashtagGroups.filter((g) => g.brandId === s.brandId)} onPick={addGroupHashtags} />}
+          </div>
           {accounts.length === 0 && (
             <p className="rounded-lg bg-brand-amber/15 px-3 py-2 text-sm">
               Esta marca ainda não tem redes ligadas.{' '}
@@ -289,10 +312,16 @@ export function Composer({ data }: { data: ComposerData }) {
           {errorsFor(null).filter((e) => e.field !== 'mediaIds').map((e) => <p key={e.message} role="alert" className="text-sm text-destructive">{e.message}</p>)}
         </section>
 
+        {ro && s.id && (
+          <div className="border-t pt-4">
+            <Button type="button" variant="outline" disabled={pending} onClick={duplicate}>Duplicar</Button>
+          </div>
+        )}
         {!ro && (
           <div className="flex flex-wrap gap-2 border-t pt-4">
             <Button type="button" disabled={pending} onClick={() => submit('schedule')}>Agendar</Button>
             <Button type="button" variant="outline" disabled={pending} onClick={() => submit('draft')}>Guardar rascunho</Button>
+            {s.id && <Button type="button" variant="outline" disabled={pending} onClick={duplicate}>Duplicar</Button>}
             {s.id && (
               <Button type="button" variant="ghost" disabled={pending} onClick={() => {
                 if (!confirm('Cancelar este post?')) return;

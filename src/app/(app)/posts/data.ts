@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { listBrands } from '@/lib/db/repo/brands-repo';
+import { listHashtagGroups, type HashtagGroup } from '@/lib/db/repo/hashtag-groups-repo';
 import { listMedia, type MediaItem } from '@/lib/db/repo/media-repo';
 import type { Platform, TargetFormat } from '@/lib/platforms/types';
 import { utcToLocalParts } from '@/lib/time/zone';
@@ -17,7 +18,8 @@ export interface ComposerInitial {
   status?: string;
 }
 export interface ComposerData {
-  brands: { id: string; name: string; color: string; timezone: string }[];
+  brands: { id: string; name: string; color: string; timezone: string; hasSlots: boolean }[];
+  hashtagGroups: HashtagGroup[];
   accounts: ComposerAccount[];
   media: MediaItem[];
   initial: ComposerInitial;
@@ -32,10 +34,15 @@ export async function loadComposer(
   db: SupabaseClient,
   opts: { postId?: string; brandId?: string | null; date?: string; mediaId?: string },
 ): Promise<ComposerData | null> {
-  const brands = (await listBrands(db)).map(({ id, name, color, timezone }) => ({ id, name, color, timezone }));
-  const { data: acc } = await db.from('social_accounts').select('id, brand_id, platform, handle, status').neq('status', 'disabled').order('created_at');
+  // Consultas independentes em paralelo (antes eram em fila).
+  const [allBrands, { data: acc }, media, hashtagGroups] = await Promise.all([
+    listBrands(db),
+    db.from('social_accounts').select('id, brand_id, platform, handle, status').neq('status', 'disabled').order('created_at'),
+    listMedia(db, { limit: 300 }),
+    listHashtagGroups(db),
+  ]);
+  const brands = allBrands.map(({ id, name, color, timezone, postingSlots }) => ({ id, name, color, timezone, hasSlots: postingSlots.length > 0 }));
   const accounts = (acc ?? []).map((a) => ({ id: a.id, brandId: a.brand_id, platform: a.platform, handle: a.handle, status: a.status }));
-  const media = await listMedia(db, { limit: 300 });
 
   if (opts.postId) {
     const { data: post } = await db.from('posts').select('*').eq('id', opts.postId).single();
@@ -47,7 +54,7 @@ export async function loadComposer(
     const tz = brands.find((b) => b.id === post.brand_id)?.timezone ?? 'Africa/Maputo';
     const when = post.scheduled_at ? utcToLocalParts(new Date(post.scheduled_at), tz) : tomorrowAt9(tz);
     return {
-      brands, accounts, media,
+      brands, accounts, media, hashtagGroups,
       initial: {
         id: post.id, brandId: post.brand_id, internalTitle: post.internal_title, mediaIds: (pm ?? []).map((m) => m.media_id), ...when,
         targets: (targets ?? []).map((t) => ({ accountId: t.social_account_id, format: t.format, caption: t.caption, title: t.title })),
@@ -62,7 +69,7 @@ export async function loadComposer(
   const tz = brands.find((b) => b.id === brandId)?.timezone ?? 'Africa/Maputo';
   const when = tomorrowAt9(tz);
   return {
-    brands, accounts, media,
+    brands, accounts, media, hashtagGroups,
     initial: {
       brandId, internalTitle: '', mediaIds: fromMedia ? [fromMedia.id] : [], targets: [], locked: false,
       date: opts.date && /^\d{4}-\d{2}-\d{2}$/.test(opts.date) ? opts.date : when.date, time: when.time,
