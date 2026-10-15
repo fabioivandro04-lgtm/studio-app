@@ -60,6 +60,7 @@ export function createMetricsRepo(db: SupabaseClient, tokenKey: string): Metrics
           {
             post_target_id: targetId, collected_on: day, views: m.views, reach: m.reach, likes: m.likes, comments: m.comments,
             shares: m.shares, saves: m.saves, watch_time_s: m.watchTimeS, raw: m.raw ?? null,
+            profile_visits: m.profileVisits ?? null, follows: m.follows ?? null,
           },
           { onConflict: 'post_target_id,collected_on' },
         ),

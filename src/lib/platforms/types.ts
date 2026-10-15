@@ -104,6 +104,9 @@ export interface PostMetrics {
   watchTimeS: number | null;
   isPublic: boolean | null;
   raw: unknown;
+  /** Só Instagram: visitas ao perfil e seguidores ganhos a partir do post. */
+  profileVisits?: number | null;
+  follows?: number | null;
 }
 
 export interface AccountMetrics {

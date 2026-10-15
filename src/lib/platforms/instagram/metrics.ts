@@ -24,14 +24,23 @@ export async function igPostMetrics(
       if (e instanceof PermanentError) continue; // ex.: métrica não suportada para este tipo de mídia
       throw e;
     }
-    const v = (name: string): number | null => {
-      const item = (res.data ?? []).find((d: any) => d.name === name);
+    // Métricas de "contactos": nem todos os tipos de mídia as têm, por isso pedem-se à parte e ignora-se qualquer erro.
+    let extra: any = null;
+    try {
+      extra = await api.get(`/${id}/insights`, { metric: 'profile_visits,follows' });
+    } catch {
+      extra = null;
+    }
+    const pick = (src: any, name: string): number | null => {
+      const item = (src?.data ?? []).find((d: any) => d.name === name);
       const value = item?.values?.[0]?.value ?? item?.total_value?.value;
       return typeof value === 'number' ? value : null;
     };
+    const v = (name: string) => pick(res, name);
     out[id] = {
       views: v('views'), reach: v('reach'), likes: v('likes'), comments: v('comments'), shares: v('shares'),
-      saves: v('saved'), watchTimeS: null, isPublic: true, raw: res,
+      saves: v('saved'), watchTimeS: null, isPublic: true, raw: extra ? { ...res, extra } : res,
+      profileVisits: pick(extra, 'profile_visits'), follows: pick(extra, 'follows'),
     };
   }
   return out;

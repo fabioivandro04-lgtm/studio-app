@@ -69,6 +69,28 @@ describe('Instagram métricas', () => {
     expect(r.m2).toBeUndefined();
   });
 
+  it('insights extra: profile_visits e follows', async () => {
+    const fetch = fakeFetch([
+      ['GET', /\/m1\/insights/, (c) =>
+        c.params.metric === 'profile_visits,follows'
+          ? { data: [{ name: 'profile_visits', values: [{ value: 7 }] }, { name: 'follows', values: [{ value: 2 }] }] }
+          : { data: [{ name: 'reach', values: [{ value: 100 }] }] }],
+    ]);
+    const r = await adapter.fetchPostMetrics(acct, ['m1'], { fetch });
+    expect(r.m1).toMatchObject({ reach: 100, profileVisits: 7, follows: 2 });
+  });
+
+  it('insights extra falham → campos nulos e métricas base mantêm-se', async () => {
+    const fetch = fakeFetch([
+      ['GET', /\/m1\/insights/, (c) =>
+        c.params.metric === 'profile_visits,follows'
+          ? new Response(JSON.stringify({ error: { message: 'unsupported metric' } }), { status: 400 })
+          : { data: [{ name: 'reach', values: [{ value: 100 }] }] }],
+    ]);
+    const r = await adapter.fetchPostMetrics(acct, ['m1'], { fetch });
+    expect(r.m1).toMatchObject({ reach: 100, profileVisits: null, follows: null });
+  });
+
   it('listRecentPosts filtra pela data', async () => {
     const fetch = fakeFetch([['GET', /\/IG1\/media\?/, () => ({ data: [
       { id: 'a', timestamp: '2026-10-15T09:00:00+0000', permalink: 'pa', caption: 'x' },
