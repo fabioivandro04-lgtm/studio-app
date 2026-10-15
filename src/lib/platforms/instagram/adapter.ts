@@ -31,7 +31,7 @@ async function checkPublishingLimit(api: Api, igId: string, now: Date) {
   }
 }
 
-async function mediaUrlParam(m: MediaInfo, deps: AdvanceDeps) {
+async function mediaUrlParam(m: MediaInfo, deps: AdvanceDeps): Promise<Record<string, string>> {
   const url = await deps.storage.signedUrl(m.storagePath, URL_TTL_S);
   return m.kind === 'video' ? { video_url: url } : { image_url: url };
 }

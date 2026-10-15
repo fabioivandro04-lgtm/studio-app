@@ -107,11 +107,11 @@ describe('instagramAdapter.advance', () => {
     let ch2 = 'IN_PROGRESS';
     route(['GET', /\/ch1\?/, () => ({ status_code: 'FINISHED' })]);
     route(['GET', /\/ch2\?/, () => ({ status_code: ch2 })]);
-    const r2 = await adapter.advance({ ...t, progress: (r1 as { progress: object }).progress }, acct, deps);
+    const r2 = await adapter.advance({ ...t, progress: (r1 as { progress: Record<string, unknown> }).progress }, acct, deps);
     expect(r2).toMatchObject({ progress: { step: 'children' } });
 
     ch2 = 'FINISHED';
-    const r3 = await adapter.advance({ ...t, progress: (r2 as { progress: object }).progress }, acct, deps);
+    const r3 = await adapter.advance({ ...t, progress: (r2 as { progress: Record<string, unknown> }).progress }, acct, deps);
     expect(r3).toMatchObject({ progress: { step: 'container', containerId: 'parent' } });
     const parent = fetch.calls.filter((c) => c.method === 'POST').at(-1)!;
     expect(parent.params).toMatchObject({ media_type: 'CAROUSEL', children: 'ch1,ch2', caption: 'Olá #uni' });
