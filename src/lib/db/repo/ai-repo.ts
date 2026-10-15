@@ -14,15 +14,36 @@ interface MetricRow {
   shares: number | null; saves: number | null; comments: number | null;
 }
 
-/** Destino publicado → ponto do histórico com a métrica mais recente; null sem dados. */
+/** Destino publicado → ponto do histórico com o último valor conhecido de cada métrica; null sem dados. */
 export function toHistoryPoint(row: { published_at: string | null; post_metrics: MetricRow[] }): HistoryPoint | null {
   if (!row.published_at || row.post_metrics.length === 0) return null;
-  const m = [...row.post_metrics].sort((a, b) => String(b.collected_on).localeCompare(String(a.collected_on)))[0];
+  const rows = [...row.post_metrics].sort((a, b) => String(b.collected_on).localeCompare(String(a.collected_on)));
+  const latest = (k: keyof Omit<MetricRow, 'collected_on'>) => num(rows.find((r) => r[k] != null)?.[k] ?? null);
   return {
     publishedAt: new Date(row.published_at),
-    reach: num(m.reach), views: num(m.views), profileVisits: num(m.profile_visits), follows: num(m.follows),
-    shares: num(m.shares), saves: num(m.saves), comments: num(m.comments),
+    reach: latest('reach'), views: latest('views'), profileVisits: latest('profile_visits'), follows: latest('follows'),
+    shares: latest('shares'), saves: latest('saves'), comments: latest('comments'),
   };
+}
+
+const FIELDS = ['reach', 'views', 'profileVisits', 'follows', 'shares', 'saves', 'comments'] as const;
+
+/** Um ponto por post (soma os destinos de várias redes); assim um post em 3 redes conta uma vez. */
+export function toHistoryPoints(rows: { post_id: string; published_at: string | null; post_metrics: MetricRow[] }[]): HistoryPoint[] {
+  const byPost = new Map<string, HistoryPoint>();
+  for (const r of rows) {
+    const p = toHistoryPoint(r);
+    if (!p) continue;
+    const prev = byPost.get(r.post_id);
+    if (!prev) {
+      byPost.set(r.post_id, p);
+      continue;
+    }
+    const merged: HistoryPoint = { ...prev, publishedAt: p.publishedAt < prev.publishedAt ? p.publishedAt : prev.publishedAt };
+    for (const f of FIELDS) merged[f] = prev[f] == null && p[f] == null ? null : (prev[f] ?? 0) + (p[f] ?? 0);
+    byPost.set(r.post_id, merged);
+  }
+  return [...byPost.values()];
 }
 
 export async function loadAiSettings(db: SupabaseClient): Promise<{ model: string; limitUsd: number }> {
@@ -54,7 +75,7 @@ export async function bestTimeInputs(
   const [published, scheduled] = await Promise.all([
     db
       .from('post_targets')
-      .select('published_at, posts!inner(brand_id), post_metrics(collected_on, reach, views, profile_visits, follows, shares, saves, comments)')
+      .select('post_id, published_at, posts!inner(brand_id), post_metrics(collected_on, reach, views, profile_visits, follows, shares, saves, comments)')
       .eq('status', 'published')
       .eq('posts.brand_id', brandId)
       .not('published_at', 'is', null)
@@ -68,9 +89,7 @@ export async function bestTimeInputs(
       .gte('scheduled_at', new Date(now.getTime() - 3 * 3_600_000).toISOString())
       .lte('scheduled_at', new Date(now.getTime() + 9 * 86_400_000).toISOString()),
   ]);
-  const history = ((published.data ?? []) as unknown as { published_at: string; post_metrics: MetricRow[] }[])
-    .map(toHistoryPoint)
-    .filter((p): p is HistoryPoint => !!p);
+  const history = toHistoryPoints((published.data ?? []) as unknown as { post_id: string; published_at: string; post_metrics: MetricRow[] }[]);
   const busy = (scheduled.data ?? []).filter((p) => p.id !== excludePostId && p.scheduled_at).map((p) => new Date(p.scheduled_at));
   return { history, busy };
 }
