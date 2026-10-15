@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AiSettingsInput, BrandAiInput, BrandInput, TIMEZONES } from './schema';
+import { AiSettingsInput, BrandAiInput, BrandInput, HashtagGroupInput, parseTags, TIMEZONES } from './schema';
 
 describe('BrandInput', () => {
   it('padrão de fuso é Africa/Maputo', () => {
@@ -85,5 +85,22 @@ describe('BrandAiInput — horários fixos', () => {
   it('aceita horários válidos e recusa repetidos', () => {
     expect(BrandAiInput.safeParse({ ...ok, postingSlots: [{ weekday: 1, time: '19:00' }] }).success).toBe(true);
     expect(BrandAiInput.safeParse({ ...ok, postingSlots: [{ weekday: 1, time: '19:00' }, { weekday: 1, time: '19:00' }] }).error?.issues[0].message).toBe('Horário repetido.');
+  });
+});
+
+describe('grupos de hashtags', () => {
+  it('parseTags: vírgulas/espaços, acrescenta #, sem repetidas', () => {
+    expect(parseTags('bolsas, #Estudar  #bolsas\n#estudar')).toEqual(['#bolsas', '#Estudar']);
+    expect(parseTags('  ')).toEqual([]);
+  });
+
+  it('HashtagGroupInput valida nome e hashtags', () => {
+    const err = (v: Record<string, unknown>) => HashtagGroupInput.safeParse({ brandId: '6f1c2a3b-1234-4abc-8def-0123456789ab', name: 'Bolsas', tags: '#a', ...v }).error?.issues[0].message;
+    expect(err({})).toBeUndefined();
+    expect(err({ name: '  ' })).toBe('Dê um nome ao grupo.');
+    expect(err({ name: 'x'.repeat(41) })).toBe('O nome pode ter no máximo 40 caracteres.');
+    expect(err({ tags: ' , ' })).toBe('Escreva pelo menos uma hashtag.');
+    expect(err({ tags: Array.from({ length: 31 }, (_, i) => `#t${i}`).join(' ') })).toBe('No máximo 30 hashtags por grupo.');
+    expect(err({ tags: '#ok #não-vale' })).toBe('Hashtag inválida: #não-vale');
   });
 });

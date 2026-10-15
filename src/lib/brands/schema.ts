@@ -44,3 +44,37 @@ export const AiSettingsInput = z.object({
   limitUsd: z.number({ message: 'Escreva um limite em USD.' }).min(0, 'O limite não pode ser negativo.').max(1000, 'O limite máximo é 1000 USD.'),
 });
 export type AiSettingsInput = z.infer<typeof AiSettingsInput>;
+
+/** Texto livre ("bolsas, #estudar #bolsas") → hashtags com #, sem repetidas (ignora maiúsculas). */
+export function parseTags(text: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of text.split(/[\s,]+/)) {
+    const body = raw.replace(/^#+/, '');
+    if (!body) continue;
+    const tag = `#${body}`;
+    if (seen.has(tag.toLowerCase())) continue;
+    seen.add(tag.toLowerCase());
+    out.push(tag);
+  }
+  return out;
+}
+
+export const HashtagGroupInput = z.object({
+  id: z.guid().optional(),
+  brandId: z.guid({ message: 'Escolha uma marca.' }),
+  name: z.string().trim().min(1, 'Dê um nome ao grupo.').max(40, 'O nome pode ter no máximo 40 caracteres.'),
+  tags: z
+    .string()
+    .transform(parseTags)
+    .pipe(
+      z
+        .array(z.string())
+        .min(1, 'Escreva pelo menos uma hashtag.')
+        .max(30, 'No máximo 30 hashtags por grupo.')
+        .superRefine((tags, ctx) => {
+          const bad = tags.find((t) => !/^#[\p{L}\p{N}_]+$/u.test(t));
+          if (bad) ctx.addIssue({ code: 'custom', message: `Hashtag inválida: ${bad}` });
+        }),
+    ),
+});

@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { TIMEZONES } from '@/lib/brands/schema';
 import { deleteBrand, saveBrand } from '../actions';
 import { BrandAiSection, type BrandAiForm } from './brand-ai-section';
+import { HashtagGroupsSection } from './hashtag-groups-section';
+import type { HashtagGroup } from '@/lib/db/repo/hashtag-groups-repo';
 
 type BrandForm = { id?: string; name: string; color: string; timezone: string };
 const EMPTY: BrandForm = { name: '', color: '#0B1F45', timezone: 'Africa/Maputo' };
@@ -86,14 +88,15 @@ function BrandRow({ initial, onDone }: { initial: BrandForm; onDone?: () => void
   );
 }
 
-export function BrandsEditor({ brands }: { brands: (BrandForm & { ai: BrandAiForm })[] }) {
+export function BrandsEditor({ brands }: { brands: (BrandForm & { ai: BrandAiForm; groups: HashtagGroup[] })[] }) {
   return (
     <div className="space-y-4">
       {brands.length === 0 && <p className="text-sm text-muted-foreground">Ainda não tem marcas. Crie a primeira abaixo.</p>}
-      {brands.map(({ ai, ...b }) => (
+      {brands.map(({ ai, groups, ...b }) => (
         <div key={b.id} className="space-y-2">
           <BrandRow initial={b} />
           <BrandAiSection initial={ai} />
+          <HashtagGroupsSection brandId={b.id!} groups={groups} />
         </div>
       ))}
       <h2 className="pt-2 font-medium">Nova marca</h2>

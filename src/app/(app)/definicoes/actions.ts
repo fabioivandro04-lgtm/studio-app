@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { normalizeHashtag } from '@/lib/ai/schemas';
-import { BrandAiInput, BrandInput } from '@/lib/brands/schema';
+import { BrandAiInput, BrandInput, HashtagGroupInput } from '@/lib/brands/schema';
 import { createServerClient, createServiceClient } from '@/lib/db/clients';
 import { countOpenTargets } from '@/lib/db/repo/accounts-repo';
 
@@ -80,5 +80,26 @@ export async function disconnectAccount(id: string): Promise<ActionResult> {
           .eq('id', id);
   if (res.error) return { ok: false, error: 'Não foi possível desligar a conta.' };
   revalidatePath('/', 'layout');
+  return { ok: true };
+}
+
+export async function saveHashtagGroup(input: { id?: string; brandId: string; name: string; tags: string }): Promise<ActionResult> {
+  const parsed = HashtagGroupInput.safeParse(input);
+  if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
+  const { id, brandId, name, tags } = parsed.data;
+  const db = await createServerClient();
+  const res = id
+    ? await db.from('hashtag_groups').update({ name, tags }).eq('id', id).select('id')
+    : await db.from('hashtag_groups').insert({ brand_id: brandId, name, tags }).select('id');
+  if (res.error || !res.data?.length) return { ok: false, error: 'Não foi possível guardar o grupo.' };
+  revalidatePath('/definicoes/marcas');
+  return { ok: true };
+}
+
+export async function deleteHashtagGroup(id: string): Promise<ActionResult> {
+  const db = await createServerClient();
+  const { error } = await db.from('hashtag_groups').delete().eq('id', id);
+  if (error) return { ok: false, error: 'Não foi possível apagar o grupo.' };
+  revalidatePath('/definicoes/marcas');
   return { ok: true };
 }
