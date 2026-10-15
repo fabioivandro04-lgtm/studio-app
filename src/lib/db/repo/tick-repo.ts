@@ -124,3 +124,24 @@ export function createTickRepo(db: SupabaseClient, tokenKey: string): TickRepo {
     },
   };
 }
+
+/** Contas ativas com tokens, para os jobs diários (tokens e métricas). */
+export async function listActiveAccounts(db: SupabaseClient) {
+  const rows: Row[] = check(
+    await db
+      .from('social_accounts')
+      .select('id, brand_id, platform, external_id, access_token_enc, refresh_token_enc, token_expires_at, token_updated_at')
+      .eq('status', 'active'),
+    'social_accounts',
+  );
+  return rows.map((a) => ({
+    id: a.id as string,
+    brandId: a.brand_id as string,
+    platform: a.platform,
+    externalId: a.external_id as string,
+    accessTokenEnc: a.access_token_enc as string,
+    refreshTokenEnc: (a.refresh_token_enc ?? null) as string | null,
+    tokenExpiresAt: a.token_expires_at ? new Date(a.token_expires_at) : null,
+    tokenUpdatedAt: new Date(a.token_updated_at),
+  }));
+}
