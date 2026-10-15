@@ -8,6 +8,7 @@ import { deleteMedia, tagMedia } from '@/app/(app)/biblioteca/actions';
 import type { MediaItem } from '@/lib/db/repo/media-repo';
 import { cn } from '@/lib/utils';
 import { MediaThumb } from './media-thumb';
+import { MediaViewer } from './media-viewer';
 
 /** Grelha de mídia. Em modo de seleção (`selected` + `onToggle`) serve de seletor no criador de posts. */
 export function MediaGrid({ items, selected, onToggle }: { items: MediaItem[]; selected?: string[]; onToggle?: (id: string) => void }) {
@@ -50,7 +51,7 @@ export function MediaGrid({ items, selected, onToggle }: { items: MediaItem[]; s
                 )}
               </button>
             ) : (
-              <MediaThumb item={m} />
+              <MediaViewer item={m} showCreatePost />
             )}
             <p className="truncate text-xs" title={m.originalName ?? ''}>
               {m.originalName ?? m.storagePath.split('/').pop()}

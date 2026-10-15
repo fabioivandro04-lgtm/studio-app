@@ -10,6 +10,7 @@ import type { ComposerData } from '@/app/(app)/posts/data';
 import { MediaGrid } from '@/components/media/media-grid';
 import { MediaThumb } from '@/components/media/media-thumb';
 import { MediaUploader } from '@/components/media/media-uploader';
+import { MediaViewer } from '@/components/media/media-viewer';
 import { PlatformIcon } from '@/components/platform-icon';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -204,7 +205,7 @@ export function Composer({ data }: { data: ComposerData }) {
             <ol className="flex flex-wrap gap-2">
               {selectedMedia.map((m, i) => (
                 <li key={m.id} className="w-24 space-y-1">
-                  <MediaThumb item={m} />
+                  <MediaViewer item={m} />
                   {!ro && selectedMedia.length > 1 && (
                     <div className="flex justify-between text-xs">
                       <button type="button" disabled={i === 0} aria-label="Mover para a esquerda" onClick={() => { const a = [...s.mediaIds]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; update({ mediaIds: a }); }}>←</button>

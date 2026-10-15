@@ -28,3 +28,14 @@ export async function deleteMedia(id: string): Promise<ActionResult> {
   revalidatePath('/biblioteca');
   return { ok: true };
 }
+
+/** Link temporário (1 h) para ver o ficheiro original (foto ou vídeo). */
+export async function mediaFileUrl(id: string): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: false, error: 'Ficheiro não encontrado.' };
+  const db = await createServerClient();
+  const { data: media } = await db.from('media_assets').select('storage_path').eq('id', id).maybeSingle();
+  if (!media) return { ok: false, error: 'Ficheiro não encontrado.' };
+  const { data, error } = await db.storage.from('media').createSignedUrl(media.storage_path, 3600);
+  if (error || !data?.signedUrl) return { ok: false, error: 'Não foi possível abrir o ficheiro.' };
+  return { ok: true, url: data.signedUrl };
+}
