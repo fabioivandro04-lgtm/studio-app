@@ -24,14 +24,22 @@ async function generate(page: Page) {
   return panel;
 }
 
+let originalLimit = 5;
+
+/** Secção "Assistente de IA" da marca de teste (não a primeira marca da conta). */
+const aiSectionOf = (page: Page) =>
+  page.getByRole('form', { name: `Marca ${brand.name}` }).locator('xpath=..').getByRole('group', { name: 'Assistente de IA' });
+
 test.beforeEach(async ({ page, context }) => {
+  const { data } = await admin().from('app_settings').select('ai_monthly_limit_usd').eq('id', true).single();
+  originalLimit = Number(data?.ai_monthly_limit_usd ?? 5);
   brand = await createTestBrand();
   await context.addCookies([{ name: 'brand', value: brand.id, url: process.env.E2E_BASE_URL ?? 'http://localhost:3000' }]);
   await loginAsOwner(page);
 });
 test.afterEach(async () => {
   await cleanupBrand(brand.id);
-  await admin().from('app_settings').update({ ai_monthly_limit_usd: 5 }).eq('id', true);
+  await admin().from('app_settings').update({ ai_monthly_limit_usd: originalLimit }).eq('id', true);
 });
 
 test('gera sugestões e usa legenda e hashtags', async ({ page }) => {
@@ -85,9 +93,9 @@ test('melhor hora preenche data e hora', async ({ page }) => {
   await expect(page.getByLabel('Hora')).toHaveValue(time!);
 });
 
-test('contexto, voz e objetivo da marca', async ({ page }) => {
+test('sem Instagram ligado, o rascunho da voz está desativado', async ({ page }) => {
   await page.goto('/definicoes/marcas');
-  const section = page.getByRole('group', { name: 'Assistente de IA' }).first();
+  const section = aiSectionOf(page);
   await section.locator('summary').click();
   await expect(section.getByRole('button', { name: '✨ Criar a partir do Instagram' })).toBeDisabled();
   await expect(section.getByText('Ligue o Instagram desta marca primeiro.')).toBeVisible();
@@ -95,8 +103,7 @@ test('contexto, voz e objetivo da marca', async ({ page }) => {
 
 test('guardar contexto e objetivo persiste', async ({ page }) => {
   await page.goto('/definicoes/marcas');
-  const form = page.getByRole('form', { name: `Marca ${brand.name}` }).locator('xpath=..');
-  const section = form.getByRole('group', { name: 'Assistente de IA' });
+  const section = aiSectionOf(page);
   await section.locator('summary').click();
   await section.getByLabel('Contexto da empresa').fill('Consultoria de candidaturas em Maputo.');
   await section.getByLabel('Objetivo').selectOption('reach');
@@ -104,4 +111,17 @@ test('guardar contexto e objetivo persiste', async ({ page }) => {
   await expect(page.getByText('Definições de IA guardadas.')).toBeVisible();
   const { data } = await admin().from('brands').select('ai_context, goal').eq('id', brand.id).single();
   expect(data).toEqual({ ai_context: 'Consultoria de candidaturas em Maputo.', goal: 'reach' });
+});
+
+test('voz da marca rascunhada a partir do Instagram e guardada', async ({ page }) => {
+  await connectInstagram(page);
+  await page.goto('/definicoes/marcas');
+  const section = aiSectionOf(page);
+  await section.locator('summary').click();
+  await section.getByRole('button', { name: '✨ Criar a partir do Instagram' }).click();
+  await expect(section.getByLabel('Voz da marca')).toHaveValue(/Tom próximo/);
+  await section.getByRole('button', { name: 'Guardar IA' }).click();
+  await expect(page.getByText('Definições de IA guardadas.')).toBeVisible();
+  const { data } = await admin().from('brands').select('ai_voice').eq('id', brand.id).single();
+  expect(data?.ai_voice).toMatch(/Tom próximo/);
 });
