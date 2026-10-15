@@ -57,6 +57,16 @@ describe('AiSettingsInput', () => {
     expect(AiSettingsInput.parse({ model: 'anthropic/claude-haiku-5.5', limitUsd: 5 })).toEqual({ model: 'anthropic/claude-haiku-5.5', limitUsd: 5 });
   });
 
+  it('limite vazio (NaN) é recusado em vez de virar 0', () => {
+    const r = AiSettingsInput.safeParse({ model: 'anthropic/claude-haiku-5.5', limitUsd: Number.NaN });
+    expect(r.error?.issues[0].message).toBe('Escreva um limite em USD.');
+  });
+
+  it('modelo vazio tem mensagem em pt-PT', () => {
+    const r = AiSettingsInput.safeParse({ model: '', limitUsd: 5 });
+    expect(r.error?.issues[0].message).toBe('Escreva o id do modelo do OpenRouter (ex.: anthropic/claude-sonnet-5.5).');
+  });
+
   it('recusa limite negativo e modelo sem barra', () => {
     expect(AiSettingsInput.safeParse({ model: 'anthropic/claude-haiku-5.5', limitUsd: -1 }).success).toBe(false);
     expect(AiSettingsInput.safeParse({ model: 'claude', limitUsd: 5 }).success).toBe(false);

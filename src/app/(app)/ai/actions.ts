@@ -5,6 +5,7 @@ import { unstable_rethrow } from 'next/navigation';
 import { suggestSlots, type Slot } from '@/lib/ai/best-time';
 import { AiError } from '@/lib/ai/errors';
 import { createFakeAi } from '@/lib/ai/fake';
+import { RefineInput, SuggestInput } from '@/lib/ai/inputs';
 import { createOpenRouter } from '@/lib/ai/openrouter';
 import { runDraftVoice, runRefine, runSuggest, type AiDeps } from '@/lib/ai/service';
 import type { BrandAi, RefineAction, Suggestions } from '@/lib/ai/types';
@@ -60,6 +61,8 @@ export async function suggestPost(i: {
   platforms: Platform[];
   formats: Partial<Record<Platform, TargetFormat>>;
 }): Promise<{ ok: true; suggestions: Suggestions } | Fail> {
+  const parsed = SuggestInput.safeParse(i);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Pedido inválido.' };
   try {
     const { db, brand, deps } = await setup(i.brandId);
     let imageUrl: string | null = null;
@@ -82,6 +85,8 @@ export async function suggestPost(i: {
 const defaultFormatFor = (p: Platform): TargetFormat => (p === 'instagram' ? 'ig_image' : p === 'tiktok' ? 'tiktok_video' : 'yt_short');
 
 export async function refineCaption(i: { brandId: string; platform: Platform; text: string; action: RefineAction }): Promise<{ ok: true; text: string } | Fail> {
+  const parsed = RefineInput.safeParse(i);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Pedido inválido.' };
   try {
     const { brand, deps } = await setup(i.brandId);
     return { ok: true, text: await runRefine(deps, { ...i, brand: toBrandAi(brand) }) };

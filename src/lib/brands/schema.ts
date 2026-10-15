@@ -32,8 +32,10 @@ export const BrandAiInput = z.object({
 });
 export type BrandAiInput = z.infer<typeof BrandAiInput>;
 
+const MODEL_MSG = 'Escreva o id do modelo do OpenRouter (ex.: anthropic/claude-sonnet-5.5).';
+
 export const AiSettingsInput = z.object({
-  model: z.string().trim().min(3).max(100).regex(/^[\w.-]+\/[\w.:-]+$/, 'Escreva o id do modelo do OpenRouter (ex.: anthropic/claude-sonnet-5.5).'),
+  model: z.string().trim().min(3, MODEL_MSG).max(100, MODEL_MSG).regex(/^[\w.-]+\/[\w.:-]+$/, MODEL_MSG),
   limitUsd: z.number({ message: 'Escreva um limite em USD.' }).min(0, 'O limite não pode ser negativo.').max(1000, 'O limite máximo é 1000 USD.'),
 });
 export type AiSettingsInput = z.infer<typeof AiSettingsInput>;

@@ -21,7 +21,7 @@ export function AiSettingsForm({ initial }: { initial: { model: string; limitUsd
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     start(async () => {
-      const r = await callSafely(() => saveAiSettings({ model: choice === OTHER ? custom.trim() : choice, limitUsd: Number(limit.replace(',', '.')) }));
+      const r = await callSafely(() => saveAiSettings({ model: choice === OTHER ? custom.trim() : choice, limitUsd: limit.trim() === '' ? Number.NaN : Number(limit.replace(',', '.')) }));
       if (r.ok) toast.success('Definições da IA guardadas.');
       else toast.error(r.error);
     });
