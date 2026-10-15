@@ -1,5 +1,5 @@
 import { AI_MESSAGES, AiError } from './errors';
-import type { AiProvider } from './types';
+import { isFreeModel, type AiProvider } from './types';
 
 const ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 const FALLBACK_USD_PER_M = { input: 3, output: 15 };
@@ -42,6 +42,7 @@ export function createOpenRouter(o: { apiKey: string; appUrl: string; fetch: typ
       }
       if (res.status === 401 || res.status === 402 || res.status === 403) throw new AiError('auth', AI_MESSAGES.auth);
       if ([400, 404, 413, 422].includes(res.status)) throw new AiError('bad_request', AI_MESSAGES.bad_request);
+      if (res.status === 429) throw new AiError('rate_limit', AI_MESSAGES.rate_limit);
       if (!res.ok) throw new AiError('unavailable', AI_MESSAGES.unavailable);
 
       let body: any;
@@ -54,7 +55,7 @@ export function createOpenRouter(o: { apiKey: string; appUrl: string; fetch: typ
       const inputTokens = Number(u.prompt_tokens ?? 0);
       const outputTokens = Number(u.completion_tokens ?? 0);
       // Sem custo na resposta, estimar por excesso para o limite mensal continuar a valer.
-      const costUsd = typeof u.cost === 'number' ? u.cost : (inputTokens * FALLBACK_USD_PER_M.input + outputTokens * FALLBACK_USD_PER_M.output) / 1e6;
+      const costUsd = typeof u.cost === 'number' ? u.cost : isFreeModel(model) ? 0 : (inputTokens * FALLBACK_USD_PER_M.input + outputTokens * FALLBACK_USD_PER_M.output) / 1e6;
       const usage = { inputTokens, outputTokens, costUsd };
       // Resposta paga mas inutilizável (cortada ou fora do esquema): o erro leva o custo.
       const unusable = () => new AiError('invalid_response', AI_MESSAGES.invalid_response, usage);

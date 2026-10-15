@@ -48,7 +48,12 @@ export interface AiProvider {
   chat<T>(req: { model: string; messages: ChatMessage[]; spec: JsonSchemaSpec<T>; maxTokens: number; timeoutMs?: number }): Promise<{ data: T; usage: AiUsage }>;
 }
 
+/** Router do OpenRouter que escolhe um modelo gratuito com as capacidades pedidas (JSON, imagem). */
+export const FREE_MODEL = 'openrouter/free';
+export const isFreeModel = (model: string) => model === FREE_MODEL || model.endsWith(':free');
+
 export const AI_MODELS = [
   { id: 'anthropic/claude-sonnet-5.5', label: 'Normal — Claude Sonnet 5.5' },
   { id: 'anthropic/claude-haiku-5.5', label: 'Económico — Claude Haiku 5.5' },
+  { id: FREE_MODEL, label: 'Grátis — modelos gratuitos (mais lento, com limite diário de pedidos)' },
 ] as const;

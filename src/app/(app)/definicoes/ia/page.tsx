@@ -1,3 +1,4 @@
+import { isFreeModel } from '@/lib/ai/types';
 import { aiStatus } from '@/app/(app)/ai/actions';
 import { AiSettingsForm } from './ai-settings-form';
 
@@ -35,6 +36,12 @@ export default async function IaPage() {
               <p className="font-medium tabular-nums">{s.requests}</p>
             </div>
           </section>
+          {s.spentUsd >= s.limitUsd && !isFreeModel(s.model) && (
+            <p role="status" className="rounded-lg bg-brand-amber/15 px-3 py-2 text-sm">
+              Chegou ao limite deste mês: até ao próximo mês a IA usa o modelo grátis (mais lento e com limite diário de pedidos).
+            </p>
+          )}
+          <p className="text-sm text-muted-foreground">Ao chegar ao limite mensal, a IA não para: passa a usar o modelo grátis até ao mês seguinte.</p>
           <AiSettingsForm initial={{ model: s.model, limitUsd: s.limitUsd }} />
         </>
       )}

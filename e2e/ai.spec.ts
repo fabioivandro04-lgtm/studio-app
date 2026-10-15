@@ -69,15 +69,14 @@ test('ação rápida com desfazer', async ({ page }) => {
   await expect(caption).toHaveValue('As candidaturas para Lisboa estão abertas.');
 });
 
-test('erro mantém a legenda (limite mensal)', async ({ page }) => {
+test('limite mensal atingido → continua com o modelo grátis', async ({ page }) => {
   await admin().from('app_settings').update({ ai_monthly_limit_usd: 0 }).eq('id', true);
   await openComposerWithInstagram(page);
   const caption = page.getByLabel('Legenda Instagram');
   await caption.fill('Texto original');
   await page.getByRole('button', { name: 'Reescrever com IA — Instagram' }).click();
   await page.getByRole('menuitem', { name: 'Mais chamativo' }).click();
-  await expect(page.getByText(/limite mensal/)).toBeVisible();
-  await expect(caption).toHaveValue('Texto original');
+  await expect(caption).toHaveValue(/^Versão melhorada:/);
 });
 
 test('melhor hora preenche data e hora', async ({ page }) => {

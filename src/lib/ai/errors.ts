@@ -1,5 +1,5 @@
 import type { AiUsage } from './types';
-export type AiErrorCode = 'no_key' | 'budget' | 'auth' | 'unavailable' | 'invalid_response' | 'invalid_input' | 'bad_request';
+export type AiErrorCode = 'no_key' | 'budget' | 'auth' | 'unavailable' | 'invalid_response' | 'invalid_input' | 'bad_request' | 'rate_limit';
 
 /** Erro da IA com mensagem pronta a mostrar ao dono (pt-PT). */
 export class AiError extends Error {
@@ -16,6 +16,7 @@ export class AiError extends Error {
 
 export const AI_MESSAGES = {
   no_key: 'Falta ligar a IA: adicione OPENROUTER_API_KEY na Vercel.',
+  rate_limit: 'A IA recebeu demasiados pedidos (o modelo grátis tem limite por minuto e por dia). Espere um pouco e tente de novo.',
   auth: 'A conta OpenRouter não tem crédito ou a chave é inválida.',
   unavailable: 'A IA está ocupada. Tente de novo dentro de momentos.',
   invalid_response: 'A IA respondeu de forma inesperada. Tente de novo.',

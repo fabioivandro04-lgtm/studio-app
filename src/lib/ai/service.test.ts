@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AiError } from './errors';
 import { createFakeAi } from './fake';
 import { runDraftVoice, runIdeas, runRefine, runSuggest, type AiDeps } from './service';
-import type { AiProvider, BrandAi, ChatMessage } from './types';
+import { FREE_MODEL, type AiProvider, type BrandAi, type ChatMessage } from './types';
 
 const brand: BrandAi = { name: 'Unidreamity', aiContext: 'ctx', aiVoice: 'voz', aiHashtags: ['#unidreamity'], goal: 'contacts' };
 
@@ -59,11 +59,18 @@ describe('runSuggest', () => {
     expect((await errOf(runSuggest(deps({ provider: null }), input))).code).toBe('no_key');
   });
 
-  it('gasto no limite → budget, sem chamar a IA', async () => {
+  it('gasto no limite → passa para o modelo grátis em vez de parar', async () => {
     const { provider, calls } = spyProvider();
-    expect((await errOf(runSuggest(deps({ provider, spentUsd: 5 }), input))).code).toBe('budget');
-    expect(calls).toHaveLength(0);
+    await runSuggest(deps({ provider, spentUsd: 5 }), input);
+    expect(calls[0].model).toBe(FREE_MODEL);
   });
+
+  it('modelo grátis escolhido → não consulta o limite', async () => {
+    const { provider, calls } = spyProvider();
+    await runSuggest(deps({ provider, model: FREE_MODEL, spentUsd: 99 }), input);
+    expect(calls[0].model).toBe(FREE_MODEL);
+  });
+
 
   it('pedido vazio ou sem redes → mensagem clara', async () => {
     expect((await errOf(runSuggest(deps(), { ...input, prompt: '   ' }))).message).toBe('Escreva sobre o que é o post.');
@@ -177,11 +184,6 @@ describe('runIdeas', () => {
     expect(d.recordUsage).toHaveBeenCalledWith(expect.objectContaining({ kind: 'ideas' }));
   });
 
-  it('orçamento esgotado → budget sem chamar a IA', async () => {
-    const { provider, calls } = spyProvider();
-    expect((await errOf(runIdeas(deps({ provider, spentUsd: 9 }), ideasInput))).code).toBe('budget');
-    expect(calls).toHaveLength(0);
-  });
 
   it('quantidade inválida → erro de entrada', async () => {
     expect((await errOf(runIdeas(deps(), { ...ideasInput, count: 0 }))).code).toBe('invalid_input');

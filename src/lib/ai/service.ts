@@ -1,12 +1,11 @@
 import type { Platform, TargetFormat } from '@/lib/platforms/types';
-import { assertWithinBudget } from './budget';
 import { AI_MESSAGES, AiError } from './errors';
 import { buildIdeasMessages, type IdeasMode } from './ideas-prompts';
 import { IdeasSpec, postprocessIdeas, type IdeaDraft } from './ideas-schema';
 import { buildRefineMessages, buildSuggestMessages, buildVoiceMessages } from './prompts';
 import { AI_RULES } from './rules';
 import { postprocessSuggestions, RefinedSpec, SuggestionsSpec, VoiceSpec } from './schemas';
-import type { AiProvider, AiUsage, BrandAi, JsonSchemaSpec, RefineAction, Suggestions } from './types';
+import { FREE_MODEL, isFreeModel, type AiProvider, type AiUsage, type BrandAi, type JsonSchemaSpec, type RefineAction, type Suggestions } from './types';
 
 export interface AiDeps {
   provider: AiProvider | null;
@@ -18,11 +17,12 @@ export interface AiDeps {
 
 const VOICE_MAX = 2000;
 
+/** Provider pronto e o modelo a usar: ao chegar ao limite mensal, passa para o modelo grátis em vez de parar. */
 function ready(d: AiDeps): AiProvider {
   if (!d.provider) throw new AiError('no_key', AI_MESSAGES.no_key);
-  assertWithinBudget(d.spentUsd, d.limitUsd);
   return d.provider;
 }
+const modelFor = (d: AiDeps) => (isFreeModel(d.model) || d.spentUsd < d.limitUsd ? d.model : FREE_MODEL);
 
 const invalid = (message: string) => new AiError('invalid_input', message);
 
@@ -63,12 +63,12 @@ type Kind = Parameters<AiDeps['recordUsage']>[0]['kind'];
 async function chatRecorded<T>(d: AiDeps, provider: AiProvider, brandId: string | null, kind: Kind, req: Omit<Parameters<AiProvider['chat']>[0], 'model'> & { spec: JsonSchemaSpec<T> }): Promise<T> {
   let res;
   try {
-    res = await provider.chat<T>({ ...req, model: d.model });
+    res = await provider.chat<T>({ ...req, model: modelFor(d) });
   } catch (e) {
-    if (e instanceof AiError && e.usage) await record(d, { brandId, kind, model: d.model, usage: e.usage });
+    if (e instanceof AiError && e.usage) await record(d, { brandId, kind, model: modelFor(d), usage: e.usage });
     throw e;
   }
-  await record(d, { brandId, kind, model: d.model, usage: res.usage });
+  await record(d, { brandId, kind, model: modelFor(d), usage: res.usage });
   return res.data;
 }
 

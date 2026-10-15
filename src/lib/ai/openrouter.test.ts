@@ -56,7 +56,7 @@ describe('createOpenRouter', () => {
   it.each([
     [401, 'auth'],
     [402, 'auth'],
-    [429, 'unavailable'],
+    [429, 'rate_limit'],
     [500, 'unavailable'],
   ])('HTTP %i → %s', async (status, code) => {
     const fetch = fakeFetch([['POST', URL_RE, () => jsonResponse(status, { error: { message: 'x' } })]]);
@@ -145,5 +145,18 @@ describe('tempo limite por pedido', () => {
       new Promise((_, reject) => init.signal?.addEventListener('abort', () => reject(new Error('abort'))))) as unknown as typeof fetch;
     const ai = createOpenRouter({ apiKey: 'k', appUrl: 'https://a', fetch: hang, timeoutMs: 60_000 });
     expect(await codeOf(ai.chat({ ...req, timeoutMs: 5 }))).toBe('unavailable');
+  });
+});
+
+describe('modelo grátis', () => {
+  it('sem custo na resposta → custo 0 (não estima)', async () => {
+    const fetch = fakeFetch([['POST', URL_RE, () => okBody('{"text":"ok"}', { prompt_tokens: 1000, completion_tokens: 500 })]]);
+    const r = await createOpenRouter({ apiKey: 'k', appUrl: 'https://a', fetch }).chat({ ...req, model: 'openrouter/free' });
+    expect(r.usage.costUsd).toBe(0);
+  });
+
+  it('429 → mensagem de limite de pedidos', async () => {
+    const fetch = fakeFetch([['POST', URL_RE, () => jsonResponse(429, { error: { message: 'rate limited' } })]]);
+    expect(await codeOf(createOpenRouter({ apiKey: 'k', appUrl: 'https://a', fetch }).chat(req))).toBe('rate_limit');
   });
 });
