@@ -47,7 +47,7 @@ test('grupo de hashtags criado em Definições e usado no post, com Desfazer', a
   const section = page.getByRole('group', { name: 'Grupos de hashtags' }).filter({ has: page.getByRole('button', { name: '+ Novo grupo' }) }).last();
   await section.getByRole('button', { name: '+ Novo grupo' }).click();
   await section.getByLabel('Nome do grupo').fill('Bolsas');
-  await section.getByLabel('Hashtags').fill('bolsas, #estudar #bolsas');
+  await section.getByLabel('Hashtags', { exact: true }).fill('bolsas, #estudar #bolsas');
   await section.getByRole('button', { name: 'Guardar grupo' }).click();
   await expect(section.getByText('#bolsas #estudar')).toBeVisible();
 
