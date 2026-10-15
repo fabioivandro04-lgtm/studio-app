@@ -1,4 +1,8 @@
+import { existsSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
+
+// Os testes usam as mesmas variáveis que a app (Supabase, CRON_SECRET, E2E_*).
+if (existsSync('.env.local')) process.loadEnvFile('.env.local');
 
 export default defineConfig({
   testDir: './e2e',
