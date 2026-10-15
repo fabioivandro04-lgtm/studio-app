@@ -16,9 +16,11 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const { data } = await supabase.auth.getUser();
+  // getClaims valida o token localmente (chaves assimétricas), sem ida ao servidor de autenticação;
+  // renova a sessão quando expirou.
+  const { data } = await supabase.auth.getClaims();
   const path = request.nextUrl.pathname;
-  if (!data.user && !isPublicPath(path)) {
+  if (!data?.claims && !isPublicPath(path)) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.search = path === '/' ? '' : `?next=${encodeURIComponent(path)}`;

@@ -11,12 +11,11 @@ import { signOut } from '../login/actions';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const db = await createServerClient();
-  const { data } = await db.auth.getUser();
-  if (!data.user) redirect('/login');
+  const { data } = await db.auth.getClaims();
+  if (!data?.claims) redirect('/login');
 
-  const brands = await listBrands(db);
-  const selected = await selectedBrandId(brands);
-  const [{ count: pending }, { data: reauth }] = await Promise.all([
+  const [brands, { count: pending }, { data: reauth }] = await Promise.all([
+    listBrands(db),
     db
       .from('post_targets')
       .select('id, posts!inner(status)', { count: 'exact', head: true })
@@ -24,6 +23,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .neq('posts.status', 'cancelled'),
     db.from('social_accounts').select('id, platform, handle, status_message').eq('status', 'needs_reauth'),
   ]);
+  const selected = await selectedBrandId(brands);
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
