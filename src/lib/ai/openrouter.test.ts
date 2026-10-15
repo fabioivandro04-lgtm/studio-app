@@ -138,3 +138,12 @@ describe('resposta paga mas inutilizável', () => {
     expect(e.usage?.costUsd).toBe(0.048);
   });
 });
+
+describe('tempo limite por pedido', () => {
+  it('o pedido pode pedir um tempo limite próprio', async () => {
+    const hang = ((_url: string, init: RequestInit) =>
+      new Promise((_, reject) => init.signal?.addEventListener('abort', () => reject(new Error('abort'))))) as unknown as typeof fetch;
+    const ai = createOpenRouter({ apiKey: 'k', appUrl: 'https://a', fetch: hang, timeoutMs: 60_000 });
+    expect(await codeOf(ai.chat({ ...req, timeoutMs: 5 }))).toBe('unavailable');
+  });
+});

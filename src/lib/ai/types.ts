@@ -45,7 +45,7 @@ export interface JsonSchemaSpec<T> {
 }
 
 export interface AiProvider {
-  chat<T>(req: { model: string; messages: ChatMessage[]; spec: JsonSchemaSpec<T>; maxTokens: number }): Promise<{ data: T; usage: AiUsage }>;
+  chat<T>(req: { model: string; messages: ChatMessage[]; spec: JsonSchemaSpec<T>; maxTokens: number; timeoutMs?: number }): Promise<{ data: T; usage: AiUsage }>;
 }
 
 export const AI_MODELS = [

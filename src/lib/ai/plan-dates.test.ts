@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { localToUtc } from '@/lib/time/zone';
 import type { HistoryPoint } from './best-time';
-import { deadlineDates, missingForWeek, nextWeekRange, spreadWeek, timeForDate } from './plan-dates';
+import { deadlineDates, IDEAS_PER_RUN, missingForWeek, nextWeekRange, spreadWeek, timeForDate, weekPlanDays } from './plan-dates';
 
 const MZ = 'Africa/Maputo';
 
@@ -68,5 +68,15 @@ describe('timeForDate', () => {
       ...['2026-09-03', '2026-09-10', '2026-09-17', '2026-09-24', '2026-09-04', '2026-09-11', '2026-09-18', '2026-09-25'].map((d) => pt(d, '19:05', 5)),
     ];
     expect(timeForDate({ ...base, date: '2026-10-20', history })).toBe('13:00');
+  });
+});
+
+describe('weekPlanDays', () => {
+  it('no máximo 10 ideias por pedido, espalhadas pela semana toda', () => {
+    expect(IDEAS_PER_RUN).toBe(10);
+    expect(weekPlanDays('2026-10-19', 3)).toEqual(['2026-10-19', '2026-10-21', '2026-10-23']);
+    const many = weekPlanDays('2026-10-19', 21);
+    expect(many).toHaveLength(10);
+    expect(many).toEqual(spreadWeek('2026-10-19', 21).slice(0, 10));
   });
 });

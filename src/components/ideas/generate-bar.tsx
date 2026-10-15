@@ -35,9 +35,9 @@ export function GenerateBar({ brandId, deadlines }: { brandId: string | null; de
   return (
     <section aria-label="Gerar ideias" className="space-y-3 rounded-xl border border-brand-amber/50 bg-brand-amber/5 p-3">
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" disabled={pending} onClick={() => setPicking((v) => !v)}>💡 Ideias para um prazo</Button>
-        <Button type="button" variant="outline" disabled={pending} onClick={() => run(() => generateShortsIdeas({ brandId }))}>🎬 Ideias de vídeos curtos</Button>
-        <Button type="button" variant="outline" disabled={pending} onClick={() => run(() => planNextWeek({ brandId }))}>🗓️ Planear a próxima semana</Button>
+        <Button type="button" variant="outline" disabled={pending} onClick={() => setPicking((v) => !v)}><span aria-hidden>💡</span> Ideias para um prazo</Button>
+        <Button type="button" variant="outline" disabled={pending} onClick={() => run(() => generateShortsIdeas({ brandId }))}><span aria-hidden>🎬</span> Ideias de vídeos curtos</Button>
+        <Button type="button" variant="outline" disabled={pending} onClick={() => run(() => planNextWeek({ brandId }))}><span aria-hidden>🗓️</span> Planear a próxima semana</Button>
       </div>
       {picking && (
         deadlines.length === 0 ? (

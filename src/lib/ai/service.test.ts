@@ -7,10 +7,10 @@ import type { AiProvider, BrandAi, ChatMessage } from './types';
 const brand: BrandAi = { name: 'Unidreamity', aiContext: 'ctx', aiVoice: 'voz', aiHashtags: ['#unidreamity'], goal: 'contacts' };
 
 function spyProvider(inner: AiProvider = createFakeAi(), costUsd = 0.01) {
-  const calls: { messages: ChatMessage[]; maxTokens: number; model: string }[] = [];
+  const calls: { messages: ChatMessage[]; maxTokens: number; model: string; timeoutMs?: number }[] = [];
   const provider: AiProvider = {
     async chat(req) {
-      calls.push({ messages: req.messages, maxTokens: req.maxTokens, model: req.model });
+      calls.push({ messages: req.messages, maxTokens: req.maxTokens, model: req.model, timeoutMs: req.timeoutMs });
       const r = await inner.chat(req);
       return { ...r, usage: { inputTokens: 10, outputTokens: 5, costUsd } };
     },
@@ -191,6 +191,7 @@ describe('runIdeas', () => {
     const { provider, calls } = spyProvider();
     await runIdeas(deps({ provider }), { ...ideasInput, count: 10 });
     expect(calls[0].maxTokens).toBe(5000);
+    expect(calls[0].timeoutMs).toBe(55_000); // cabe nos 60 s da página
   });
 
   it('resposta paga mas inválida → regista o custo e devolve o erro', async () => {

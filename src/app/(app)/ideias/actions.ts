@@ -5,12 +5,12 @@ import { suggestSlots } from '@/lib/ai/best-time';
 import { aiSetup, fail, toBrandAi, type Fail } from '@/lib/ai/context';
 import { AiError } from '@/lib/ai/errors';
 import type { IdeasMode } from '@/lib/ai/ideas-prompts';
-import { deadlineDates, missingForWeek, nextWeekRange, spreadWeek, timeForDate } from '@/lib/ai/plan-dates';
+import { deadlineDates, IDEAS_PER_RUN, missingForWeek, nextWeekRange, timeForDate, weekPlanDays } from '@/lib/ai/plan-dates';
 import { runIdeas } from '@/lib/ai/service';
 import { createServerClient } from '@/lib/db/clients';
 import { bestTimeInputs } from '@/lib/db/repo/ai-repo';
 import { listBrands } from '@/lib/db/repo/brands-repo';
-import { getIdea, insertIdeas, plannedCount, recentTitles, setIdeaStatus, upcomingDeadlines, type IdeaKind } from '@/lib/db/repo/ideas-repo';
+import { claimIdea, getIdea, insertIdeas, linkIdeaPost, plannedCount, recentTitles, setIdeaStatus, upcomingDeadlines, type IdeaKind } from '@/lib/db/repo/ideas-repo';
 import type { Brand } from '@/lib/db/types';
 import { DeadlineInput, draftPayload, GenerateInput, IdeaIdInput, IdeaStatusInput } from '@/lib/ideas/draft';
 import type { Platform } from '@/lib/platforms/types';
@@ -20,7 +20,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 type Ok = { ok: true; count: number };
 const ALL_PLATFORMS: Platform[] = ['instagram', 'tiktok', 'youtube'];
 const DEADLINES_AHEAD_DAYS = 42;
-const SHORTS_COUNT = 10;
 
 const firstIssue = (e: { issues: { message: string }[] }) => e.issues[0]?.message ?? 'Pedido inválido.';
 const addDaysIso = (date: string, n: number) => {
@@ -81,7 +80,7 @@ async function generate(o: {
 export async function generateShortsIdeas(i: { brandId: string }): Promise<Ok | Fail> {
   const parsed = GenerateInput.safeParse(i);
   if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
-  return generate({ brandId: i.brandId, kind: 'shorts', mode: 'shorts', plan: async () => ({ count: SHORTS_COUNT, dates: null, deadline: null }) });
+  return generate({ brandId: i.brandId, kind: 'shorts', mode: 'shorts', plan: async () => ({ count: IDEAS_PER_RUN, dates: null, deadline: null }) });
 }
 
 export async function generateDeadlineIdeas(i: { brandId: string; deadlineId: string }): Promise<Ok | Fail> {
@@ -115,7 +114,8 @@ export async function planNextWeek(i: { brandId: string }): Promise<Ok | Fail> {
       const to = localToUtc(addDaysIso(end, 1), '00:00', brand.timezone);
       const missing = missingForWeek(brand.postsPerWeek, await plannedCount(db, brand.id, from, to));
       if (missing === 0) throw new AiError('invalid_input', 'A próxima semana já está completa.');
-      return { count: missing, dates: await scheduleDays(db, brand, spreadWeek(start, missing), now), deadline: null };
+      const days = weekPlanDays(start, missing);
+      return { count: days.length, dates: await scheduleDays(db, brand, days, now), deadline: null };
     },
   });
 }
@@ -129,6 +129,7 @@ export async function ideaToDraft(i: { ideaId: string }): Promise<{ ok: true; po
     const idea = await getIdea(db, i.ideaId);
     if (!idea) return { ok: false, error: 'Ideia não encontrada.' };
     if (idea.status === 'used' && idea.postId) return { ok: true, postId: idea.postId };
+    if (idea.status !== 'new') return { ok: false, error: 'Recupere a ideia antes de a pôr no calendário.' };
     const brand = (await listBrands(db)).find((b) => b.id === idea.brandId);
     if (!brand) return { ok: false, error: 'Marca não encontrada.' };
     const now = new Date();
@@ -140,9 +141,17 @@ export async function ideaToDraft(i: { ideaId: string }): Promise<{ ok: true; po
     }
     const { data: accounts } = await db.from('social_accounts').select('id, platform, status').eq('brand_id', brand.id);
     const payload = draftPayload({ brandId: brand.id, idea, scheduledAt: at, accounts: (accounts ?? []) as { id: string; platform: Platform; status: string }[] });
+    if (!(await claimIdea(db, idea.id))) {
+      // Outro clique ou separador chegou primeiro: abrir o post dele, se já existir.
+      const again = await getIdea(db, idea.id);
+      return again?.postId ? { ok: true, postId: again.postId } : { ok: false, error: 'Esta ideia já está a ser posta no calendário.' };
+    }
     const { data: postId, error } = await db.rpc('save_post', { p: payload });
-    if (error || !postId) return { ok: false, error: 'Não foi possível criar o rascunho.' };
-    await setIdeaStatus(db, idea.id, 'used', postId as string);
+    if (error || !postId) {
+      await setIdeaStatus(db, idea.id, 'new');
+      return { ok: false, error: 'Não foi possível criar o rascunho.' };
+    }
+    await linkIdeaPost(db, idea.id, postId as string);
     revalidatePath('/ideias');
     revalidatePath('/calendario');
     return { ok: true, postId: postId as string };

@@ -74,6 +74,8 @@ async function chatRecorded<T>(d: AiDeps, provider: AiProvider, brandId: string 
 
 /** Margem de tokens para N ideias curtas (≈ 300 tokens cada em pt-PT). */
 export const ideasMaxTokens = (count: number) => 1000 + 400 * count;
+/** Mais tempo que o normal, mas dentro dos 60 s da página Ideias. */
+const IDEAS_TIMEOUT_MS = 55_000;
 
 export async function runRefine(
   d: AiDeps,
@@ -107,7 +109,7 @@ export async function runIdeas(
 ): Promise<IdeaDraft[]> {
   const provider = ready(d);
   if (!Number.isInteger(i.count) || i.count < 1 || i.count > 21) throw invalid('Quantidade de ideias inválida.');
-  const data = await chatRecorded(d, provider, i.brandId, 'ideas', { messages: buildIdeasMessages(i), spec: IdeasSpec, maxTokens: ideasMaxTokens(i.count) });
+  const data = await chatRecorded(d, provider, i.brandId, 'ideas', { messages: buildIdeasMessages(i), spec: IdeasSpec, maxTokens: ideasMaxTokens(i.count), timeoutMs: IDEAS_TIMEOUT_MS });
   const ideas = postprocessIdeas(data, { count: i.count, platforms: i.platforms });
   if (ideas.length === 0) throw new AiError('invalid_response', AI_MESSAGES.invalid_response);
   return ideas;

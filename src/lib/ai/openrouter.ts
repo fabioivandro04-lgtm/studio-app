@@ -13,9 +13,9 @@ function extractJson(content: string): unknown {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function createOpenRouter(o: { apiKey: string; appUrl: string; fetch: typeof fetch; timeoutMs?: number }): AiProvider {
   return {
-    async chat({ model, messages, spec, maxTokens }) {
+    async chat({ model, messages, spec, maxTokens, timeoutMs }) {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), o.timeoutMs ?? 45_000);
+      const timer = setTimeout(() => controller.abort(), timeoutMs ?? o.timeoutMs ?? 45_000);
       let res: Response;
       try {
         res = await o.fetch(ENDPOINT, {

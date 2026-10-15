@@ -52,3 +52,11 @@ export function timeForDate(o: { date: string; goal: Goal; tz: string; history: 
   };
   return candidates.find(ok) ?? candidates[0];
 }
+
+/** Máximo de ideias por pedido à IA (mais do que isto não cabe no tempo de resposta). */
+export const IDEAS_PER_RUN = 10;
+
+/** Dias para as ideias em falta na semana; se faltarem mais de 10, as primeiras 10 (o resto num novo pedido). */
+export function weekPlanDays(start: string, missing: number): string[] {
+  return spreadWeek(start, missing).slice(0, IDEAS_PER_RUN);
+}

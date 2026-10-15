@@ -80,7 +80,7 @@ export function IdeaCard({ idea }: { idea: IdeaCardData }) {
             <Button type="button" size="sm" variant="ghost" disabled={pending} onClick={() => setStatus('discarded')}>Descartar</Button>
           </>
         )}
-        {idea.status === 'discarded' && (
+        {(idea.status === 'discarded' || (idea.status === 'used' && !idea.postId)) && (
           <Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => setStatus('new')}>Recuperar</Button>
         )}
         {idea.status === 'used' && idea.postId && (

@@ -17,6 +17,8 @@ export interface DraftPayload {
 }
 
 /** Rascunho (sem mídia) para save_post: uma conta ativa por rede da ideia. */
+const YT_TITLE_MAX = 100;
+
 export function draftPayload(o: {
   brandId: string;
   idea: { title: string; caption: string; format: TargetFormat | null; platforms: Platform[] };
@@ -27,7 +29,7 @@ export function draftPayload(o: {
     const acc = o.accounts.find((a) => a.platform === platform && a.status === 'active');
     if (!acc) return [];
     const format = o.idea.format && FORMAT_PLATFORM[o.idea.format] === platform ? o.idea.format : defaultFormat(platform, []);
-    return [{ accountId: acc.id, format, caption: o.idea.caption, title: platform === 'youtube' ? o.idea.title : '' }];
+    return [{ accountId: acc.id, format, caption: o.idea.caption, title: platform === 'youtube' ? o.idea.title.slice(0, YT_TITLE_MAX) : '' }];
   });
   return {
     brandId: o.brandId,

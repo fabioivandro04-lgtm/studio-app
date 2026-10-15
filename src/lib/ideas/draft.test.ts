@@ -28,6 +28,12 @@ describe('draftPayload', () => {
     expect(p.targets).toEqual([]);
   });
 
+  it('título do YouTube cortado a 100 caracteres', () => {
+    const p = draftPayload({ brandId: 'b1', idea: { ...idea, title: 'x'.repeat(120) }, scheduledAt: at, accounts: [{ id: 'yt1', platform: 'youtube', status: 'active' }] });
+    expect(p.targets[0].title).toHaveLength(100);
+    expect(p.internalTitle).toHaveLength(120);
+  });
+
   it('uma conta por rede', () => {
     const p = draftPayload({ brandId: 'b1', idea: { ...idea, platforms: ['instagram'] }, scheduledAt: at, accounts: [
       { id: 'ig1', platform: 'instagram', status: 'active' },

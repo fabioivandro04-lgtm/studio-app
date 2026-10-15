@@ -24,12 +24,27 @@ const fromRow = (r: any): Idea => ({
   createdAt: new Date(r.created_at),
 });
 
-export async function listIdeas(db: SupabaseClient, brandId: string | null): Promise<Idea[]> {
-  let q = db.from('ideas').select('*, deadlines(title)').order('suggested_at', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false }).limit(300);
+const STATUSES: IdeaStatus[] = ['new', 'used', 'discarded'];
+
+/** Ideias de um separador: novas por data sugerida; usadas e descartadas das mais recentes. */
+export async function listIdeas(db: SupabaseClient, brandId: string | null, status: IdeaStatus): Promise<Idea[]> {
+  let q = db.from('ideas').select('*, deadlines(title)').eq('status', status);
   if (brandId) q = q.eq('brand_id', brandId);
-  const { data, error } = await q;
+  q = status === 'new' ? q.order('suggested_at', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false }) : q.order('created_at', { ascending: false });
+  const { data, error } = await q.limit(300);
   if (error) throw new Error(`ideas: ${error.message}`);
   return (data ?? []).map(fromRow);
+}
+
+export async function countIdeas(db: SupabaseClient, brandId: string | null): Promise<Record<IdeaStatus, number>> {
+  const counts = await Promise.all(
+    STATUSES.map(async (status) => {
+      let q = db.from('ideas').select('id', { count: 'exact', head: true }).eq('status', status);
+      if (brandId) q = q.eq('brand_id', brandId);
+      return (await q).count ?? 0;
+    }),
+  );
+  return { new: counts[0], used: counts[1], discarded: counts[2] };
 }
 
 export async function getIdea(db: SupabaseClient, id: string): Promise<Idea | null> {
@@ -50,12 +65,24 @@ export async function insertIdeas(
   if (error) throw new Error(`ideas: ${error.message}`);
 }
 
-export async function setIdeaStatus(db: SupabaseClient, id: string, status: IdeaStatus, postId?: string): Promise<boolean> {
-  const patch: Record<string, unknown> = { status };
-  if (postId) patch.post_id = postId;
-  const { data, error } = await db.from('ideas').update(patch).eq('id', id).select('id');
+async function updated(q: PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>): Promise<boolean> {
+  const { data, error } = await q;
   if (error) throw new Error(`ideas: ${error.message}`);
   return (data ?? []).length > 0;
+}
+
+/** Nova ↔ descartada. Uma ideia usada só volta a nova se o post dela foi apagado. */
+export function setIdeaStatus(db: SupabaseClient, id: string, status: 'new' | 'discarded'): Promise<boolean> {
+  return updated(db.from('ideas').update({ status }).eq('id', id).or('status.neq.used,post_id.is.null').select('id'));
+}
+
+/** Reserva a ideia antes de criar o post: só uma chamada ganha (evita dois rascunhos). */
+export function claimIdea(db: SupabaseClient, id: string): Promise<boolean> {
+  return updated(db.from('ideas').update({ status: 'used' }).eq('id', id).eq('status', 'new').select('id'));
+}
+
+export function linkIdeaPost(db: SupabaseClient, id: string, postId: string): Promise<boolean> {
+  return updated(db.from('ideas').update({ post_id: postId }).eq('id', id).select('id'));
 }
 
 /** Títulos recentes (posts e ideias) da marca, para a IA não repetir temas. */
