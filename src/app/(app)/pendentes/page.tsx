@@ -1,3 +1,5 @@
+import { PartyPopper } from 'lucide-react';
+import { EmptyState } from '@/components/empty-state';
 import { PendingItem, type PendingItemData } from '@/components/pending/pending-item';
 import { createServerClient } from '@/lib/db/clients';
 import { listBrands, selectedBrandId } from '@/lib/db/repo/brands-repo';
@@ -44,7 +46,13 @@ export default async function PendentesPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <h1 className="text-xl font-semibold">Pendentes</h1>
-      {items.length === 0 && <p className="text-sm text-muted-foreground">Nada pendente. 🎉</p>}
+      {items.length === 0 && (
+        <EmptyState
+          icon={PartyPopper}
+          title="Nada pendente"
+          text="Aqui aparecem os posts do TikTok e YouTube que precisam de 1 toque seu para ficarem públicos, e qualquer publicação que falhe."
+        />
+      )}
       {awaiting.length > 0 && (
         <section className="space-y-2" aria-label="Aguarda 1 toque">
           <h2 className="font-medium">Aguarda 1 toque ({awaiting.length})</h2>

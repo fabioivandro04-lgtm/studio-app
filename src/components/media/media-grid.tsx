@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Tag, Trash2 } from 'lucide-react';
+import { Check, ImagePlus, Tag, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
@@ -14,7 +14,19 @@ export function MediaGrid({ items, selected, onToggle }: { items: MediaItem[]; s
   const [pending, start] = useTransition();
   const selecting = !!onToggle;
 
-  if (items.length === 0) return <p className="py-8 text-center text-sm text-muted-foreground">Sem ficheiros.</p>;
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col items-center rounded-xl border border-dashed px-6 py-10 text-center">
+        <span className="mb-3 flex size-12 items-center justify-center rounded-full bg-brand-amber/20 text-brand-navy">
+          <ImagePlus className="size-6" aria-hidden />
+        </span>
+        <p className="font-medium">Ainda sem ficheiros</p>
+        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+          {selecting ? 'Carregue fotos ou vídeos na Biblioteca para os usar nos posts.' : 'Carregue aqui as fotos e vídeos que criou. Depois escolhe-os ao criar cada post.'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

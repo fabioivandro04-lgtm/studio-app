@@ -52,7 +52,7 @@ test('filtro de marca esconde posts de outras marcas', async ({ page, context })
     await expect(page.getByText('De outra marca')).toHaveCount(0);
     await context.addCookies([{ name: 'brand', value: 'todas', url: process.env.E2E_BASE_URL ?? 'http://localhost:3000' }]);
     await page.reload();
-    await expect(page.getByText('De outra marca')).toBeVisible();
+    await expect(page.getByTestId('calendar-grid').getByText('De outra marca')).toBeVisible();
   } finally {
     await cleanupBrand(other.id);
   }

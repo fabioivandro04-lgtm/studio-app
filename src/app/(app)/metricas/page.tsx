@@ -1,5 +1,8 @@
+import { BarChart3 } from 'lucide-react';
 import Link from 'next/link';
+import { EmptyState } from '@/components/empty-state';
 import { FollowersChart } from '@/components/metrics/followers-chart';
+import { PlatformIcon } from '@/components/platform-icon';
 import { createServerClient } from '@/lib/db/clients';
 import { listBrands, selectedBrandId } from '@/lib/db/repo/brands-repo';
 import { fromAccountMetricsRow } from '@/lib/db/types';
@@ -54,6 +57,20 @@ export default async function MetricasPage({ searchParams }: { searchParams: Pro
     { label: 'Seguidores ganhos', value: followersGained(accountRows) },
   ];
 
+  if (accounts.length === 0) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-xl font-semibold">Métricas</h1>
+        <EmptyState
+          icon={BarChart3}
+          title="Ainda sem redes ligadas"
+          text="Ligue o Instagram, TikTok ou YouTube. A app recolhe as visualizações, gostos e seguidores 1 vez por dia."
+          action={{ href: '/definicoes/contas', label: 'Ligar uma rede' }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -79,7 +96,7 @@ export default async function MetricasPage({ searchParams }: { searchParams: Pro
       <section aria-label="Por rede" className="grid gap-3 sm:grid-cols-3">
         {(Object.keys(byPlatform) as Platform[]).map((p) => (
           <div key={p} className="rounded-xl border p-3 text-sm">
-            <p className="font-medium">{PLATFORM_LABEL[p]}</p>
+            <p className="flex items-center gap-2 font-medium"><PlatformIcon platform={p} size="sm" />{PLATFORM_LABEL[p]}</p>
             <p className="text-muted-foreground">{fmt.format(byPlatform[p].views)} visualizações · {fmt.format(byPlatform[p].likes)} gostos</p>
           </div>
         ))}

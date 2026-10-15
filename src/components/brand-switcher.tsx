@@ -12,7 +12,7 @@ export function BrandSwitcher({ brands, selected }: { brands: { id: string; name
       <span className="sr-only">Marca</span>
       <select
         aria-label="Marca"
-        className="rounded-md border bg-background px-2 py-1.5 text-sm disabled:opacity-60"
+        className="max-w-44 rounded-md border border-white/20 bg-white/10 px-2 py-1.5 text-sm text-white disabled:opacity-60 [&>option]:text-foreground"
         value={selected ?? ALL_BRANDS}
         disabled={pending}
         onChange={(e) => {

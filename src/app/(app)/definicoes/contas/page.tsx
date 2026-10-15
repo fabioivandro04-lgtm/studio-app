@@ -1,3 +1,4 @@
+import { PlatformIcon } from '@/components/platform-icon';
 import { createServerClient } from '@/lib/db/clients';
 import { listBrands } from '@/lib/db/repo/brands-repo';
 import { fromAccountRow } from '@/lib/db/types';
@@ -20,7 +21,10 @@ export default async function ContasPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-xl font-semibold">Contas ligadas</h1>
+      <div>
+        <h1 className="text-xl font-semibold">Contas ligadas</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Ligue as redes de cada marca. A app só publica nas contas que ligar aqui.</p>
+      </div>
       {ligada && <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">Conta {PLATFORM_LABEL[ligada as Platform] ?? ''} ligada com sucesso.</p>}
       {erro && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-900">{erro}</p>}
       {brands.length === 0 && (
@@ -38,7 +42,8 @@ export default async function ContasPage({ searchParams }: { searchParams: Promi
             {accounts
               .filter((a) => a.brandId === b.id && a.status !== 'disabled')
               .map((a) => (
-                <li key={a.id} className="flex flex-wrap items-center gap-2 text-sm">
+                <li key={a.id} className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">
+                  <PlatformIcon platform={a.platform} />
                   <span className="font-medium">{PLATFORM_LABEL[a.platform]}</span>
                   <span>@{a.handle.replace(/^@/, '')}</span>
                   <span className={a.status === 'active' ? 'text-emerald-700' : 'text-amber-700'}>· {STATUS_LABEL[a.status]}</span>
@@ -58,7 +63,8 @@ export default async function ContasPage({ searchParams }: { searchParams: Promi
           </ul>
           <div className="flex flex-wrap gap-2">
             {PLATFORMS.map((p) => (
-              <a key={p} href={`/api/oauth/${p}/start?brand=${b.id}`} className="rounded-md border px-3 py-1.5 text-sm hover:bg-accent">
+              <a key={p} href={`/api/oauth/${p}/start?brand=${b.id}`} className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium hover:bg-accent">
+                <PlatformIcon platform={p} size="sm" />
                 Ligar {PLATFORM_LABEL[p]}
               </a>
             ))}

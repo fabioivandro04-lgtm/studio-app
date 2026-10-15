@@ -1,4 +1,5 @@
 import { LogOut } from 'lucide-react';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AppNav } from '@/components/app-nav';
 import { BrandSwitcher } from '@/components/brand-switcher';
@@ -27,13 +28,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
       <AppNav pendingCount={pending ?? 0} />
-      <div className="flex min-w-0 flex-1 flex-col pb-16 md:pb-0">
-        <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
-          <span className="font-semibold text-brand-navy">Estúdio</span>
+      <div className="flex min-w-0 flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-brand-navy px-4 py-2.5 text-white shadow-sm">
+          <Link href="/calendario" className="flex items-center gap-2 font-semibold">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-brand-amber text-sm font-bold text-brand-navy" aria-hidden>E</span>
+            Estúdio
+          </Link>
           <div className="flex items-center gap-2">
             <BrandSwitcher brands={brands} selected={selected} />
             <form action={signOut}>
-              <button type="submit" className="rounded-md p-2 text-muted-foreground hover:bg-accent" aria-label="Sair">
+              <button type="submit" className="rounded-md p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Sair">
                 <LogOut className="size-4" aria-hidden />
               </button>
             </form>

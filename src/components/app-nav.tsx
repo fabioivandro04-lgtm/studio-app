@@ -18,7 +18,7 @@ export function AppNav({ pendingCount = 0 }: { pendingCount?: number }) {
   return (
     <nav
       aria-label="Navegação principal"
-      className="fixed inset-x-0 bottom-0 z-40 flex border-t bg-background md:static md:w-56 md:flex-col md:border-r md:border-t-0 md:p-3"
+      className="fixed inset-x-0 bottom-0 z-40 flex border-t bg-background pb-[env(safe-area-inset-bottom)] md:static md:w-56 md:flex-col md:border-r md:border-t-0 md:p-3"
     >
       {ITEMS.map(({ href, label, icon: Icon }) => {
         const active = path === href || path.startsWith(`${href}/`);

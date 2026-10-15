@@ -1,6 +1,7 @@
 'use client';
 
 import { Copy } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -9,6 +10,7 @@ import type { ComposerData } from '@/app/(app)/posts/data';
 import { MediaGrid } from '@/components/media/media-grid';
 import { MediaThumb } from '@/components/media/media-thumb';
 import { MediaUploader } from '@/components/media/media-uploader';
+import { PlatformIcon } from '@/components/platform-icon';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -130,11 +132,17 @@ export function Composer({ data }: { data: ComposerData }) {
 
         <section className="space-y-3" aria-label="Redes">
           <h2 className="font-medium">2. Redes e legendas</h2>
-          {accounts.length === 0 && <p className="text-sm text-muted-foreground">Esta marca ainda não tem contas ligadas (Definições → Contas ligadas).</p>}
+          {accounts.length === 0 && (
+            <p className="rounded-lg bg-brand-amber/15 px-3 py-2 text-sm">
+              Esta marca ainda não tem redes ligadas.{' '}
+              <Link href="/definicoes/contas" className="font-medium text-brand-navy underline">Ligar agora</Link>
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             {accounts.map((a) => (
-              <label key={a.id} className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm">
+              <label key={a.id} className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm has-[:checked]:border-brand-navy has-[:checked]:bg-brand-navy/5">
                 <input type="checkbox" disabled={ro} checked={s.targets.some((t) => t.accountId === a.id)} onChange={() => toggleAccount(a.id)} />
+                <PlatformIcon platform={a.platform} size="sm" />
                 {PLATFORM_LABEL[a.platform]} @{a.handle.replace(/^@/, '')}
               </label>
             ))}

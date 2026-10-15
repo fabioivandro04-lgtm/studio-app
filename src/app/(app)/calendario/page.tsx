@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { CalendarView, type CalendarDeadline, type CalendarPost } from '@/components/calendar/calendar-view';
+import { SetupChecklist } from '@/components/setup-checklist';
 import { buildMonthGrid, buildWeek, shiftDate } from '@/lib/calendar/grid';
 import { createServerClient } from '@/lib/db/clients';
 import { listBrands, selectedBrandId } from '@/lib/db/repo/brands-repo';
@@ -32,7 +33,15 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
   if (brandId) pq = pq.eq('brand_id', brandId);
   let dq = db.from('deadlines').select('id, brand_id, title, due_date').gte('due_date', first).lte('due_date', last);
   if (brandId) dq = dq.eq('brand_id', brandId);
-  const [{ data: rows }, { data: dls }] = await Promise.all([pq, dq]);
+  const head = { count: 'exact' as const, head: true };
+  const [{ data: rows }, { data: dls }, accounts, media, allPosts] = await Promise.all([
+    pq,
+    dq,
+    db.from('social_accounts').select('id', head).eq('status', 'active'),
+    db.from('media_assets').select('id', head),
+    db.from('posts').select('id', head),
+  ]);
+  const progress = { brands: brands.length, accounts: accounts.count ?? 0, media: media.count ?? 0, posts: allPosts.count ?? 0 };
 
   type Row = {
     id: string; brand_id: string; internal_title: string; scheduled_at: string; status: CalendarPost['status'];
@@ -66,14 +75,16 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
   }));
 
   const nav = (n: number) => `/calendario?vista=${view}&data=${shiftDate(date, view, n)}`;
-  const heading = view === 'mes' ? formatInZone(localToUtc(date, '12:00', displayTz), displayTz, "MMMM 'de' yyyy") : `Semana de ${formatInZone(localToUtc(first, '12:00', displayTz), displayTz, "d 'de' MMMM")}`;
+  const rawHeading = view === 'mes' ? formatInZone(localToUtc(date, '12:00', displayTz), displayTz, "MMMM 'de' yyyy") : `Semana de ${formatInZone(localToUtc(first, '12:00', displayTz), displayTz, "d 'de' MMMM")}`;
+  const heading = rawHeading.charAt(0).toUpperCase() + rawHeading.slice(1);
 
   return (
     <div className="space-y-4">
+      <SetupChecklist progress={progress} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1">
           <Link href={nav(-1)} className="rounded-md p-2 hover:bg-accent" aria-label="Anterior"><ChevronLeft className="size-4" /></Link>
-          <h1 className="min-w-44 text-center text-lg font-semibold capitalize">{heading}</h1>
+          <h1 className="min-w-40 text-center text-lg font-semibold">{heading}</h1>
           <Link href={nav(1)} className="rounded-md p-2 hover:bg-accent" aria-label="Seguinte"><ChevronRight className="size-4" /></Link>
           <Link href={`/calendario?vista=${view}`} className="ml-1 rounded-md border px-2 py-1 text-sm hover:bg-accent">Hoje</Link>
         </div>
