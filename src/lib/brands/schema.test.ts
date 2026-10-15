@@ -21,7 +21,7 @@ describe('BrandInput', () => {
 });
 
 describe('BrandAiInput', () => {
-  const ok = { aiContext: 'Consultoria de candidaturas.', aiVoice: 'Próxima e confiável.', aiHashtags: ['#unidreamity', 'estudarfora'], goal: 'contacts', postsPerWeek: 3 };
+  const ok = { aiContext: 'Consultoria de candidaturas.', aiVoice: 'Próxima e confiável.', aiHashtags: ['#unidreamity', 'estudarfora'], goal: 'contacts', postsPerWeek: 3, postingSlots: [] };
 
   it('aceita valores válidos', () => {
     expect(BrandAiInput.parse(ok)).toEqual(ok);
@@ -77,5 +77,13 @@ describe('AiSettingsInput', () => {
   it('recusa limite negativo e modelo sem barra', () => {
     expect(AiSettingsInput.safeParse({ model: 'anthropic/claude-haiku-5.5', limitUsd: -1 }).success).toBe(false);
     expect(AiSettingsInput.safeParse({ model: 'claude', limitUsd: 5 }).success).toBe(false);
+  });
+});
+
+describe('BrandAiInput — horários fixos', () => {
+  const ok = { aiContext: '', aiVoice: '', aiHashtags: [], goal: 'contacts', postsPerWeek: 3 };
+  it('aceita horários válidos e recusa repetidos', () => {
+    expect(BrandAiInput.safeParse({ ...ok, postingSlots: [{ weekday: 1, time: '19:00' }] }).success).toBe(true);
+    expect(BrandAiInput.safeParse({ ...ok, postingSlots: [{ weekday: 1, time: '19:00' }, { weekday: 1, time: '19:00' }] }).error?.issues[0].message).toBe('Horário repetido.');
   });
 });

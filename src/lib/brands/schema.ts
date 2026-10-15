@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PostingSlots } from '@/lib/schedule/slots';
 
 export const TIMEZONES = [
   { id: 'Africa/Maputo', label: 'Maputo (UTC+2)' },
@@ -32,6 +33,7 @@ export const BrandAiInput = z.object({
     .max(10, 'No máximo 10 hashtags fixas.'),
   goal: z.enum(['contacts', 'reach'], { message: 'Escolha o objetivo da marca.' }),
   postsPerWeek: z.number({ message: PPW_MSG }).int(PPW_MSG).min(1, PPW_MSG).max(21, PPW_MSG),
+  postingSlots: PostingSlots.default([]),
 });
 export type BrandAiInput = z.infer<typeof BrandAiInput>;
 
