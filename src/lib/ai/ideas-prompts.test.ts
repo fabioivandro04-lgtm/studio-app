@@ -13,6 +13,13 @@ describe('buildIdeasMessages', () => {
     expect(text(sys)).toContain('Consultoria em Maputo.');
   });
 
+  it('pede campos curtos (cabe na resposta mesmo com 10 ideias)', () => {
+    const u = text(buildIdeasMessages({ ...base, mode: 'shorts' })[1]);
+    expect(u).toContain('caption: legenda de rascunho curta (até 500 caracteres)');
+    expect(u).toContain('outline: 3 a 5 linhas curtas');
+    expect(u).not.toContain('2200');
+  });
+
   it('inclui quantidade e redes disponíveis', () => {
     const u = text(buildIdeasMessages({ ...base, mode: 'week' })[1]);
     expect(u).toContain('Quantidade: 5');

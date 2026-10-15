@@ -6,7 +6,7 @@ import { IdeasSpec, postprocessIdeas, type IdeaDraft } from './ideas-schema';
 import { buildRefineMessages, buildSuggestMessages, buildVoiceMessages } from './prompts';
 import { AI_RULES } from './rules';
 import { postprocessSuggestions, RefinedSpec, SuggestionsSpec, VoiceSpec } from './schemas';
-import type { AiProvider, AiUsage, BrandAi, RefineAction, Suggestions } from './types';
+import type { AiProvider, AiUsage, BrandAi, JsonSchemaSpec, RefineAction, Suggestions } from './types';
 
 export interface AiDeps {
   provider: AiProvider | null;
@@ -34,17 +34,15 @@ export async function runSuggest(
   if (!i.prompt.trim()) throw invalid('Escreva sobre o que é o post.');
   if (i.targets.length === 0) throw invalid('Escolha pelo menos uma rede.');
   const ask = (imageUrl: string | null) =>
-    provider.chat({ model: d.model, messages: buildSuggestMessages({ ...i, imageUrl }), spec: SuggestionsSpec, maxTokens: 1500 });
-  let res;
+    chatRecorded(d, provider, i.brandId, 'suggest', { messages: buildSuggestMessages({ ...i, imageUrl }), spec: SuggestionsSpec, maxTokens: 1500 });
+  let data;
   try {
-    res = await ask(i.imageUrl);
+    data = await ask(i.imageUrl);
   } catch (e) {
     // Imagem grande ou formato não suportado pelo modelo: repetir só com o texto.
     if (!(i.imageUrl && e instanceof AiError && e.code === 'bad_request')) throw e;
-    res = await ask(null);
+    data = await ask(null);
   }
-  const { data, usage } = res;
-  await record(d, { brandId: i.brandId, kind: 'suggest', model: d.model, usage });
   const out = postprocessSuggestions(data, { platforms: i.targets.map((t) => t.platform), fixedHashtags: i.brand.aiHashtags });
   if (out.byPlatform.every((p) => p.captions.length === 0)) throw new AiError('invalid_response', AI_MESSAGES.invalid_response);
   return out;
@@ -59,22 +57,38 @@ async function record(d: AiDeps, u: Parameters<AiDeps['recordUsage']>[0]) {
   }
 }
 
+type Kind = Parameters<AiDeps['recordUsage']>[0]['kind'];
+
+/** Chama a IA e regista o custo — também quando a resposta veio paga mas inutilizável. */
+async function chatRecorded<T>(d: AiDeps, provider: AiProvider, brandId: string | null, kind: Kind, req: Omit<Parameters<AiProvider['chat']>[0], 'model'> & { spec: JsonSchemaSpec<T> }): Promise<T> {
+  let res;
+  try {
+    res = await provider.chat<T>({ ...req, model: d.model });
+  } catch (e) {
+    if (e instanceof AiError && e.usage) await record(d, { brandId, kind, model: d.model, usage: e.usage });
+    throw e;
+  }
+  await record(d, { brandId, kind, model: d.model, usage: res.usage });
+  return res.data;
+}
+
+/** Margem de tokens para N ideias curtas (≈ 300 tokens cada em pt-PT). */
+export const ideasMaxTokens = (count: number) => 1000 + 400 * count;
+
 export async function runRefine(
   d: AiDeps,
   i: { brandId: string; brand: BrandAi; platform: Platform; text: string; action: RefineAction },
 ): Promise<string> {
   const provider = ready(d);
   if (!i.text.trim()) throw invalid('Escreva primeiro uma legenda.');
-  const { data, usage } = await provider.chat({ model: d.model, messages: buildRefineMessages(i), spec: RefinedSpec, maxTokens: 600 });
-  await record(d, { brandId: i.brandId, kind: 'refine', model: d.model, usage });
+  const data = await chatRecorded(d, provider, i.brandId, 'refine', { messages: buildRefineMessages(i), spec: RefinedSpec, maxTokens: 600 });
   return data.text.trim().slice(0, AI_RULES[i.platform].captionMax);
 }
 
 export async function runDraftVoice(d: AiDeps, i: { brandId: string; brand: BrandAi; captions: string[] }): Promise<string> {
   const provider = ready(d);
   if (!i.captions.some((c) => c.trim())) throw invalid('Não há legendas no Instagram para analisar.');
-  const { data, usage } = await provider.chat({ model: d.model, messages: buildVoiceMessages(i), spec: VoiceSpec, maxTokens: 800 });
-  await record(d, { brandId: i.brandId, kind: 'voice', model: d.model, usage });
+  const data = await chatRecorded(d, provider, i.brandId, 'voice', { messages: buildVoiceMessages(i), spec: VoiceSpec, maxTokens: 800 });
   return data.voice.trim().slice(0, VOICE_MAX);
 }
 
@@ -93,8 +107,7 @@ export async function runIdeas(
 ): Promise<IdeaDraft[]> {
   const provider = ready(d);
   if (!Number.isInteger(i.count) || i.count < 1 || i.count > 21) throw invalid('Quantidade de ideias inválida.');
-  const { data, usage } = await provider.chat({ model: d.model, messages: buildIdeasMessages(i), spec: IdeasSpec, maxTokens: 3000 });
-  await record(d, { brandId: i.brandId, kind: 'ideas', model: d.model, usage });
+  const data = await chatRecorded(d, provider, i.brandId, 'ideas', { messages: buildIdeasMessages(i), spec: IdeasSpec, maxTokens: ideasMaxTokens(i.count) });
   const ideas = postprocessIdeas(data, { count: i.count, platforms: i.platforms });
   if (ideas.length === 0) throw new AiError('invalid_response', AI_MESSAGES.invalid_response);
   return ideas;

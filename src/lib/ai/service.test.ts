@@ -152,6 +152,16 @@ describe('runDraftVoice', () => {
   });
 });
 
+describe('custo de respostas inválidas', () => {
+  it('runRefine também regista o custo antes de devolver o erro', async () => {
+    const usage = { inputTokens: 5, outputTokens: 600, costUsd: 0.01 };
+    const broken: AiProvider = { chat: async () => { throw new AiError('invalid_response', 'x', usage); } };
+    const d = deps({ provider: broken });
+    await errOf(runRefine(d, { brandId: 'b1', brand, platform: 'instagram', text: 'olá', action: 'shorten' }));
+    expect(d.recordUsage).toHaveBeenCalledWith(expect.objectContaining({ kind: 'refine', usage }));
+  });
+});
+
 describe('runIdeas', () => {
   const ideasInput = {
     brandId: 'b1', brand, mode: 'shorts' as const, count: 4, deadline: null, upcomingDeadlines: [], recentTitles: [], platforms: ['instagram' as const],
@@ -163,7 +173,7 @@ describe('runIdeas', () => {
     const r = await runIdeas(d, ideasInput);
     expect(r).toHaveLength(4);
     expect(r.every((i) => i.platforms.every((p) => p === 'instagram'))).toBe(true);
-    expect(calls[0].maxTokens).toBe(3000);
+    expect(calls[0].maxTokens).toBe(2600);
     expect(d.recordUsage).toHaveBeenCalledWith(expect.objectContaining({ kind: 'ideas' }));
   });
 
@@ -175,6 +185,20 @@ describe('runIdeas', () => {
 
   it('quantidade inválida → erro de entrada', async () => {
     expect((await errOf(runIdeas(deps(), { ...ideasInput, count: 0 }))).code).toBe('invalid_input');
+  });
+
+  it('limite de tokens cresce com a quantidade (10 ideias → 5000)', async () => {
+    const { provider, calls } = spyProvider();
+    await runIdeas(deps({ provider }), { ...ideasInput, count: 10 });
+    expect(calls[0].maxTokens).toBe(5000);
+  });
+
+  it('resposta paga mas inválida → regista o custo e devolve o erro', async () => {
+    const usage = { inputTokens: 900, outputTokens: 3000, costUsd: 0.048 };
+    const broken: AiProvider = { chat: async () => { throw new AiError('invalid_response', 'x', usage); } };
+    const d = deps({ provider: broken });
+    expect((await errOf(runIdeas(d, ideasInput))).code).toBe('invalid_response');
+    expect(d.recordUsage).toHaveBeenCalledWith({ brandId: 'b1', kind: 'ideas', model: d.model, usage });
   });
 
   it('nenhuma ideia → invalid_response', async () => {

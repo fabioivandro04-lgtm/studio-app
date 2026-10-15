@@ -1,3 +1,4 @@
+import type { AiUsage } from './types';
 export type AiErrorCode = 'no_key' | 'budget' | 'auth' | 'unavailable' | 'invalid_response' | 'invalid_input' | 'bad_request';
 
 /** Erro da IA com mensagem pronta a mostrar ao dono (pt-PT). */
@@ -5,6 +6,8 @@ export class AiError extends Error {
   constructor(
     public code: AiErrorCode,
     message: string,
+    /** Custo de uma resposta paga mas inutilizável (para contar no limite mensal). */
+    public usage?: AiUsage,
   ) {
     super(message);
     this.name = 'AiError';

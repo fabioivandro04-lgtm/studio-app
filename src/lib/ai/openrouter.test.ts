@@ -112,3 +112,29 @@ describe('createFakeAi', () => {
     expect((await ai.chat({ ...base, spec: VoiceSpec })).data.voice).toBeTruthy();
   });
 });
+
+describe('resposta paga mas inutilizável', () => {
+  const usage = { prompt_tokens: 900, completion_tokens: 3000, cost: 0.048 };
+  const errOf = async (p: Promise<unknown>) => {
+    try {
+      await p;
+    } catch (e) {
+      return e as AiError;
+    }
+    throw new Error('não lançou');
+  };
+
+  it('cortada por falta de tokens → invalid_response com o custo', async () => {
+    const body = { choices: [{ finish_reason: 'length', message: { role: 'assistant', content: '{"text":"Olá' } }], usage };
+    const e = await errOf(createOpenRouter({ apiKey: 'k', appUrl: 'https://a', fetch: fakeFetch([['POST', URL_RE, () => body]]) }).chat(req));
+    expect(e.code).toBe('invalid_response');
+    expect(e.usage).toEqual({ inputTokens: 900, outputTokens: 3000, costUsd: 0.048 });
+  });
+
+  it('JSON que não cumpre o esquema → invalid_response com o custo', async () => {
+    const fetch = fakeFetch([['POST', URL_RE, () => okBody('{"outro":1}', usage)]]);
+    const e = await errOf(createOpenRouter({ apiKey: 'k', appUrl: 'https://a', fetch }).chat(req));
+    expect(e.code).toBe('invalid_response');
+    expect(e.usage?.costUsd).toBe(0.048);
+  });
+});

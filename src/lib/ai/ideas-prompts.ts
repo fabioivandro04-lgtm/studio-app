@@ -38,9 +38,9 @@ export function buildIdeasMessages(o: {
     [
       'Para cada ideia devolve em "ideas":',
       `- title: título curto (até ${IDEA_LIMITS.title} caracteres)`,
-      `- hook: frase de abertura que prende a atenção (até ${IDEA_LIMITS.hook})`,
-      `- outline: guião ou pontos principais, um por linha começando por "- " (até ${IDEA_LIMITS.outline})`,
-      `- caption: legenda de rascunho pronta a usar (até ${IDEA_LIMITS.caption})`,
+      '- hook: frase de abertura que prende a atenção (até 150 caracteres)',
+      '- outline: 3 a 5 linhas curtas com o guião ou os pontos principais, cada uma começando por "- "',
+      '- caption: legenda de rascunho curta (até 500 caracteres); o dono afina depois no post',
       '- format: um de ig_image, ig_carousel, ig_reel, ig_story, tiktok_video, yt_short (ou null)',
       '- platforms: redes onde publicar, só das disponíveis',
     ].join('\n'),

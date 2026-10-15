@@ -50,20 +50,24 @@ export function createOpenRouter(o: { apiKey: string; appUrl: string; fetch: typ
       } catch {
         throw new AiError('invalid_response', AI_MESSAGES.invalid_response);
       }
-      const content = body?.choices?.[0]?.message?.content;
-      if (typeof content !== 'string') throw new AiError('invalid_response', AI_MESSAGES.invalid_response);
-      let data;
-      try {
-        data = spec.parse(extractJson(content));
-      } catch {
-        throw new AiError('invalid_response', AI_MESSAGES.invalid_response);
-      }
-      const u = body.usage ?? {};
+      const u = body?.usage ?? {};
       const inputTokens = Number(u.prompt_tokens ?? 0);
       const outputTokens = Number(u.completion_tokens ?? 0);
       // Sem custo na resposta, estimar por excesso para o limite mensal continuar a valer.
       const costUsd = typeof u.cost === 'number' ? u.cost : (inputTokens * FALLBACK_USD_PER_M.input + outputTokens * FALLBACK_USD_PER_M.output) / 1e6;
-      return { data, usage: { inputTokens, outputTokens, costUsd } };
+      const usage = { inputTokens, outputTokens, costUsd };
+      // Resposta paga mas inutilizável (cortada ou fora do esquema): o erro leva o custo.
+      const unusable = () => new AiError('invalid_response', AI_MESSAGES.invalid_response, usage);
+      const choice = body?.choices?.[0];
+      const content = choice?.message?.content;
+      if (typeof content !== 'string' || choice?.finish_reason === 'length') throw unusable();
+      let data;
+      try {
+        data = spec.parse(extractJson(content));
+      } catch {
+        throw unusable();
+      }
+      return { data, usage };
     },
   };
 }
