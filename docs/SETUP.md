@@ -64,7 +64,8 @@ O projeto **studio app** já tem as tabelas, a segurança e as funções aplicad
 4. Em **Business login settings**, adicione o redirect: `APP_URL/api/oauth/instagram/callback`.
 5. Em **App roles → Roles**, adicione a sua conta de Instagram como **Instagram Tester** e aceite o convite
    no Instagram (**Definições → Apps e sites → Convites de testador**).
-6. Em **Permissions**, confirme `instagram_business_basic` e **ative `instagram_business_content_publish`**.
+6. Em **Permissions**, confirme `instagram_business_basic` e ative `instagram_business_content_publish` e
+   `instagram_business_manage_insights` (métricas).
 7. Copie o **Instagram App ID** e **Instagram App Secret** para a Vercel (`IG_APP_ID`, `IG_APP_SECRET`).
 
 Como só usa as suas contas, o **acesso padrão** chega e não precisa de revisão da Meta.
