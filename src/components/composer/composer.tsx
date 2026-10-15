@@ -308,7 +308,7 @@ export function Composer({ data }: { data: ComposerData }) {
             </div>
             <span className="pb-2 text-sm text-muted-foreground">Fuso: {brand?.timezone}</span>
           </div>
-          {!ro && <BestTime key={s.brandId} brandId={s.brandId} postId={s.id ?? null} onPick={(date, time) => update({ date, time })} />}
+          {!ro && <BestTime key={s.brandId} brandId={s.brandId} postId={s.id ?? null} hasSlots={!!brand?.hasSlots} onPick={(date, time) => update({ date, time })} />}
           {errorsFor(null).filter((e) => e.field !== 'mediaIds').map((e) => <p key={e.message} role="alert" className="text-sm text-destructive">{e.message}</p>)}
         </section>
 

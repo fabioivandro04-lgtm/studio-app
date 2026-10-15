@@ -8,12 +8,13 @@ import type { IdeasMode } from '@/lib/ai/ideas-prompts';
 import { deadlineDates, IDEAS_PER_RUN, missingForWeek, nextWeekRange, timeForDate, weekPlanDays } from '@/lib/ai/plan-dates';
 import { runIdeas } from '@/lib/ai/service';
 import { createServerClient } from '@/lib/db/clients';
-import { bestTimeInputs } from '@/lib/db/repo/ai-repo';
+import { bestTimeInputs, busyTimes } from '@/lib/db/repo/ai-repo';
 import { listBrands } from '@/lib/db/repo/brands-repo';
 import { claimIdea, getIdea, insertIdeas, linkIdeaPost, plannedCount, recentTitles, setIdeaStatus, upcomingDeadlines, type IdeaKind } from '@/lib/db/repo/ideas-repo';
 import type { Brand } from '@/lib/db/types';
 import { DeadlineInput, draftPayload, GenerateInput, IdeaIdInput, IdeaStatusInput } from '@/lib/ideas/draft';
 import type { Platform } from '@/lib/platforms/types';
+import { freeSlotsInRange } from '@/lib/schedule/slots';
 import { localToUtc, utcToLocalParts } from '@/lib/time/zone';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -37,9 +38,11 @@ async function activePlatforms(db: SupabaseClient, brandId: string): Promise<Pla
 /** Datas (com hora) para cada dia, evitando posts agendados e as horas já atribuídas neste lote. */
 async function scheduleDays(db: SupabaseClient, brand: Brand, days: string[], now: Date): Promise<Date[]> {
   const { history, busy } = await bestTimeInputs(db, brand.id, null, now);
-  const taken = [...busy];
+  const last = days.length ? localToUtc(addDaysIso(days[days.length - 1], 2), '00:00', brand.timezone) : now;
+  const others = brand.postingSlots.length ? await busyTimes(db, brand.id, new Date(now.getTime() - 86_400_000), last, { includeIdeas: true }) : [];
+  const taken = [...busy, ...others];
   return days.map((date) => {
-    const at = localToUtc(date, timeForDate({ date, goal: brand.goal, tz: brand.timezone, history, busy: taken, now }), brand.timezone);
+    const at = localToUtc(date, timeForDate({ date, goal: brand.goal, tz: brand.timezone, history, busy: taken, now, slots: brand.postingSlots }), brand.timezone);
     taken.push(at);
     return at;
   });
@@ -114,6 +117,13 @@ export async function planNextWeek(i: { brandId: string }): Promise<Ok | Fail> {
       const to = localToUtc(addDaysIso(end, 1), '00:00', brand.timezone);
       const missing = missingForWeek(brand.postsPerWeek, await plannedCount(db, brand.id, from, to));
       if (missing === 0) throw new AiError('invalid_input', 'A próxima semana já está completa.');
+      if (brand.postingSlots.length) {
+        // Horários fixos: as ideias vão para os horários livres da próxima semana.
+        const busy = await busyTimes(db, brand.id, from, to, { includeIdeas: true });
+        const free = freeSlotsInRange({ slots: brand.postingSlots, tz: brand.timezone, busy, now, from: start, to: end }).slice(0, Math.min(missing, IDEAS_PER_RUN));
+        if (free.length === 0) throw new AiError('invalid_input', 'Os horários fixos da próxima semana já estão ocupados.');
+        return { count: free.length, dates: free.map((s) => localToUtc(s.date, s.time, brand.timezone)), deadline: null };
+      }
       const days = weekPlanDays(start, missing);
       return { count: days.length, dates: await scheduleDays(db, brand, days, now), deadline: null };
     },

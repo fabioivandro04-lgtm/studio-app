@@ -53,6 +53,16 @@ describe('timeForDate', () => {
     expect(timeForDate({ ...base, date: '2026-10-24' })).toBe('18:00');
   });
 
+  it('com horários fixos: usa o livre desse dia mais próximo das 19:00; ocupado → comportamento atual', () => {
+    // 2026-10-20 é terça (weekday 2)
+    const slots = [{ weekday: 2, time: '08:00' }, { weekday: 2, time: '18:00' }, { weekday: 4, time: '10:00' }];
+    expect(timeForDate({ ...base, date: '2026-10-20', slots })).toBe('18:00');
+    expect(timeForDate({ ...base, date: '2026-10-20', slots, busy: [localToUtc('2026-10-20', '18:30', MZ)] })).toBe('08:00');
+    const busy = [localToUtc('2026-10-20', '18:00', MZ)];
+    expect(timeForDate({ ...base, date: '2026-10-20', slots: [{ weekday: 2, time: '18:00' }], busy })).toBe(timeForDate({ ...base, date: '2026-10-20', busy }));
+    expect(timeForDate({ ...base, date: '2026-10-21', slots })).toBe('19:00');
+  });
+
   it('evita posts agendados (±2 h) e horas a menos de 1 h', () => {
     expect(timeForDate({ ...base, date: '2026-10-20', busy: [localToUtc('2026-10-20', '19:30', MZ)] })).toBe('12:30');
     expect(timeForDate({ ...base, date: '2026-10-15', now: localToUtc('2026-10-15', '18:30', MZ) })).toBe('20:30');

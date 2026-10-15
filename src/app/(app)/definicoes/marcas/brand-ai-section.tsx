@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { saveBrandAi } from '../actions';
+import { PostingSlotsField } from './posting-slots-field';
+import type { PostingSlot } from '@/lib/schedule/slots';
 
 export interface BrandAiForm {
   brandId: string;
@@ -17,6 +19,7 @@ export interface BrandAiForm {
   aiHashtags: string[];
   goal: 'contacts' | 'reach';
   postsPerWeek: number;
+  postingSlots: PostingSlot[];
   hasInstagram: boolean;
 }
 
@@ -31,13 +34,14 @@ export function BrandAiSection({ initial }: { initial: BrandAiForm }) {
   const [tags, setTags] = useState(initial.aiHashtags.join(' '));
   const [goal, setGoal] = useState(initial.goal);
   const [ppw, setPpw] = useState(String(initial.postsPerWeek));
+  const [slots, setSlots] = useState(initial.postingSlots);
   const [pending, start] = useTransition();
   const [drafting, startDraft] = useTransition();
   const id = initial.brandId;
 
   const save = () =>
     start(async () => {
-      const r = await callSafely(() => saveBrandAi({ brandId: id, aiContext: context, aiVoice: voice, aiHashtags: tags.split(/[\s,]+/).filter(Boolean), goal, postsPerWeek: ppw.trim() === '' ? Number.NaN : Number(ppw) }));
+      const r = await callSafely(() => saveBrandAi({ brandId: id, aiContext: context, aiVoice: voice, aiHashtags: tags.split(/[\s,]+/).filter(Boolean), goal, postsPerWeek: ppw.trim() === '' ? Number.NaN : Number(ppw), postingSlots: slots }));
       if (r.ok) toast.success('Definições de IA guardadas.');
       else toast.error(r.error);
     });
@@ -124,6 +128,7 @@ export function BrandAiSection({ initial }: { initial: BrandAiForm }) {
           />
           <p className="text-xs text-muted-foreground">Usado para planear a semana nas Ideias.</p>
         </div>
+        <PostingSlotsField id={id} value={slots} onChange={setSlots} />
         <Button type="button" onClick={save} disabled={pending}>
           {pending ? 'A guardar…' : 'Guardar IA'}
         </Button>

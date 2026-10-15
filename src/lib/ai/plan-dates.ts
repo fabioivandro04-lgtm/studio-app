@@ -1,3 +1,4 @@
+import { freeSlotsInRange, type PostingSlot } from '@/lib/schedule/slots';
 import { localToUtc, utcToLocalParts } from '@/lib/time/zone';
 import { bestBuckets, INITIAL_TIMES, weekdayOf, type HistoryPoint } from './best-time';
 import type { Goal } from './types';
@@ -39,8 +40,13 @@ export function missingForWeek(postsPerWeek: number, alreadyPlanned: number): nu
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 
 /** Hora para um dia: melhor faixa do histórico nesse dia, senão a hora inicial mais perto das 19:00; evita ocupados. */
-export function timeForDate(o: { date: string; goal: Goal; tz: string; history: HistoryPoint[]; busy: Date[]; now: Date }): string {
+export function timeForDate(o: { date: string; goal: Goal; tz: string; history: HistoryPoint[]; busy: Date[]; now: Date; slots?: PostingSlot[] }): string {
   const wd = weekdayOf(o.date);
+  // Horários fixos da marca primeiro: o livre desse dia mais próximo das 19:00.
+  const fixed = freeSlotsInRange({ slots: o.slots ?? [], tz: o.tz, busy: o.busy, now: o.now, from: o.date, to: o.date })
+    .map((s) => s.time)
+    .sort((a, b) => Math.abs(toMin(a) - TARGET_MIN) - Math.abs(toMin(b) - TARGET_MIN));
+  if (fixed.length) return fixed[0];
   const fromHistory = bestBuckets(o.history, o.goal, o.tz)
     .best.filter((b) => b.weekday === wd)
     .map((b) => `${String(b.hour).padStart(2, '0')}:00`);

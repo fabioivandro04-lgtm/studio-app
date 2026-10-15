@@ -10,13 +10,14 @@ import type { RefineAction, Suggestions } from '@/lib/ai/types';
 import { AiSettingsInput } from '@/lib/brands/schema';
 import { decryptToken } from '@/lib/crypto/tokens';
 import { createServerClient, createServiceClient } from '@/lib/db/clients';
-import { bestTimeInputs, loadAiSettings, monthSpend } from '@/lib/db/repo/ai-repo';
+import { bestTimeInputs, busyTimes, loadAiSettings, monthSpend } from '@/lib/db/repo/ai-repo';
 import { listBrands } from '@/lib/db/repo/brands-repo';
 import { createTickRepo } from '@/lib/db/repo/tick-repo';
 import { serverEnv } from '@/lib/env';
 import { getAdapters } from '@/lib/platforms/registry';
 import type { Platform, TargetFormat } from '@/lib/platforms/types';
 import { ensureFreshToken } from '@/lib/publishing/tokens';
+import { nextFreeSlot } from '@/lib/schedule/slots';
 
 const IMAGE_URL_TTL_S = 600;
 
@@ -134,4 +135,18 @@ export async function saveAiSettings(i: { model: string; limitUsd: number }): Pr
   if (error) return { ok: false, error: 'Não foi possível guardar as definições da IA.' };
   revalidatePath('/definicoes/ia');
   return { ok: true };
+}
+
+/** Próximo horário fixo livre da marca (até 4 semanas). */
+export async function nextSlot(i: { brandId: string; excludePostId: string | null }): Promise<{ ok: true; slot: { date: string; time: string } | null } | Fail> {
+  try {
+    const db = await createServerClient();
+    const brand = (await listBrands(db)).find((b) => b.id === i.brandId);
+    if (!brand) return { ok: false, error: 'Marca não encontrada.' };
+    const now = new Date();
+    const busy = await busyTimes(db, brand.id, new Date(now.getTime() - 86_400_000), new Date(now.getTime() + 30 * 86_400_000), { excludePostId: i.excludePostId });
+    return { ok: true, slot: nextFreeSlot({ slots: brand.postingSlots, tz: brand.timezone, busy, now }) };
+  } catch (e) {
+    return fail(e);
+  }
 }

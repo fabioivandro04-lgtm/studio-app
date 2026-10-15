@@ -93,3 +93,17 @@ export async function bestTimeInputs(
   const busy = (scheduled.data ?? []).filter((p) => p.id !== excludePostId && p.scheduled_at).map((p) => new Date(p.scheduled_at));
   return { history, busy };
 }
+
+/** Momentos ocupados da marca em [from, to): posts não cancelados com data (rascunhos incluídos) e, se pedido, ideias novas com data. */
+export async function busyTimes(db: SupabaseClient, brandId: string, from: Date, to: Date, o: { excludePostId?: string | null; includeIdeas?: boolean } = {}): Promise<Date[]> {
+  const [posts, ideas] = await Promise.all([
+    db.from('posts').select('id, scheduled_at').eq('brand_id', brandId).neq('status', 'cancelled').gte('scheduled_at', from.toISOString()).lt('scheduled_at', to.toISOString()),
+    o.includeIdeas
+      ? db.from('ideas').select('suggested_at').eq('brand_id', brandId).eq('status', 'new').gte('suggested_at', from.toISOString()).lt('suggested_at', to.toISOString())
+      : Promise.resolve({ data: [] as { suggested_at: string }[] }),
+  ]);
+  return [
+    ...(posts.data ?? []).filter((p) => p.id !== o.excludePostId && p.scheduled_at).map((p) => new Date(p.scheduled_at as string)),
+    ...(ideas.data ?? []).map((i) => new Date(i.suggested_at)),
+  ];
+}
