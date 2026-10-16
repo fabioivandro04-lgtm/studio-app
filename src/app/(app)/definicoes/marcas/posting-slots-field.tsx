@@ -2,6 +2,8 @@
 
 import { Button } from '@/components/ui/button';
 import type { PostingSlot } from '@/lib/schedule/slots';
+import { SelectField } from '@/components/ui-x/select-field';
+import { TimeField } from '@/components/ui-x/time-field';
 
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
@@ -16,21 +18,8 @@ export function PostingSlotsField({ id, value, onChange }: { id: string; value: 
       </p>
       {value.map((s, i) => (
         <div key={i} className="flex items-center gap-2" data-testid="posting-slot">
-          <select
-            aria-label={`Dia do horário ${i + 1}`}
-            value={s.weekday}
-            onChange={(e) => set(i, { weekday: Number(e.target.value) })}
-            className="h-9 rounded-md border bg-background px-2 text-sm"
-          >
-            {DAYS.map((d, n) => <option key={d} value={n}>{d}</option>)}
-          </select>
-          <input
-            type="time"
-            aria-label={`Hora do horário ${i + 1}`}
-            value={s.time}
-            onChange={(e) => set(i, { time: e.target.value })}
-            className="h-9 rounded-md border bg-background px-2 text-sm"
-          />
+          <SelectField aria-label={`Dia do horário ${i + 1}`} value={String(s.weekday)} onChange={(v) => set(i, { weekday: Number(v) })} options={DAYS.map((d, n) => ({ value: String(n), label: d }))} className="w-40" />
+          <TimeField aria-label={`Hora do horário ${i + 1}`} value={s.time} onChange={(v) => set(i, { time: v })} className="w-28" />
           <Button type="button" size="sm" variant="ghost" onClick={() => onChange(value.filter((_, j) => j !== i))}>Remover</Button>
         </div>
       ))}

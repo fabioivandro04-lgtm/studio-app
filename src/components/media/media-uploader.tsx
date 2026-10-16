@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { checkFile } from '@/lib/media/check';
 import { uploadMedia } from '@/lib/media/upload';
+import { SelectField } from '@/components/ui-x/select-field';
 
 const MAX_MB = Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB ?? 50);
 
@@ -55,11 +56,7 @@ export function MediaUploader({ brands, defaultBrandId, onUploaded }: {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {brands.length > 1 && (
-        <select aria-label="Marca do ficheiro" value={brandId} onChange={(e) => setBrandId(e.target.value)} className="h-9 rounded-md border bg-background px-2 text-sm">
-          {brands.map((b) => (
-            <option key={b.id} value={b.id}>{b.name}</option>
-          ))}
-        </select>
+        <SelectField aria-label="Marca do ficheiro" value={brandId} onChange={setBrandId} options={brands.map((b) => ({ value: b.id, label: b.name }))} className="w-48" />
       )}
       <input
         ref={input}

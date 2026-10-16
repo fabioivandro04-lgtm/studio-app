@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AI_MODELS } from '@/lib/ai/types';
+import { SelectField } from '@/components/ui-x/select-field';
 
 const OTHER = 'outro';
 
@@ -31,12 +32,7 @@ export function AiSettingsForm({ initial }: { initial: { model: string; limitUsd
     <form onSubmit={submit} className="space-y-3 rounded-xl border p-4" aria-label="Definições da IA">
       <div className="space-y-1">
         <Label htmlFor="ai-model">Motor</Label>
-        <select id="ai-model" value={choice} onChange={(e) => setChoice(e.target.value)} className="h-9 w-full rounded-md border bg-background px-2 text-sm">
-          {AI_MODELS.map((m) => (
-            <option key={m.id} value={m.id}>{m.label}</option>
-          ))}
-          <option value={OTHER}>Outro (id do OpenRouter)</option>
-        </select>
+        <SelectField id="ai-model" value={choice} onChange={setChoice} options={[...AI_MODELS.map((m) => ({ value: m.id, label: m.label })), { value: OTHER, label: 'Outro (id do OpenRouter)' }]} />
         <p className="text-xs text-muted-foreground">Normal ≈ 2 cêntimos por geração · Económico ≈ 0,2 cêntimos.</p>
       </div>
       {choice === OTHER && (

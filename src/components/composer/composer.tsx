@@ -31,6 +31,9 @@ import { HashtagGroupsMenu } from './hashtag-groups-menu';
 import { RefineMenu } from './refine-menu';
 import { hasUnsavedChanges } from '@/lib/posts/dirty';
 import { checkPost, defaultFormat, FORMAT_LABEL, type PostError } from '@/lib/posts/schema';
+import { SelectField } from '@/components/ui-x/select-field';
+import { DateField } from '@/components/ui-x/date-field';
+import { TimeField } from '@/components/ui-x/time-field';
 
 type Target = ComposerData['initial']['targets'][number];
 const CAPTION_MAX: Record<string, number> = { instagram: 2200, tiktok: 2200, youtube: 5000 };
@@ -234,9 +237,7 @@ export function Composer({ data }: { data: ComposerData }) {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="brand">Marca</Label>
-              <select id="brand" disabled={ro || !!s.id} value={s.brandId} onChange={(e) => update({ brandId: e.target.value, mediaIds: [], targets: [] })} className="h-9 w-full rounded-md border bg-background px-2 text-sm">
-                {data.brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
+              <SelectField id="brand" disabled={ro || !!s.id} value={s.brandId} onChange={(v) => update({ brandId: v, mediaIds: [], targets: [] })} options={data.brands.map((b) => ({ value: b.id, label: b.name }))} />
             </div>
             <div className="space-y-1">
               <Label htmlFor="title">Título interno (só para si)</Label>
@@ -380,11 +381,11 @@ export function Composer({ data }: { data: ComposerData }) {
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-1">
               <Label htmlFor="date">Data</Label>
-              <Input id="date" type="date" disabled={ro} value={s.date} onChange={(e) => update({ date: e.target.value })} />
+              <DateField id="date" disabled={ro} value={s.date} onChange={(v) => update({ date: v })} />
             </div>
             <div className="space-y-1">
               <Label htmlFor="time">Hora</Label>
-              <Input id="time" type="time" disabled={ro} value={s.time} onChange={(e) => update({ time: e.target.value })} />
+              <TimeField id="time" disabled={ro} value={s.time} onChange={(v) => update({ time: v })} />
             </div>
             <span className="pb-2 text-sm text-muted-foreground">Fuso: {brand?.timezone}</span>
           </div>

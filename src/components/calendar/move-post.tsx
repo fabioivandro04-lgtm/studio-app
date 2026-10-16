@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { reschedule } from '@/app/(app)/calendario/actions';
 import { Button } from '@/components/ui/button';
 import { callSafely } from '@/lib/ai/call-safely';
+import { DateField } from '@/components/ui-x/date-field';
 
 const dayLabel = (d: string) => new Intl.DateTimeFormat('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${d}T12:00:00Z`));
 
@@ -33,13 +34,7 @@ export function MovePost({ postId, day, title }: { postId: string; day: string; 
   }
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 p-2">
-      <input
-        type="date"
-        aria-label="Novo dia"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-        className="h-9 rounded-md border bg-background px-2 text-sm"
-      />
+      <DateField aria-label="Novo dia" value={date} onChange={setDate} className="w-auto" />
       <Button type="button" size="sm" disabled={pending || !date || date === day} onClick={move}>
         {pending ? 'A mover…' : 'Mover para este dia'}
       </Button>

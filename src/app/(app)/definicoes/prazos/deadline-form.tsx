@@ -6,16 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { deleteDeadline, saveDeadline } from './actions';
+import { SelectField } from '@/components/ui-x/select-field';
+import { DateField } from '@/components/ui-x/date-field';
 
 const EMPTY = { title: '', dueDate: '', country: '', institution: '', url: '', notes: '' };
 
 export function DeadlineForm({ brands, defaultBrandId }: { brands: { id: string; name: string }[]; defaultBrandId: string | null }) {
   const [f, setF] = useState({ ...EMPTY, brandId: defaultBrandId ?? brands[0]?.id ?? '' });
   const [pending, start] = useTransition();
-  const field = (k: keyof typeof EMPTY, label: string, type = 'text') => (
+  const field = (k: keyof typeof EMPTY, label: string) => (
     <div className="space-y-1">
       <Label htmlFor={`dl-${k}`}>{label}</Label>
-      <Input id={`dl-${k}`} type={type} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+      <Input id={`dl-${k}`} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
     </div>
   );
   return (
@@ -36,13 +38,14 @@ export function DeadlineForm({ brands, defaultBrandId }: { brands: { id: string;
       {brands.length > 1 && (
         <div className="space-y-1 sm:col-span-2">
           <Label htmlFor="dl-brand">Marca</Label>
-          <select id="dl-brand" value={f.brandId} onChange={(e) => setF({ ...f, brandId: e.target.value })} className="h-9 w-full rounded-md border bg-background px-2 text-sm">
-            {brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select>
+          <SelectField id="dl-brand" value={f.brandId} onChange={(v) => setF({ ...f, brandId: v })} options={brands.map((b) => ({ value: b.id, label: b.name }))} />
         </div>
       )}
       {field('title', 'Nome do prazo')}
-      {field('dueDate', 'Data', 'date')}
+      <div className="space-y-1">
+        <Label htmlFor="dl-dueDate">Data</Label>
+        <DateField id="dl-dueDate" value={f.dueDate} onChange={(v) => setF({ ...f, dueDate: v })} />
+      </div>
       {field('country', 'País')}
       {field('institution', 'Instituição')}
       {field('url', 'Link')}

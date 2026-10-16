@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { generateDeadlineIdeas, generateShortsIdeas, planNextWeek } from '@/app/(app)/ideias/actions';
 import { Button } from '@/components/ui/button';
 import { callSafely } from '@/lib/ai/call-safely';
+import { SelectField } from '@/components/ui-x/select-field';
 
 export interface DeadlineOption { id: string; title: string; dueDate: string }
 
@@ -48,9 +49,7 @@ export function GenerateBar({ brandId, deadlines }: { brandId: string | null; de
         ) : (
           <div className="flex flex-wrap items-center gap-2">
             <label htmlFor="deadline-pick" className="text-sm">Prazo</label>
-            <select id="deadline-pick" value={deadlineId} onChange={(e) => setDeadlineId(e.target.value)} className="h-9 max-w-full rounded-md border bg-background px-2 text-sm">
-              {deadlines.map((d) => <option key={d.id} value={d.id}>{fmt(d.dueDate)} · {d.title}</option>)}
-            </select>
+            <SelectField id="deadline-pick" value={deadlineId} onChange={setDeadlineId} options={deadlines.map((d) => ({ value: d.id, label: `${fmt(d.dueDate)} · ${d.title}` }))} className="max-w-full sm:w-80" />
             <Button type="button" size="sm" disabled={pending || !deadlineId} onClick={() => run(() => generateDeadlineIdeas({ brandId, deadlineId }))}>Gerar</Button>
           </div>
         )

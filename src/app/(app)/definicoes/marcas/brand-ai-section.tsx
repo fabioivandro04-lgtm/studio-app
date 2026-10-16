@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { saveBrandAi } from '../actions';
 import { PostingSlotsField } from './posting-slots-field';
 import type { PostingSlot } from '@/lib/schedule/slots';
+import { SelectField } from '@/components/ui-x/select-field';
 
 export interface BrandAiForm {
   brandId: string;
@@ -104,15 +105,7 @@ export function BrandAiSection({ initial }: { initial: BrandAiForm }) {
         </div>
         <div className="space-y-1">
           <Label htmlFor={`goal-${id}`}>Objetivo</Label>
-          <select
-            id={`goal-${id}`}
-            value={goal}
-            onChange={(e) => setGoal(e.target.value as 'contacts' | 'reach')}
-            className="h-9 w-full rounded-md border bg-background px-2 text-sm"
-          >
-            <option value="contacts">Contactos</option>
-            <option value="reach">Alcance</option>
-          </select>
+          <SelectField id={`goal-${id}`} value={goal} onChange={(v) => setGoal(v as 'contacts' | 'reach')} options={[{ value: 'contacts', label: 'Contactos' }, { value: 'reach', label: 'Alcance' }]} />
         </div>
         <div className="space-y-1">
           <Label htmlFor={`ppw-${id}`}>Posts por semana</Label>

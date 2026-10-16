@@ -10,6 +10,7 @@ import { deleteBrand, saveBrand } from '../actions';
 import { BrandAiSection, type BrandAiForm } from './brand-ai-section';
 import { HashtagGroupsSection } from './hashtag-groups-section';
 import type { HashtagGroup } from '@/lib/db/repo/hashtag-groups-repo';
+import { SelectField } from '@/components/ui-x/select-field';
 
 type BrandForm = { id?: string; name: string; color: string; timezone: string };
 const EMPTY: BrandForm = { name: '', color: '#0B1F45', timezone: 'Africa/Maputo' };
@@ -49,18 +50,7 @@ function BrandRow({ initial, onDone }: { initial: BrandForm; onDone?: () => void
       </div>
       <div className="space-y-1">
         <Label htmlFor={`tz-${initial.id ?? 'nova'}`}>Fuso horário</Label>
-        <select
-          id={`tz-${initial.id ?? 'nova'}`}
-          value={form.timezone}
-          onChange={(e) => setForm({ ...form, timezone: e.target.value })}
-          className="h-9 w-full rounded-md border bg-background px-2 text-sm"
-        >
-          {TIMEZONES.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.label}
-            </option>
-          ))}
-        </select>
+        <SelectField id={`tz-${initial.id ?? 'nova'}`} value={form.timezone} onChange={(v) => setForm({ ...form, timezone: v })} options={TIMEZONES.map((t) => ({ value: t.id, label: t.label }))} />
       </div>
       <div className="flex gap-2 sm:col-span-3">
         <Button type="submit" disabled={pending}>
