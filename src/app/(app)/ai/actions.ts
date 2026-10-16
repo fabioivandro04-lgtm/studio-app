@@ -8,15 +8,12 @@ import { RefineInput, SuggestInput } from '@/lib/ai/inputs';
 import { runDraftVoice, runRefine, runSuggest } from '@/lib/ai/service';
 import type { RefineAction, Suggestions } from '@/lib/ai/types';
 import { AiSettingsInput } from '@/lib/brands/schema';
-import { decryptToken } from '@/lib/crypto/tokens';
-import { createServerClient, createServiceClient } from '@/lib/db/clients';
+import { createServerClient } from '@/lib/db/clients';
 import { bestTimeInputs, busyTimes, loadAiSettings, monthSpend } from '@/lib/db/repo/ai-repo';
 import { listBrands } from '@/lib/db/repo/brands-repo';
-import { createTickRepo } from '@/lib/db/repo/tick-repo';
+import { instagramRecentPosts } from '@/lib/db/repo/instagram-recent';
 import { serverEnv } from '@/lib/env';
-import { getAdapters } from '@/lib/platforms/registry';
 import type { Platform, TargetFormat } from '@/lib/platforms/types';
-import { ensureFreshToken } from '@/lib/publishing/tokens';
 import { nextFreeSlot } from '@/lib/schedule/slots';
 
 const IMAGE_URL_TTL_S = 600;
@@ -65,31 +62,8 @@ export async function refineCaption(i: { brandId: string; platform: Platform; te
 export async function draftVoice(i: { brandId: string }): Promise<{ ok: true; voice: string } | Fail> {
   try {
     const { db, brand, deps } = await aiSetup(i.brandId);
-    // RLS confirma que a conta é do dono; só depois se lê o token com o cliente de serviço.
-    const { data: acc } = await db
-      .from('social_accounts')
-      .select('id')
-      .eq('brand_id', brand.id)
-      .eq('platform', 'instagram')
-      .eq('status', 'active')
-      .limit(1)
-      .maybeSingle();
-    if (!acc) throw new AiError('invalid_input', 'Ligue o Instagram desta marca primeiro.');
-    const env = serverEnv();
-    const svc = createServiceClient();
-    const { data: a } = await svc
-      .from('social_accounts')
-      .select('id, external_id, access_token_enc, refresh_token_enc, token_expires_at')
-      .eq('id', acc.id)
-      .single();
-    if (!a) throw new AiError('invalid_input', 'Conta não encontrada.');
-    const adapter = getAdapters(env).instagram;
-    const accessToken = await ensureFreshToken(
-      { id: a.id, externalId: a.external_id, accessTokenEnc: a.access_token_enc, refreshTokenEnc: a.refresh_token_enc, tokenExpiresAt: a.token_expires_at ? new Date(a.token_expires_at) : null },
-      adapter,
-      { repo: createTickRepo(svc, env.TOKEN_ENC_KEY), decrypt: (x) => decryptToken(x, env.TOKEN_ENC_KEY), fetch, now: () => new Date() },
-    );
-    const posts = await adapter.listRecentPosts({ id: a.id, externalId: a.external_id, accessToken }, new Date(0), { fetch });
+    const posts = await instagramRecentPosts(db, brand.id);
+    if (!posts) throw new AiError('invalid_input', 'Ligue o Instagram desta marca primeiro.');
     const captions = posts.map((p) => p.title ?? '').filter(Boolean).slice(0, 20);
     return { ok: true, voice: await runDraftVoice(deps, { brandId: brand.id, brand: toBrandAi(brand), captions }) };
   } catch (e) {

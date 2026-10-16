@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { CalendarFilterBar } from '@/components/calendar/calendar-filters';
 import { CalendarList } from '@/components/calendar/calendar-list';
+import { InstagramGrid } from '@/components/calendar/instagram-grid';
 import { CalendarView, type CalendarDeadline, type CalendarPost } from '@/components/calendar/calendar-view';
 import { applyFilters, parseFilters } from '@/lib/calendar/filters';
 import { freeSlotsByDay } from '@/lib/calendar/free-slots';
@@ -15,13 +16,34 @@ import { cn } from '@/lib/utils';
 
 export default async function CalendarioPage({ searchParams }: { searchParams: Promise<{ vista?: string; data?: string; rede?: string; estado?: string }> }) {
   const sp = await searchParams;
-  const view = sp.vista === 'semana' ? 'semana' : sp.vista === 'lista' ? 'lista' : 'mes';
+  const view = sp.vista === 'semana' ? 'semana' : sp.vista === 'lista' ? 'lista' : sp.vista === 'grelha' ? 'grelha' : 'mes';
   const filters = parseFilters(sp);
   const db = await createServerClient();
   const brands = await listBrands(db);
   const brandId = await selectedBrandId(brands);
   const displayTz = brands.find((b) => b.id === brandId)?.timezone ?? brands[0]?.timezone ?? 'Africa/Maputo';
   const today = utcToLocalParts(new Date(), displayTz).date;
+  const viewTabs = (current: string, d: string, extra = '') => (
+    <div className="flex rounded-md border text-sm" role="tablist" aria-label="Vista">
+      {(['lista', 'semana', 'mes', 'grelha'] as const).map((v) => (
+        <Link key={v} role="tab" aria-selected={current === v} href={`/calendario?vista=${v}&data=${d}${v === 'grelha' ? '' : extra}`} className={cn('px-3 py-1.5 first:rounded-l-md last:rounded-r-md', current === v ? 'bg-primary text-primary-foreground' : 'hover:bg-accent')}>
+          {v === 'semana' ? 'Semana' : v === 'mes' ? 'Mês' : v === 'lista' ? 'Lista' : 'Grelha'}
+        </Link>
+      ))}
+    </div>
+  );
+  if (view === 'grelha') {
+    const brand = brands.find((b) => b.id === brandId);
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-lg font-semibold">Grelha do Instagram</h1>
+          {viewTabs('grelha', today)}
+        </div>
+        {brand ? <InstagramGrid brand={brand} /> : <p className="rounded-lg bg-highlight px-3 py-2 text-sm text-highlight-foreground">Escolha uma marca no topo para ver a grelha do Instagram.</p>}
+      </div>
+    );
+  }
   const date = sp.data && /^\d{4}-\d{2}-\d{2}$/.test(sp.data) ? sp.data : today;
 
   const listDays = Array.from({ length: 30 }, (_, i) => new Date(Date.parse(`${date}T12:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10));
@@ -101,13 +123,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
           <Link href={`/calendario?vista=${view}${keep}`} className="ml-1 rounded-md border px-2 py-1 text-sm hover:bg-accent">Hoje</Link>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-md border text-sm" role="tablist" aria-label="Vista">
-            {(['lista', 'semana', 'mes'] as const).map((v) => (
-              <Link key={v} role="tab" aria-selected={view === v} href={`/calendario?vista=${v}&data=${date}${keep}`} className={cn('px-3 py-1.5 first:rounded-l-md last:rounded-r-md', view === v ? 'bg-primary text-primary-foreground' : 'hover:bg-accent')}>
-                {v === 'semana' ? 'Semana' : v === 'mes' ? 'Mês' : 'Lista'}
-              </Link>
-            ))}
-          </div>
+          {viewTabs(view, date, keep)}
           <Link href="/posts/novo" className="flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"><Plus className="size-4" /> Novo post</Link>
         </div>
       </div>
