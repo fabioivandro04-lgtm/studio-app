@@ -55,7 +55,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
 
   let pq = db
     .from('posts')
-    .select('id, brand_id, internal_title, scheduled_at, status, post_targets(format), post_media(position, media_assets(storage_path, thumbnail_path, kind))')
+    .select('id, brand_id, internal_title, scheduled_at, status, origin, post_targets(format), post_media(position, media_assets(storage_path, thumbnail_path, kind))')
     .gte('scheduled_at', new Date(from.getTime() - 14 * 3_600_000).toISOString())
     .lt('scheduled_at', to.toISOString());
   if (brandId) pq = pq.eq('brand_id', brandId);
@@ -72,7 +72,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
   const progress = { brands: brands.length, accounts: accounts.count ?? 0, media: media.count ?? 0, posts: allPosts.count ?? 0 };
 
   type Row = {
-    id: string; brand_id: string; internal_title: string; scheduled_at: string; status: CalendarPost['status'];
+    id: string; brand_id: string; internal_title: string; scheduled_at: string; status: CalendarPost['status']; origin: string | null;
     post_targets: { format: TargetFormat }[];
     post_media: { position: number; media_assets: { storage_path: string; thumbnail_path: string | null; kind: string } | null }[];
   };
@@ -96,6 +96,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
       platforms: [...new Set(r.post_targets.map((t) => FORMAT_PLATFORM[t.format]))] as Platform[],
       thumbUrl: thumbPaths[i] ? (signed.get(thumbPaths[i]!) ?? null) : null,
       movable: r.status === 'draft' || r.status === 'scheduled',
+      byClaude: r.origin === 'claude',
     };
   });
   const posts = applyFilters(loaded, filters);

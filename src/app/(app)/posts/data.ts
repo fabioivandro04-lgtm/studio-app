@@ -23,6 +23,8 @@ export interface ComposerData {
   accounts: ComposerAccount[];
   media: MediaItem[];
   initial: ComposerInitial;
+  /** Rascunho criado pelo Claude (MCP). */
+  byClaude?: boolean;
 }
 
 function tomorrowAt9(tz: string): { date: string; time: string } {
@@ -56,7 +58,7 @@ export async function loadComposer(
     const tz = brands.find((b) => b.id === post.brand_id)?.timezone ?? 'Africa/Maputo';
     const when = post.scheduled_at ? utcToLocalParts(new Date(post.scheduled_at), tz) : tomorrowAt9(tz);
     return {
-      brands, accounts, media, hashtagGroups,
+      brands, accounts, media, hashtagGroups, byClaude: post.origin === 'claude',
       initial: {
         id: post.id, brandId: post.brand_id, internalTitle: post.internal_title, mediaIds, ...when,
         targets: (targets ?? []).map((t) => ({

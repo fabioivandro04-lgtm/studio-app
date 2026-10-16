@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarClock } from 'lucide-react';
+import { Bot, CalendarClock } from 'lucide-react';
 import Link from 'next/link';
 import { PrefetchKind } from 'next/dist/client/components/router-reducer/router-reducer-types';
 import { useRouter } from 'next/navigation';
@@ -25,6 +25,7 @@ export interface CalendarPost {
   platforms: Platform[];
   thumbUrl: string | null;
   movable: boolean;
+  byClaude?: boolean;
 }
 export interface CalendarDeadline { id: string; day: string; title: string; brandColor: string }
 
@@ -49,7 +50,7 @@ export function PostCard({ p, large = false }: { p: CalendarPost; large?: boolea
         p.status === 'cancelled' && 'opacity-60',
       )}
       style={{ borderLeft: `3px solid ${p.brandColor}` }}
-      title={`${p.brandName} · ${p.platforms.map((x) => PLATFORM_LABEL[x]).join(', ')} · ${POST_STATUS_LABEL[p.status]}`}
+      title={`${p.brandName} · ${p.platforms.map((x) => PLATFORM_LABEL[x]).join(', ')} · ${POST_STATUS_LABEL[p.status]}${p.byClaude ? ' · Criado pelo Claude' : ''}`}
     >
       <div className="flex items-start gap-2">
         {p.thumbUrl && (
@@ -65,6 +66,7 @@ export function PostCard({ p, large = false }: { p: CalendarPost; large?: boolea
           <p className={cn('truncate', large ? 'font-medium' : '')}>{p.title || 'Sem título'}</p>
           <div className="mt-0.5 flex items-center gap-1">
             {p.platforms.map((x) => <PlatformIcon key={x} platform={x} size="sm" />)}
+            {p.byClaude && <Bot className="size-3 text-muted-foreground" aria-label="Criado pelo Claude" />}
             {large && <span className="ml-1 truncate text-xs text-muted-foreground">{p.brandName}</span>}
           </div>
         </div>
