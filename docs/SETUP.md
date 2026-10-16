@@ -139,3 +139,8 @@ A IA só sugere texto e horários: nunca publica nem agenda sozinha.
 4. Carregue um vídeo curto na **Biblioteca**, crie um post para daqui a 5 minutos nas três redes.
 5. Confirme: Instagram publicado; TikTok e YouTube em **Pendentes** a aguardar 1 toque;
    **Definições → Registo** mostra cada passo.
+
+## Claude (MCP)
+
+O Claude (claude.ai e Claude Code) pode ler o Estúdio e criar rascunhos. Guia: [MCP.md](MCP.md).
+Passos únicos: correr `supabase/migrations/0014_mcp.sql` e ligar Authentication → OAuth Server (com Dynamic client registration e Authorization path `/oauth/autorizar`).

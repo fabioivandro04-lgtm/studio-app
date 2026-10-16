@@ -40,3 +40,7 @@ registado em `app_owner`.
 - `src/lib/schedule/slots.ts` — horários fixos (próximo horário livre, horários livres da semana)
 - `src/app/api/cron/*` — rotas chamadas pelo pg_cron do Supabase
 - `supabase/migrations` — esquema, segurança (RLS) e funções
+
+## Claude (MCP)
+
+O Claude (claude.ai e Claude Code) pode ler o Estúdio e criar rascunhos. Guia: [docs/MCP.md](docs/MCP.md).
