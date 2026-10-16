@@ -34,6 +34,7 @@ import { checkPost, defaultFormat, FORMAT_LABEL, type PostError } from '@/lib/po
 import { SelectField } from '@/components/ui-x/select-field';
 import { DateField } from '@/components/ui-x/date-field';
 import { TimeField } from '@/components/ui-x/time-field';
+import { PreviewSheet } from './preview-sheet';
 
 type Target = ComposerData['initial']['targets'][number];
 const CAPTION_MAX: Record<string, number> = { instagram: 2200, tiktok: 2200, youtube: 5000 };
@@ -220,8 +221,26 @@ export function Composer({ data }: { data: ComposerData }) {
 
   if (data.brands.length === 0) return <p className="text-sm text-muted-foreground">Crie primeiro uma marca em Definições → Marcas.</p>;
 
+  const preview = (
+    <>
+      {s.targets.length === 0 && <p className="text-sm text-muted-foreground">Escolha uma rede para ver a pré-visualização.</p>}
+      {s.targets.map((t) => {
+        const acc = accounts.find((a) => a.id === t.accountId);
+        if (!acc) return null;
+        return (
+          <div key={t.accountId} className="space-y-2 rounded-lg border bg-card p-3 shadow-xs">
+            <p className="text-xs font-medium">{PLATFORM_LABEL[acc.platform]} · {FORMAT_LABEL[t.format]}</p>
+            {selectedMedia[0] && <MediaThumb item={selectedMedia[0]} className={t.format === 'ig_image' || t.format === 'ig_carousel' ? '' : 'aspect-[9/16]'} />}
+            {t.title && <p className="text-sm font-semibold">{t.title}</p>}
+            {t.caption && <p className="line-clamp-4 whitespace-pre-wrap text-xs">{t.caption}</p>}
+          </div>
+        );
+      })}
+    </>
+  );
+
   return (
-    <div className="mx-auto grid max-w-5xl gap-6 pb-28 md:pb-20 lg:grid-cols-[1fr_300px]">
+    <div className="mx-auto grid max-w-5xl gap-6 pb-40 md:pb-20 lg:grid-cols-[1fr_300px]">
       <div className="space-y-5">
         {ro && <p role="status" className="rounded-lg bg-highlight px-3 py-2 text-sm text-highlight-foreground">Este post já começou a publicar — só de leitura.</p>}
         {showRecover && (
@@ -282,8 +301,14 @@ export function Composer({ data }: { data: ComposerData }) {
           {errorsFor(null).filter((e) => e.field === 'mediaIds').map((e) => <p key={e.message} className="text-sm text-destructive">{e.message}</p>)}
         </section>
 
-        {!ro && (
-          <AiPanel
+
+        <section className="space-y-4 rounded-lg border bg-card p-4 shadow-xs md:p-5" aria-label="Redes">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-semibold">2. Redes e legendas</h2>
+            {!ro && <HashtagGroupsMenu key={s.brandId} groups={data.hashtagGroups.filter((g) => g.brandId === s.brandId)} onPick={addGroupHashtags} />}
+          </div>
+          {!ro && (
+            <AiPanel
             key={s.brandId}
             brandId={s.brandId}
             mediaId={s.mediaIds[0] ?? null}
@@ -302,12 +327,6 @@ export function Composer({ data }: { data: ComposerData }) {
             }}
           />
         )}
-
-        <section className="space-y-4 rounded-lg border bg-card p-4 shadow-xs md:p-5" aria-label="Redes">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-semibold">2. Redes e legendas</h2>
-            {!ro && <HashtagGroupsMenu key={s.brandId} groups={data.hashtagGroups.filter((g) => g.brandId === s.brandId)} onPick={addGroupHashtags} />}
-          </div>
           {accounts.length === 0 && (
             <p className="rounded-lg bg-highlight px-3 py-2 text-sm text-highlight-foreground">
               Esta marca ainda não tem redes ligadas.{' '}
@@ -397,6 +416,7 @@ export function Composer({ data }: { data: ComposerData }) {
           <div className="mx-auto flex max-w-5xl items-center gap-2">
             {!ro && <Button type="button" disabled={pending} onClick={() => submit('schedule')}>Agendar</Button>}
             {!ro && <Button type="button" variant="outline" disabled={pending} onClick={() => submit('draft')}>Guardar rascunho</Button>}
+            <PreviewSheet>{preview}</PreviewSheet>
             {s.id && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -423,21 +443,9 @@ export function Composer({ data }: { data: ComposerData }) {
         </div>
       </div>
 
-      <aside aria-label="Pré-visualização" className="space-y-3 lg:sticky lg:top-20 lg:self-start">
+      <aside aria-label="Pré-visualização" className="hidden space-y-3 lg:sticky lg:top-20 lg:block lg:self-start">
         <h2 className="font-semibold">Pré-visualização</h2>
-        {s.targets.length === 0 && <p className="text-sm text-muted-foreground">Escolha uma rede para ver a pré-visualização.</p>}
-        {s.targets.map((t) => {
-          const acc = accounts.find((a) => a.id === t.accountId);
-          if (!acc) return null;
-          return (
-            <div key={t.accountId} className="space-y-2 rounded-lg border bg-card p-3 shadow-xs">
-              <p className="text-xs font-medium">{PLATFORM_LABEL[acc.platform]} · {FORMAT_LABEL[t.format]}</p>
-              {selectedMedia[0] && <MediaThumb item={selectedMedia[0]} className={t.format === 'ig_image' || t.format === 'ig_carousel' ? '' : 'aspect-[9/16]'} />}
-              {t.title && <p className="text-sm font-semibold">{t.title}</p>}
-              {t.caption && <p className="line-clamp-4 whitespace-pre-wrap text-xs">{t.caption}</p>}
-            </div>
-          );
-        })}
+        {preview}
       </aside>
     </div>
   );

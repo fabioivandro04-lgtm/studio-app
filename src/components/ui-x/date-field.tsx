@@ -23,7 +23,7 @@ export function DateField({ id, value, onChange, disabled, placeholder = 'Escolh
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button id={id} type="button" variant="outline" disabled={disabled} aria-label={aria['aria-label']} className={cn('h-10 w-full justify-start gap-2 bg-card font-normal', !value && 'text-muted-foreground', className)}>
+        <Button id={id} type="button" variant="outline" data-value={value} disabled={disabled} aria-label={aria['aria-label']} className={cn('h-10 w-full justify-start gap-2 bg-card font-normal', !value && 'text-muted-foreground', className)}>
           <CalendarDays className="size-4 text-muted-foreground" aria-hidden />
           {value ? formatDayPt(value) : placeholder}
         </Button>
