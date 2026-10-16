@@ -87,8 +87,8 @@ export async function InstagramGrid({ brand }: { brand: Brand }) {
                     <span className={cn('absolute left-1 top-1 rounded px-1.5 py-0.5 text-[10px] font-medium', POST_STATUS_CLASS[it.status])}>
                       {POST_STATUS_LABEL[it.status]} · {when}
                     </span>
-                    {it.format === 'ig_reel' && <Clapperboard className="absolute right-1 top-1 size-4 text-white drop-shadow" aria-hidden />}
-                    {it.format === 'ig_carousel' && <Layers className="absolute right-1 top-1 size-4 text-white drop-shadow" aria-hidden />}
+                    {it.format === 'ig_reel' && <Clapperboard className={cn('absolute right-1 top-1 size-4', it.thumbUrl ? 'text-white drop-shadow' : 'text-muted-foreground')} aria-hidden />}
+                    {it.format === 'ig_carousel' && <Layers className={cn('absolute right-1 top-1 size-4', it.thumbUrl ? 'text-white drop-shadow' : 'text-muted-foreground')} aria-hidden />}
                   </Link>
                 ) : it.href ? (
                   <a href={it.href} target="_blank" rel="noreferrer" className="block size-full" aria-label={`Publicado ${when} (abre no Instagram)`}>
