@@ -9,12 +9,12 @@ const ITEMS = [
   { href: '/calendario', label: 'Calendário', icon: CalendarDays },
   { href: '/ideias', label: 'Ideias', icon: Lightbulb },
   { href: '/biblioteca', label: 'Biblioteca', icon: Images },
-  { href: '/pendentes', label: 'Pendentes', icon: Inbox },
+  { href: '/caixa', label: 'Caixa', icon: Inbox },
   { href: '/metricas', label: 'Métricas', icon: BarChart3 },
   { href: '/definicoes', label: 'Definições', icon: Settings },
 ] as const;
 
-export function AppNav({ pendingCount = 0 }: { pendingCount?: number }) {
+export function AppNav({ inboxCount = 0 }: { inboxCount?: number }) {
   const path = usePathname();
   return (
     <nav
@@ -38,9 +38,9 @@ export function AppNav({ pendingCount = 0 }: { pendingCount?: number }) {
           >
             <Icon className="size-5 md:size-4" aria-hidden />
             <span>{label}</span>
-            {href === '/pendentes' && pendingCount > 0 && (
+            {href === '/caixa' && inboxCount > 0 && (
               <span className="absolute right-[22%] top-1 rounded-full bg-brand-amber px-1.5 text-[10px] font-semibold text-[#0B1F45] md:static md:ml-auto">
-                {pendingCount}
+                <span className="sr-only">À espera: </span>{inboxCount}
               </span>
             )}
           </Link>

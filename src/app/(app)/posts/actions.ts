@@ -41,6 +41,7 @@ export async function savePost(raw: PostInputT): Promise<SaveResult> {
   }
   revalidatePath('/calendario');
   revalidatePath('/pendentes');
+  revalidatePath('/caixa');
   return { ok: true, id: id as string };
 }
 

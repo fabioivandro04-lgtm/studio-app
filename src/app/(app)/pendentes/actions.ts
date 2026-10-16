@@ -13,6 +13,7 @@ type Result = { ok: true } | { ok: false; error: string };
 
 const refresh = () => {
   revalidatePath('/pendentes');
+  revalidatePath('/caixa');
   revalidatePath('/calendario');
 };
 
