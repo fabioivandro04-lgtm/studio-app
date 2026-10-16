@@ -14,7 +14,7 @@ export type Sql = (q: string, params?: unknown[]) => Promise<Row[]>;
 
 export interface TestDb {
   sql: Sql;
-  asUser(uid: string | null): { sql: Sql };
+  asUser(uid: string | null, o?: { clientId?: string }): { sql: Sql };
   connect(): Promise<pg.Client>;
   stop(): Promise<void>;
 }
@@ -62,12 +62,14 @@ export async function startTestDb(): Promise<TestDb> {
 
   const sql: Sql = async (q, params) => (await admin.query(q, params as unknown[])).rows;
 
-  const asUser = (uid: string | null) => ({
+  const asUser = (uid: string | null, o: { clientId?: string } = {}) => ({
     sql: (async (q, params) => {
       await admin.query('begin');
       try {
         await admin.query(uid ? 'set local role authenticated' : 'set local role anon');
         await admin.query(`select set_config('request.jwt.claim.sub', $1, true)`, [uid ?? '']);
+        const claims = uid ? { sub: uid, role: 'authenticated', ...(o.clientId ? { client_id: o.clientId } : {}) } : {};
+        await admin.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify(claims)]);
         const res = await admin.query(q, params as unknown[]);
         await admin.query('commit');
         return res.rows;
