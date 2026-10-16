@@ -17,7 +17,7 @@ export function fakeDb(tables: Record<string, Row[]>, opts: { rpc?: Record<strin
     const preds: Pred[] = [];
     let op: 'select' | 'insert' | 'update' = 'select';
     let payload: Row | Row[] | null = null;
-    let orderBy: { col: string; asc: boolean }[] = [];
+    const orderBy: { col: string; asc: boolean }[] = [];
     let lim: number | null = null;
     let mode: 'many' | 'single' | 'maybe' = 'many';
     let countHead = false;
