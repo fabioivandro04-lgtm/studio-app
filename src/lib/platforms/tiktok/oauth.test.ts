@@ -24,7 +24,10 @@ describe('TikTok OAuth', () => {
       }],
       ['GET', /user\/info/, (c) => {
         expect(c.headers.authorization).toBe('Bearer at');
-        return { data: { user: { open_id: 'open1', display_name: 'Viral', username: 'viral_shorts', avatar_url: 'https://a' } }, error: { code: 'ok' } };
+        // "username" exige o scope user.info.profile, que não pedimos: só campos de user.info.basic.
+        expect(c.url).toContain('fields=open_id%2Cavatar_url%2Cdisplay_name');
+        expect(c.url).not.toContain('username');
+        return { data: { user: { open_id: 'open1', display_name: 'Viral', avatar_url: 'https://a' } }, error: { code: 'ok' } };
       }],
     ]);
     const r = await adapter.exchangeCode('CODE', 'https://app/cb', { fetch, now: () => NOW });
@@ -32,7 +35,7 @@ describe('TikTok OAuth', () => {
       accessToken: 'at', refreshToken: 'rt', expiresAt: new Date('2026-10-16T10:00:00Z'),
       refreshExpiresAt: new Date('2027-10-15T10:00:00Z'), scopes: ['user.info.basic', 'video.upload'],
     });
-    expect(r.profile).toEqual({ externalId: 'open1', handle: 'viral_shorts', displayName: 'Viral', avatarUrl: 'https://a' });
+    expect(r.profile).toEqual({ externalId: 'open1', handle: 'Viral', displayName: 'Viral', avatarUrl: 'https://a' });
   });
 
   it('refreshToken usa grant_type=refresh_token', async () => {

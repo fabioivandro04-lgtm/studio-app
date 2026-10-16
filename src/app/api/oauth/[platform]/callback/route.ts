@@ -38,6 +38,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ platfor
     });
     return done(`ligada=${state.platform}`);
   } catch (e) {
+    console.error(`oauth:${platform} callback falhou`, (e as Error).message);
     const msg = (e as { userMessage?: string }).userMessage ?? (e as Error).message;
     return fail(`Não foi possível ligar o ${label}: ${msg}`);
   }

@@ -56,16 +56,17 @@ export async function ttExchangeCode(
     grant_type: 'authorization_code',
     redirect_uri: redirectUri,
   });
+  // Só campos de user.info.basic: "username" exige user.info.profile (não pedido) e o TikTok recusa o pedido todo.
   const info = await ttApi(deps.fetch, r.access_token).get('/user/info/', {
-    fields: 'open_id,avatar_url,display_name,username',
+    fields: 'open_id,avatar_url,display_name',
   });
   const u = info.data?.user ?? {};
   return {
     tokens: toTokenSet(r, deps.now()),
     profile: {
       externalId: String(u.open_id ?? r.open_id),
-      handle: u.username ?? u.display_name ?? 'tiktok',
-      displayName: u.display_name ?? u.username ?? 'TikTok',
+      handle: u.display_name ?? 'tiktok',
+      displayName: u.display_name ?? 'TikTok',
       avatarUrl: u.avatar_url ?? null,
     },
   };
