@@ -3,10 +3,13 @@ import { biblioteca } from './biblioteca';
 import { calendario } from './calendario';
 import { contextoMarca } from './contexto-marca';
 import { estadoPublicacoes } from './estado-publicacoes';
+import { grelhaInstagram } from './grelha-instagram';
 import { horariosLivres } from './horarios-livres';
 import { ideias } from './ideias';
 import { marcas } from './marcas';
+import { metricas } from './metricas';
 import { prazos } from './prazos';
+import { resumoSemana } from './resumo-semana';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const TOOLS: ToolDef<any>[] = [marcas, contextoMarca, calendario, horariosLivres, biblioteca, ideias, prazos, estadoPublicacoes];
+export const TOOLS: ToolDef<any>[] = [marcas, contextoMarca, calendario, horariosLivres, biblioteca, ideias, prazos, estadoPublicacoes, metricas, grelhaInstagram, resumoSemana];
