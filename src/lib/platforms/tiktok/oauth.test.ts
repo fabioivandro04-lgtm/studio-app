@@ -38,6 +38,13 @@ describe('TikTok OAuth', () => {
     expect(r.profile).toEqual({ externalId: 'open1', handle: 'Viral', displayName: 'Viral', avatarUrl: 'https://a' });
   });
 
+  it('exchangeCode mostra o erro do TikTok quando o token não vem (200 com error)', async () => {
+    const fetch = fakeFetch([['POST', /oauth\/token/, () => ({ error: 'invalid_client', error_description: 'Client key or secret is incorrect.' })]]);
+    await expect(adapter.exchangeCode('CODE', 'https://app/cb', { fetch, now: () => NOW })).rejects.toMatchObject({
+      userMessage: 'O TikTok recusou a ligação (invalid_client: Client key or secret is incorrect.).',
+    });
+  });
+
   it('refreshToken usa grant_type=refresh_token', async () => {
     const fetch = fakeFetch([['POST', /oauth\/token/, (c) => {
       expect(c.params).toMatchObject({ grant_type: 'refresh_token', refresh_token: 'rt' });

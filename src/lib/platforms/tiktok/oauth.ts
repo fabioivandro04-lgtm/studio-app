@@ -1,3 +1,4 @@
+import { PermanentError } from '../errors';
 import { requestJson } from '../http';
 import type { AccountProfile, TokenSet } from '../types';
 import { TT_BASE, ttApi, type TtConfig } from './api';
@@ -25,14 +26,20 @@ interface TokenResponse {
 }
 
 async function tokenRequest(fetchFn: typeof fetch, params: Record<string, string>): Promise<TokenResponse> {
-  return (
-    await requestJson<TokenResponse>(fetchFn, `${TT_BASE}/oauth/token/`, {
+  const body = (
+    await requestJson<TokenResponse & { error?: unknown; error_description?: string }>(fetchFn, `${TT_BASE}/oauth/token/`, {
       platform: 'tiktok',
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams(params),
     })
   ).body;
+  // O TikTok responde 200 com { error, error_description } quando o código ou as chaves estão errados.
+  if (!body.access_token) {
+    const why = [body.error, body.error_description].filter((x) => typeof x === 'string' && x).join(': ') || 'sem token';
+    throw new PermanentError(`TikTok token: ${why}`, `O TikTok recusou a ligação (${why}).`);
+  }
+  return body;
 }
 
 const toTokenSet = (r: TokenResponse, now: Date): TokenSet => ({
