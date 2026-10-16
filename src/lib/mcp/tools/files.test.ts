@@ -32,7 +32,7 @@ describe('pedir_envio', () => {
     const r = await runTool(pedirEnvio, { brandId: B, nome: 'reel final.mp4', mime: 'video/mp4', tamanhoBytes: 1000 }, testCtx(fakeDb({ brands: [brand] }, { storage: st.api }).db));
     const d = r.structuredContent as { envioId: string; url: string };
     expect(d.envioId).toMatch(/^[0-9a-f-]{36}\.mp4$/);
-    expect(d.url).toBe(`https://sb.test/upload/${B}/${d.envioId}?token=t`);
+    expect(d.url).toBe(`https://sb.test/upload/${B}/mcp/${d.envioId}?token=t`);
     expect(text(r)).toContain(`curl -X PUT -H 'Content-Type: video/mp4' --data-binary @'reel final.mp4' '${d.url}'`);
   });
   it('HEIC/PNG recusados, tamanho acima do limite recusado', async () => {
@@ -46,11 +46,11 @@ describe('pedir_envio', () => {
 describe('confirmar_envio', () => {
   it('lê medidas e cria o ficheiro na Biblioteca', async () => {
     const env = '33333333-3333-4333-8333-333333333333.mp4';
-    const st = storage({ [`${B}/${env}`]: fx('blue-64x96-1.5s.mp4') });
+    const st = storage({ [`${B}/mcp/${env}`]: fx('blue-64x96-1.5s.mp4') });
     const { db, tables } = fakeDb({ brands: [brand], media_assets: [], activity_log: [] }, { storage: st.api });
     const r = await runTool(confirmarEnvio, { brandId: B, envioId: env, nome: 'reel.mp4' }, testCtx(db));
     expect(r.isError).toBeUndefined();
-    expect(tables.media_assets[0]).toMatchObject({ id: '33333333-3333-4333-8333-333333333333', brand_id: B, storage_path: `${B}/${env}`, kind: 'video', mime: 'video/mp4', width: 64, height: 96, duration_s: 1.52, original_name: 'reel.mp4' });
+    expect(tables.media_assets[0]).toMatchObject({ id: '33333333-3333-4333-8333-333333333333', brand_id: B, storage_path: `${B}/mcp/${env}`, kind: 'video', mime: 'video/mp4', width: 64, height: 96, duration_s: 1.52, original_name: 'reel.mp4' });
     expect(r.structuredContent).toMatchObject({ mediaId: '33333333-3333-4333-8333-333333333333' });
     expect(tables.activity_log).toHaveLength(1);
   });
@@ -62,12 +62,31 @@ describe('confirmar_envio', () => {
   });
   it('conteúdo que não é o tipo indicado → apaga e explica', async () => {
     const env = '33333333-3333-4333-8333-333333333333.jpg';
-    const st = storage({ [`${B}/${env}`]: new TextEncoder().encode('<html>') });
+    const st = storage({ [`${B}/mcp/${env}`]: new TextEncoder().encode('<html>') });
     const { db, tables } = fakeDb({ brands: [brand], media_assets: [] }, { storage: st.api });
     const r = await runTool(confirmarEnvio, { brandId: B, envioId: env, nome: 'a.jpg' }, testCtx(db));
     expect(text(r)).toBe('"a.jpg" não é um ficheiro JPG/MP4/MOV válido.');
-    expect(st.removed).toEqual([`${B}/${env}`]);
+    expect(st.removed).toEqual([`${B}/mcp/${env}`]);
     expect(tables.media_assets).toHaveLength(0);
+  });
+  it('repetir confirmar_envio devolve o mesmo ficheiro e nunca apaga nada', async () => {
+    const env = '33333333-3333-4333-8333-333333333333.mp4';
+    const st = storage({ [`${B}/mcp/${env}`]: fx('blue-64x96-1.5s.mp4') });
+    const { db, tables } = fakeDb({ brands: [brand], media_assets: [], activity_log: [] }, { storage: st.api });
+    await runTool(confirmarEnvio, { brandId: B, envioId: env, nome: 'reel.mp4' }, testCtx(db));
+    const r2 = await runTool(confirmarEnvio, { brandId: B, envioId: env, nome: 'reel.mp4' }, testCtx(db));
+    expect(r2.isError).toBeUndefined();
+    expect(r2.structuredContent).toMatchObject({ mediaId: '33333333-3333-4333-8333-333333333333' });
+    expect(tables.media_assets).toHaveLength(1);
+    expect(st.removed).toEqual([]);
+  });
+  it('um ficheiro da app (fora de mcp/) nunca é lido nem apagado', async () => {
+    const env = '44444444-4444-4444-8444-444444444444.jpg';
+    const st = storage({ [`${B}/${env}`]: new TextEncoder().encode('<html>') });
+    const { db } = fakeDb({ brands: [brand], media_assets: [] }, { storage: st.api });
+    const r = await runTool(confirmarEnvio, { brandId: B, envioId: env, nome: 'a.jpg' }, testCtx(db));
+    expect(text(r)).toBe('O ficheiro ainda não chegou. Confirme que o envio terminou e tente de novo.');
+    expect(st.removed).toEqual([]);
   });
   it('envioId inválido', async () => {
     const r = await runTool(confirmarEnvio, { brandId: B, envioId: '../x.jpg', nome: 'a' }, testCtx(fakeDb({ brands: [brand] }).db));
@@ -84,6 +103,7 @@ describe('importar_de_link', () => {
     expect(r.isError).toBeUndefined();
     expect(tables.media_assets[0]).toMatchObject({ kind: 'image', mime: 'image/jpeg', width: 40, height: 50, original_name: 'capa.jpg' });
     expect(Object.keys(st.objects)).toEqual([tables.media_assets[0].storage_path]);
+    expect(tables.media_assets[0].storage_path).toMatch(new RegExp(`^${B}/mcp/[0-9a-f-]{36}\\.jpg$`));
   });
   it('erro do link chega ao utilizador', async () => {
     const { db } = fakeDb({ brands: [brand] }, { storage: storage().api });

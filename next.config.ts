@@ -5,6 +5,18 @@ const nextConfig: NextConfig = {
   // O browser guarda as páginas já vistas (e as pré-carregadas) por uns segundos: voltar a elas é imediato.
   // As server actions que gravam dados chamam revalidatePath, que limpa esta cache.
   experimental: { staleTimes: { dynamic: 30, static: 180 } },
+  // A página "Permitir / Recusar" do Claude não pode ser mostrada dentro de outro site (clickjacking).
+  async headers() {
+    return [
+      {
+        source: "/oauth/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "X-Frame-Options", value: "DENY" },
+        ],
+      },
+    ];
+  },
   turbopack: {
     rules: {
       "*.css": {

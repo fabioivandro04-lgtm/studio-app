@@ -102,3 +102,26 @@ it('migração 0014 é reaplicável', async () => {
   await db.sql(sql);
   await db.sql(sql);
 });
+
+describe('revisão final: agente', () => {
+  it('não altera ficheiros da Biblioteca (media_assets) nem objetos do Storage', async () => {
+    expect(await agent().sql(`update media_assets set storage_path='outro' where id=$1 returning 1`, [s.media.id])).toEqual([]);
+    await db.sql(`insert into storage.objects(bucket_id, name) values ('media','b/1.jpg')`);
+    expect(await agent().sql(`update storage.objects set name='b/2.jpg' returning 1`)).toEqual([]);
+  });
+  it('não esconde a origem: save_post e insert direto ficam "claude"', async () => {
+    const [{ id }] = await saveAs(agent(), payload({ origin: undefined }));
+    expect((await db.sql('select origin from posts where id=$1', [id]))[0].origin).toBe('claude');
+    await expect(agent().sql(`insert into posts(brand_id, status, origin) values ($1,'draft','app')`, [s.brand.id])).rejects.toThrow(/row-level security/);
+    await expect(agent().sql(`update posts set origin='app' where id=$1`, [id])).rejects.toThrow(/row-level security/);
+  });
+  it('não reescreve o registo de atividade', async () => {
+    await db.sql(`insert into activity_log(brand_id, level, source, message) values ($1,'info','app','x')`, [s.brand.id]);
+    expect(await agent().sql(`update activity_log set message='y' returning 1`)).toEqual([]);
+  });
+  it('cancel_post e retry_target como agente não mudam um post agendado', async () => {
+    const [{ id }] = await saveAs(owner(), payload({ intent: 'schedule', origin: undefined }));
+    await agent().sql('select cancel_post($1)', [id]).catch(() => {});
+    expect((await db.sql('select status from posts where id=$1', [id]))[0].status).toBe('scheduled');
+  });
+});

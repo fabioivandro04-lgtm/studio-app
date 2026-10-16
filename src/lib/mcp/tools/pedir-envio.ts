@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { BrandId, loadBrand } from '../common';
 import { ok } from '../result';
 import { defineTool } from '../tool';
-import { acceptType, storageOf } from '../uploads';
+import { acceptType, mcpPath, storageOf } from '../uploads';
 
 const q = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
 
@@ -15,7 +15,7 @@ export const pedirEnvio = defineTool({
     await loadBrand(ctx.db, BrandId.parse(brandId));
     const t = acceptType(nome, mime, tamanhoBytes, ctx.maxUploadMb);
     const envioId = `${crypto.randomUUID()}.${t.ext}`;
-    const { data, error } = await storageOf(ctx).createSignedUploadUrl(`${brandId}/${envioId}`);
+    const { data, error } = await storageOf(ctx).createSignedUploadUrl(mcpPath(brandId, envioId));
     if (error || !data) throw new Error(`signed upload: ${error?.message}`);
     const expiraEm = new Date(ctx.now().getTime() + 2 * 3600_000).toISOString();
     const cmd = `curl -X PUT -H 'Content-Type: ${t.mime}' --data-binary @${q(nome)} ${q(data.signedUrl)}`;

@@ -18,7 +18,14 @@ export const criarRascunho = defineTool({
       if (!idea || idea.brand_id !== a.brandId) throw new ToolError('Ideia não encontrada nesta marca.');
       if (!(await claimIdea(ctx.db, ideiaId))) throw new ToolError('Esta ideia já foi usada ou descartada.');
     }
-    const postId = await saveDraft(ctx, input, pc.tz);
+    let postId: string;
+    try {
+      postId = await saveDraft(ctx, input, pc.tz);
+    } catch (e) {
+      // Liberta a ideia reservada: sem post, volta a nova.
+      if (ideiaId) await ctx.db.from('ideas').update({ status: 'new' }).eq('id', ideiaId).is('post_id', null);
+      throw e;
+    }
     if (ideiaId) await linkIdeaPost(ctx.db, ideiaId, postId);
     await ctx.db.from('activity_log').insert({ brand_id: a.brandId, level: 'info', source: 'mcp', message: `Claude criou o rascunho «${a.titulo || 'sem título'}»` });
     const link = `${ctx.appUrl}/posts/${postId}`;

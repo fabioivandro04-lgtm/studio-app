@@ -32,6 +32,12 @@ begin
     execute format('create policy agent_no_delete on public.%I as restrictive for delete to authenticated using (not private.is_agent())', t);
   end loop;
 
+  -- Ficheiros e registo: o agente só acrescenta (não troca o ficheiro de um post agendado nem reescreve o histórico).
+  foreach t in array array['media_assets', 'activity_log'] loop
+    execute format('drop policy if exists agent_no_update on public.%I', t);
+    execute format('create policy agent_no_update on public.%I as restrictive for update to authenticated using (not private.is_agent())', t);
+  end loop;
+
   -- Tabelas só de leitura para o agente.
   foreach t in array array['brands', 'social_accounts', 'app_settings', 'hashtag_groups', 'app_owner', 'post_metrics',
                            'account_metrics', 'api_usage', 'ai_usage'] loop
@@ -57,15 +63,18 @@ drop policy if exists agent_draft_ins on public.posts;
 drop policy if exists agent_draft_upd on public.posts;
 drop policy if exists agent_no_delete on public.posts;
 create policy agent_draft_ins on public.posts as restrictive for insert to authenticated
-  with check (not private.is_agent() or status = 'draft');
+  with check (not private.is_agent() or (status = 'draft' and origin = 'claude'));
 create policy agent_draft_upd on public.posts as restrictive for update to authenticated
-  using (not private.is_agent() or status = 'draft') with check (not private.is_agent() or status = 'draft');
+  using (not private.is_agent() or status = 'draft') with check (not private.is_agent() or (status = 'draft' and origin = 'claude'));
 create policy agent_no_delete on public.posts as restrictive for delete to authenticated
   using (not private.is_agent());
 
--- Ficheiros no Storage: o agente não apaga.
+-- Ficheiros no Storage: o agente só cria (não apaga nem substitui).
 drop policy if exists agent_no_delete on storage.objects;
 create policy agent_no_delete on storage.objects as restrictive for delete to authenticated
+  using (not private.is_agent());
+drop policy if exists agent_no_update on storage.objects;
+create policy agent_no_update on storage.objects as restrictive for update to authenticated
   using (not private.is_agent());
 
 -- save_post: grava a origem; recusa agendar com token de agente.
@@ -78,6 +87,7 @@ declare
   v_origin text := coalesce(nullif(p->>'origin', ''), 'app');
 begin
   if private.is_agent() and v_status <> 'draft' then raise exception 'Só rascunhos.'; end if;
+  if private.is_agent() then v_origin := 'claude'; end if;
 
   if exists (
     select 1 from jsonb_array_elements_text(p->'mediaIds') m(id)
@@ -102,7 +112,8 @@ begin
     end if;
     update posts
        set brand_id = v_brand, internal_title = coalesce(p->>'internalTitle', ''),
-           scheduled_at = (p->>'scheduledAt')::timestamptz, status = v_status, updated_at = now()
+           scheduled_at = (p->>'scheduledAt')::timestamptz, status = v_status, updated_at = now(),
+           origin = case when private.is_agent() then 'claude' else origin end
      where id = v_id;
     if not found then raise exception 'post_locked'; end if;
     delete from post_media where post_id = v_id;

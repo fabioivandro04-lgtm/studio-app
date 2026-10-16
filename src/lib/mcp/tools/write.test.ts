@@ -75,6 +75,16 @@ describe('criar_rascunho', () => {
     await runTool(criarRascunho, args({ ideiaId: IDEA }), testCtx(w.db));
     expect(w.tables.ideas[0]).toMatchObject({ status: 'used', post_id: 'novo-post' });
   });
+  it('se a gravação falhar, a ideia volta a nova', async () => {
+    const f = fakeDb(
+      { brands: [{ id: B, name: 'Uni', timezone: 'Africa/Maputo', created_at: '2026-01-01' }], social_accounts: [{ id: IG, brand_id: B, platform: 'instagram', handle: 'u', status: 'active' }],
+        media_assets: [{ id: M, brand_id: B, kind: 'video', mime: 'video/mp4', size_bytes: 1, storage_path: 'x' }], ideas: [{ id: IDEA, brand_id: B, status: 'new', title: 'I', post_id: null }], activity_log: [] },
+      { rpc: { save_post: () => { throw new Error('boom'); } } },
+    );
+    const r = await runTool(criarRascunho, args({ ideiaId: IDEA, redes: [{ rede: 'instagram', legenda: 'x' }] }), testCtx(f.db));
+    expect(r.isError).toBe(true);
+    expect(f.tables.ideas[0].status).toBe('new');
+  });
   it('ideia já usada → recusado', async () => {
     const w = world({ ideas: [{ id: IDEA, brand_id: B, status: 'used', title: 'I' }] });
     const r = await runTool(criarRascunho, args({ ideiaId: IDEA }), testCtx(w.db));

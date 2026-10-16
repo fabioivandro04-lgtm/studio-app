@@ -3,7 +3,7 @@ import { LinkError } from '@/lib/net/safe-fetch';
 import { BrandId, loadBrand } from '../common';
 import { ok, ToolError } from '../result';
 import { defineTool } from '../tool';
-import { acceptType, registerUpload, storageOf } from '../uploads';
+import { acceptType, mcpPath, registerUpload, storageOf } from '../uploads';
 
 export const importarDeLink = defineTool({
   name: 'importar_de_link',
@@ -21,7 +21,7 @@ export const importarDeLink = defineTool({
     }
     const t = acceptType(file.name, file.mime, file.bytes.byteLength, ctx.maxUploadMb);
     const id = crypto.randomUUID();
-    const path = `${brandId}/${id}.${t.ext}`;
+    const path = mcpPath(brandId, `${id}.${t.ext}`);
     const { error } = await storageOf(ctx, true).upload(path, file.bytes, { contentType: t.mime, upsert: false });
     if (error) throw new Error(`upload: ${error.message}`);
     const r = await registerUpload(ctx, { brandId, id, path, bytes: file.bytes, mime: t.mime, name: file.name });

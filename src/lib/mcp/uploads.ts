@@ -9,6 +9,8 @@ export const UPLOAD_TYPES: Record<string, { ext: string; kind: 'image' | 'video'
   'video/quicktime': { ext: 'mov', kind: 'video' },
 };
 const EXT_MIME: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', mp4: 'video/mp4', mov: 'video/quicktime' };
+/** Pasta só do Claude: os ficheiros da app (<marca>/<id>.<ext>) nunca são lidos nem apagados pelo MCP. */
+export const mcpPath = (brandId: string, file: string) => `${brandId}/mcp/${file}`;
 export const ENVIO_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|mp4|mov)$/;
 
 /** Tipo aceite pelo MCP: só JPG, MP4 e MOV (o Instagram só aceita JPG; HEIC/PNG convertem-se na app). */
@@ -27,6 +29,7 @@ const magicOk = (b: Uint8Array, kind: 'image' | 'video') =>
 
 /** Valida o conteúdo já guardado em `path`, lê medidas e cria a linha em media_assets. Conteúdo inválido é apagado. */
 export async function registerUpload(ctx: McpCtx, o: { brandId: string; id: string; path: string; bytes: Uint8Array; mime: string; name: string }) {
+  if (!o.path.startsWith(`${o.brandId}/mcp/`)) throw new Error('caminho fora da pasta do MCP');
   const t = UPLOAD_TYPES[o.mime];
   const remove = () => ctx.svc().storage.from(BUCKET).remove([o.path]);
   if (!t || !magicOk(o.bytes, t.kind)) {
@@ -43,6 +46,9 @@ export async function registerUpload(ctx: McpCtx, o: { brandId: string; id: stri
     width: probe.width, height: probe.height, duration_s: probe.durationS, original_name: o.name.slice(0, 200),
   });
   if (error) {
+    // Outra chamada registou o mesmo envio ao mesmo tempo: o ficheiro é dela, não apagar.
+    const same = await existingUpload(ctx, o.id);
+    if (same) return same;
     await remove();
     throw new Error(`media_assets: ${error.message}`);
   }
@@ -52,3 +58,9 @@ export async function registerUpload(ctx: McpCtx, o: { brandId: string; id: stri
 
 export const storageOf = (ctx: McpCtx, svc = false) => (svc ? ctx.svc() : ctx.db).storage.from(BUCKET);
 export { EXT_MIME };
+
+/** Ficheiro já registado com este id (repetição do mesmo envio): devolve-o sem tocar no Storage. */
+export async function existingUpload(ctx: McpCtx, id: string) {
+  const { data } = await ctx.db.from('media_assets').select('id, kind, width, height, duration_s').eq('id', id).maybeSingle();
+  return data ? { mediaId: data.id as string, tipo: data.kind as string, largura: (data.width as number) ?? null, altura: (data.height as number) ?? null, duracaoS: data.duration_s == null ? null : Number(data.duration_s) } : null;
+}
