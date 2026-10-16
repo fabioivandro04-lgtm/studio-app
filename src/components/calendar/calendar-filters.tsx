@@ -6,26 +6,31 @@ import { PLATFORM_LABEL } from '@/lib/platforms/types';
 import { cn } from '@/lib/utils';
 
 const chip = (on: boolean) =>
-  cn('flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors', on ? 'border-primary bg-primary text-primary-foreground' : 'bg-card hover:bg-accent');
+  cn('flex min-h-9 items-center gap-1.5 rounded-md border px-2.5 py-1 text-sm transition-colors', on ? 'border-primary bg-primary text-primary-foreground' : 'bg-card hover:bg-accent');
 
 /** Filtros por rede e estado (ficam na URL). */
 export function CalendarFilterBar({ base, filters }: { base: { vista?: string; data?: string }; filters: CalendarFilters }) {
   const any = filters.platforms.length + filters.statuses.length > 0;
   return (
-    <nav aria-label="Filtros" className="flex flex-wrap items-center gap-1.5">
+    <nav aria-label="Filtros" className="space-y-3">
+      <p className="text-xs font-medium text-muted-foreground">Redes</p>
+      <div className="flex flex-wrap gap-1.5">
       {FILTER_PLATFORMS.map((p) => (
         <Link key={p} href={filterHref(base, filters, 'rede', p)} aria-pressed={filters.platforms.includes(p)} className={chip(filters.platforms.includes(p))}>
           <PlatformIcon platform={p} size="sm" /> {PLATFORM_LABEL[p]}
         </Link>
       ))}
-      <span className="mx-1 h-4 w-px bg-border" aria-hidden />
+      </div>
+      <p className="text-xs font-medium text-muted-foreground">Estado</p>
+      <div className="flex flex-wrap gap-1.5">
       {FILTER_STATUSES.map((s) => (
         <Link key={s} href={filterHref(base, filters, 'estado', s)} aria-pressed={filters.statuses.includes(s)} className={chip(filters.statuses.includes(s))}>
           {POST_STATUS_LABEL[s]}
         </Link>
       ))}
+      </div>
       {any && (
-        <Link href={`/calendario?${new URLSearchParams({ ...(base.vista ? { vista: base.vista } : {}), ...(base.data ? { data: base.data } : {}) })}`} className="ml-1 text-xs text-muted-foreground underline">
+        <Link href={`/calendario?${new URLSearchParams({ ...(base.vista ? { vista: base.vista } : {}), ...(base.data ? { data: base.data } : {}) })}`} className="inline-block text-sm text-muted-foreground underline">
           Limpar filtros
         </Link>
       )}

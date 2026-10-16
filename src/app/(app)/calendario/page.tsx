@@ -13,6 +13,9 @@ import { listBrands, selectedBrandId } from '@/lib/db/repo/brands-repo';
 import { FORMAT_PLATFORM, type Platform, type TargetFormat } from '@/lib/platforms/types';
 import { formatInZone, localToUtc, utcToLocalParts } from '@/lib/time/zone';
 import { cn } from '@/lib/utils';
+import { cookies } from 'next/headers';
+import { SETUP_COOKIE } from '@/components/setup-compact';
+import { FilterButton } from '@/components/ui-x/filter-button';
 
 export default async function CalendarioPage({ searchParams }: { searchParams: Promise<{ vista?: string; data?: string; rede?: string; estado?: string }> }) {
   const sp = await searchParams;
@@ -24,9 +27,9 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
   const displayTz = brands.find((b) => b.id === brandId)?.timezone ?? brands[0]?.timezone ?? 'Africa/Maputo';
   const today = utcToLocalParts(new Date(), displayTz).date;
   const viewTabs = (current: string, d: string, extra = '') => (
-    <div className="flex rounded-md border text-sm" role="tablist" aria-label="Vista">
+    <div className="flex h-10 rounded-md border bg-card p-0.5 text-sm" role="tablist" aria-label="Vista">
       {(['lista', 'semana', 'mes', 'grelha'] as const).map((v) => (
-        <Link key={v} role="tab" aria-selected={current === v} href={`/calendario?vista=${v}&data=${d}${v === 'grelha' ? '' : extra}`} className={cn('px-3 py-1.5 first:rounded-l-md last:rounded-r-md', current === v ? 'bg-primary text-primary-foreground' : 'hover:bg-accent')}>
+        <Link key={v} role="tab" aria-selected={current === v} href={`/calendario?vista=${v}&data=${d}${v === 'grelha' ? '' : extra}`} className={cn('flex items-center rounded px-2.5 sm:px-3', current === v ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground')}>
           {v === 'semana' ? 'Semana' : v === 'mes' ? 'Mês' : v === 'lista' ? 'Lista' : 'Grelha'}
         </Link>
       ))}
@@ -115,7 +118,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
 
   return (
     <div className="space-y-4">
-      <SetupChecklist progress={progress} />
+      <SetupChecklist progress={progress} dismissed={(await cookies()).get(SETUP_COOKIE)?.value === '1'} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1">
           <Link href={nav(-1)} className="rounded-md p-2 hover:bg-accent" aria-label="Anterior"><ChevronLeft className="size-4" /></Link>
@@ -125,10 +128,15 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
         </div>
         <div className="flex items-center gap-2">
           {viewTabs(view, date, keep)}
-          <Link href="/posts/novo" className="flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"><Plus className="size-4" /> Novo post</Link>
+          <FilterButton count={filters.platforms.length + filters.statuses.length}>
+            <CalendarFilterBar base={{ vista: view, data: sp.data }} filters={filters} />
+          </FilterButton>
+          <Link href="/posts/novo" className="hidden h-10 items-center gap-1 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 md:flex"><Plus className="size-4" aria-hidden /> Novo post</Link>
         </div>
       </div>
-      <CalendarFilterBar base={{ vista: view, data: sp.data }} filters={filters} />
+      <Link href="/posts/novo" aria-label="Novo post" className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:hidden">
+        <Plus className="size-6" aria-hidden />
+      </Link>
       {view === 'lista' ? (
         <CalendarList days={listDays} today={today} posts={posts} deadlines={deadlines} freeSlots={freeSlots} />
       ) : (

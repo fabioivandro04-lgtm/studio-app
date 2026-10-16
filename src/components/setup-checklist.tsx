@@ -1,5 +1,7 @@
 import { CheckCircle2, Circle } from 'lucide-react';
 import Link from 'next/link';
+import { setupMode } from '@/lib/ui/setup-mode';
+import { SetupCompact } from './setup-compact';
 
 export interface SetupProgress {
   brands: number;
@@ -15,11 +17,13 @@ const STEPS = [
   { key: 'posts', label: 'Agendar o primeiro post', href: '/posts/novo' },
 ] as const;
 
-/** Cartão "Primeiros passos": desaparece quando tudo estiver feito. */
-export function SetupChecklist({ progress }: { progress: SetupProgress }) {
+/** "Primeiros passos": cartão completo no início, uma linha quando falta 1 passo, nada quando acabou ou foi fechado. */
+export function SetupChecklist({ progress, dismissed = false }: { progress: SetupProgress; dismissed?: boolean }) {
   const done = STEPS.filter((s) => progress[s.key] > 0).length;
-  if (done === STEPS.length) return null;
+  const mode = setupMode(done, STEPS.length, dismissed);
+  if (mode === 'hidden') return null;
   const next = STEPS.find((s) => progress[s.key] === 0)!;
+  if (mode === 'compact') return <SetupCompact label={next.label} href={next.href} />;
   return (
     <section aria-label="Primeiros passos" className="rounded-xl border bg-gradient-to-br from-brand-navy to-[#16306a] p-4 text-white shadow-sm">
       <div className="flex items-center justify-between gap-2">
