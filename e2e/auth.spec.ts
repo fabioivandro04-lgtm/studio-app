@@ -9,7 +9,7 @@ test('visitante é enviado para /login', async ({ page }) => {
 test('login mostra o calendário com a navegação em português', async ({ page }) => {
   await loginAsOwner(page);
   const nav = page.getByRole('navigation', { name: 'Navegação principal' });
-  for (const item of ['Calendário', 'Biblioteca', 'Pendentes', 'Métricas', 'Definições']) await expect(nav).toContainText(item);
+  for (const item of ['Calendário', 'Biblioteca', 'Caixa', 'Métricas', 'Definições']) await expect(nav).toContainText(item);
 });
 
 test('/legal/privacidade é pública', async ({ page }) => {

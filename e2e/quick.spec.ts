@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { admin, cleanupBrand, createTestBrand, loginAsOwner } from './helpers';
+import { admin, cleanupBrand, createTestBrand, loginAsOwner, setDate } from './helpers';
 
 // Corre com PLATFORM_MODE=fake (contas e publicação falsas).
 let brand: { id: string; name: string };
@@ -17,7 +17,7 @@ async function draft(page: Page, title: string, date = '2027-03-10') {
   await page.getByLabel('Título interno (só para si)').fill(title);
   await page.getByLabel(/^Instagram @/).check();
   await page.getByLabel('Legenda Instagram').fill('Legenda base');
-  await page.getByLabel('Data').fill(date);
+  await setDate(page, 'Data', date);
   await page.getByRole('button', { name: 'Guardar rascunho' }).click();
   await page.waitForURL('**/calendario');
   const { data } = await admin().from('posts').select('id').eq('brand_id', brand.id).eq('internal_title', title).single();
@@ -68,7 +68,7 @@ test('horários fixos e "Próximo horário livre"', async ({ page }) => {
   await page.goto('/posts/novo');
   await page.getByRole('button', { name: /Próximo horário livre/ }).click();
   await expect(page.getByLabel('Hora')).toHaveValue('18:30');
-  const date = await page.getByLabel('Data').inputValue();
+  const date = await page.getByLabel('Data', { exact: true }).getAttribute('data-value');
   expect(new Date(`${date}T12:00:00Z`).getUTCDay()).toBe(3);
 });
 
@@ -79,7 +79,7 @@ test.describe('telemóvel', () => {
     await page.goto('/calendario?data=2027-03-10');
     await page.getByRole('button', { name: 'Dia 2027-03-10' }).click();
     await page.getByRole('button', { name: 'Mover Para mover' }).click();
-    await page.getByLabel('Novo dia').fill('2027-03-12');
+    await setDate(page, 'Novo dia', '2027-03-12');
     await page.getByRole('button', { name: 'Mover para este dia' }).click();
     await expect(page.getByText(/Post movido para/)).toBeVisible();
     const { data } = await admin().from('posts').select('scheduled_at').eq('id', id).single();

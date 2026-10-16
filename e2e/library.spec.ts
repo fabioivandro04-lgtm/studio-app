@@ -61,7 +61,8 @@ test('apagar mídia usada num post mostra aviso e não apaga', async ({ page }) 
   const { data: post } = await db.from('posts').insert({ brand_id: brand.id }).select('id').single();
   await db.from('post_media').insert({ post_id: post!.id, media_id: media!.id, position: 0 });
   page.once('dialog', (d) => d.accept());
-  await items(page).first().getByRole('button', { name: 'Apagar' }).click();
+  await items(page).first().getByRole('button', { name: 'Mais ações' }).click();
+  await page.getByRole('menuitem', { name: 'Apagar' }).click();
   await expect(page.getByText('Esta mídia está num post')).toBeVisible();
   await expect(items(page)).toHaveCount(1);
 });

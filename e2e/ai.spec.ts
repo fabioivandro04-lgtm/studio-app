@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { admin, cleanupBrand, createTestBrand, loginAsOwner } from './helpers';
+import { admin, choose, cleanupBrand, createTestBrand, loginAsOwner } from './helpers';
 
 // Corre com PLATFORM_MODE=fake: o fornecedor de IA falso devolve respostas fixas e custo 0.
 let brand: { id: string; name: string };
@@ -89,7 +89,7 @@ test('melhor hora preenche data e hora', async ({ page }) => {
   const date = await slot.getAttribute('data-date');
   const time = await slot.getAttribute('data-time');
   await slot.click();
-  await expect(page.getByLabel('Data')).toHaveValue(date!);
+  await expect(page.getByLabel('Data', { exact: true })).toHaveAttribute('data-value', date!);
   await expect(page.getByLabel('Hora')).toHaveValue(time!);
 });
 
@@ -106,7 +106,7 @@ test('guardar contexto e objetivo persiste', async ({ page }) => {
   const section = aiSectionOf(page);
   await section.locator('summary').click();
   await section.getByLabel('Contexto da empresa').fill('Consultoria de candidaturas em Maputo.');
-  await section.getByLabel('Objetivo').selectOption('reach');
+  await choose(section, 'Objetivo', 'Alcance');
   await section.getByRole('button', { name: 'Guardar IA' }).click();
   await expect(page.getByText('Definições de IA guardadas.')).toBeVisible();
   const { data } = await admin().from('brands').select('ai_context, goal').eq('id', brand.id).single();

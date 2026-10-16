@@ -50,6 +50,6 @@ test('"Todas as marcas" pede uma marca', async ({ page, context }) => {
   await context.addCookies([{ name: 'brand', value: 'all', url: baseUrl }]);
   await loginAsOwner(page);
   await page.goto('/ideias');
-  await expect(page.getByText('Escolha uma marca no topo para gerar ideias.')).toBeVisible();
+  await expect(page.getByText('Para gerar ideias, escolha a marca:')).toBeVisible();
   await expect(page.getByRole('button', { name: /Vídeos curtos/ })).toHaveCount(0);
 });

@@ -37,3 +37,18 @@ export async function cleanupBrand(id: string) {
   if (posts?.length) await db.from('posts').delete().in('id', posts.map((p) => p.id));
   await db.from('brands').delete().eq('id', id);
 }
+
+/** Escolhe um dia (AAAA-MM-DD) no DateField com o rótulo dado (calendário em popover). */
+export async function setDate(scope: Page, label: string, iso: string) {
+  await scope.getByLabel(label, { exact: true }).click();
+  const day = scope.locator(`[data-day="${iso}"] button`);
+  for (let i = 0; i < 36 && !(await day.isVisible()); i++) await scope.locator('.rdp-button_next, [class*="button_next"]').first().click();
+  await day.click();
+}
+
+/** Escolhe uma opção num SelectField (lista com o estilo da app). */
+export async function choose(scope: Page | import('@playwright/test').Locator, label: string, option: string) {
+  await scope.getByLabel(label, { exact: true }).click();
+  const page = 'page' in scope ? scope.page() : scope;
+  await page.getByRole('option', { name: option, exact: true }).click();
+}
