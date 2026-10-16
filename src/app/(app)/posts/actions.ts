@@ -58,13 +58,16 @@ export async function duplicatePost(id: string): Promise<{ ok: true; id: string 
   if (!post) return { ok: false, error: 'Post não encontrado.' };
   const [{ data: pm }, { data: targets }] = await Promise.all([
     db.from('post_media').select('media_id, position').eq('post_id', id).order('position'),
-    db.from('post_targets').select('social_account_id, format, caption, title').eq('post_id', id),
+    db.from('post_targets').select('social_account_id, format, caption, title, options').eq('post_id', id),
   ]);
   const { data: newId, error } = await db.rpc('save_post', {
     p: {
       brandId: post.brand_id, internalTitle: `${post.internal_title} (cópia)`.trim(), scheduledAt: post.scheduled_at, intent: 'draft',
       mediaIds: (pm ?? []).map((m) => m.media_id),
-      targets: (targets ?? []).map((t) => ({ accountId: t.social_account_id, format: t.format, caption: t.caption, title: t.title ?? '' })),
+      targets: (targets ?? []).map((t) => ({
+        accountId: t.social_account_id, format: t.format, caption: t.caption, title: t.title ?? '',
+        coverMs: typeof t.options?.thumbOffsetMs === 'number' ? t.options.thumbOffsetMs : null,
+      })),
     },
   });
   if (error) return { ok: false, error: 'Não foi possível duplicar o post.' };

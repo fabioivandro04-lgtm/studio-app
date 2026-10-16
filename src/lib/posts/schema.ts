@@ -13,7 +13,7 @@ export const PostInput = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Escolha a data.'),
   time: z.string().regex(/^\d{2}:\d{2}$/, 'Escolha a hora.'),
   targets: z
-    .array(z.object({ accountId: z.guid(), format: z.enum(FORMATS), caption: z.string(), title: z.string().nullable() }))
+    .array(z.object({ accountId: z.guid(), format: z.enum(FORMATS), caption: z.string(), title: z.string().nullable(), coverMs: z.number().int().min(0).max(15 * 60_000).nullable().optional() }))
     .min(1, 'Escolha pelo menos uma rede.'),
   intent: z.enum(['draft', 'schedule']),
 });

@@ -26,6 +26,7 @@ import { aiPlatformsFor, appendHashtags, restoreCaptions, setCaption, snapshotCa
 import { callSafely } from '@/lib/ai/call-safely';
 import { AiPanel } from './ai-panel';
 import { BestTime } from './best-time';
+import { CoverPicker } from './cover-picker';
 import { HashtagGroupsMenu } from './hashtag-groups-menu';
 import { RefineMenu } from './refine-menu';
 import { hasUnsavedChanges } from '@/lib/posts/dirty';
@@ -363,7 +364,10 @@ export function Composer({ data }: { data: ComposerData }) {
                     <p className={`text-right text-xs ${t.caption.length > max ? 'text-destructive' : 'text-muted-foreground'}`}>{t.caption.length}/{max}</p>
                   </div>
                 )}
-                {acc.platform === 'tiktok' && <p className="text-xs text-muted-foreground">O vídeo vai para a caixa de entrada do TikTok: cole a legenda e publique com 1 toque.</p>}
+                {acc.platform === 'instagram' && t.format === 'ig_reel' && selectedMedia[0]?.kind === 'video' && (
+                  <CoverPicker key={selectedMedia[0].id} media={selectedMedia[0]} valueMs={t.coverMs ?? null} disabled={ro} onChange={(ms) => setTarget(i, { coverMs: ms })} />
+                )}
+                {acc.platform === 'tiktok' && <p className="text-xs text-muted-foreground">O vídeo vai para a caixa de entrada do TikTok: escolha a capa, cole a legenda e publique com 1 toque.</p>}
                 {acc.platform === 'youtube' && <p className="text-xs text-muted-foreground">O Short é enviado como privado: torne-o público no YouTube Studio com 1 toque.</p>}
                 {errs.map((e) => <p key={`${e.field}${e.message}`} role="alert" className="text-sm text-destructive">{e.message}</p>)}
               </fieldset>

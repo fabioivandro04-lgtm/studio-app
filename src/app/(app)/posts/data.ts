@@ -13,7 +13,7 @@ export interface ComposerInitial {
   mediaIds: string[];
   date: string;
   time: string;
-  targets: { accountId: string; format: TargetFormat; caption: string; title: string | null }[];
+  targets: { accountId: string; format: TargetFormat; caption: string; title: string | null; coverMs?: number | null }[];
   locked: boolean;
   status?: string;
 }
@@ -52,14 +52,17 @@ export async function loadComposer(
   if (opts.postId) {
     const { data: post } = await db.from('posts').select('*').eq('id', opts.postId).single();
     if (!post) return null;
-    const { data: targets } = await db.from('post_targets').select('social_account_id, format, caption, title, status').eq('post_id', post.id);
+    const { data: targets } = await db.from('post_targets').select('social_account_id, format, caption, title, status, options').eq('post_id', post.id);
     const tz = brands.find((b) => b.id === post.brand_id)?.timezone ?? 'Africa/Maputo';
     const when = post.scheduled_at ? utcToLocalParts(new Date(post.scheduled_at), tz) : tomorrowAt9(tz);
     return {
       brands, accounts, media, hashtagGroups,
       initial: {
         id: post.id, brandId: post.brand_id, internalTitle: post.internal_title, mediaIds, ...when,
-        targets: (targets ?? []).map((t) => ({ accountId: t.social_account_id, format: t.format, caption: t.caption, title: t.title })),
+        targets: (targets ?? []).map((t) => ({
+          accountId: t.social_account_id, format: t.format, caption: t.caption, title: t.title,
+          coverMs: typeof t.options?.thumbOffsetMs === 'number' ? t.options.thumbOffsetMs : null,
+        })),
         locked: !['draft', 'scheduled'].includes(post.status) || (targets ?? []).some((t) => t.status !== 'pending'),
         status: post.status,
       },

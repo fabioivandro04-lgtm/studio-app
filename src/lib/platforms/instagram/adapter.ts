@@ -41,7 +41,12 @@ async function mediaUrlParam(m: MediaInfo, deps: AdvanceDeps): Promise<Record<st
 async function createContainer(api: Api, igId: string, t: TargetCtx, deps: AdvanceDeps): Promise<string> {
   const m = t.media[0];
   const params: Record<string, string | undefined> = { ...(await mediaUrlParam(m, deps)) };
-  if (t.format === 'ig_reel') Object.assign(params, { media_type: 'REELS', share_to_feed: 'true', caption: t.caption });
+  if (t.format === 'ig_reel') {
+    Object.assign(params, { media_type: 'REELS', share_to_feed: 'true', caption: t.caption });
+    // Capa escolhida no Estúdio: o fotograma nesse momento do vídeo (ms).
+    const offset = t.options.thumbOffsetMs;
+    if (typeof offset === 'number' && offset >= 0) params.thumb_offset = String(Math.round(offset));
+  }
   else if (t.format === 'ig_story') params.media_type = 'STORIES';
   else params.caption = t.caption;
   return (await api.post(`/${igId}/media`, params)).id;

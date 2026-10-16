@@ -125,6 +125,15 @@ describe('instagramAdapter.advance', () => {
     });
   });
 
+  it('reel com capa escolhida envia thumb_offset (ms); sem capa não envia', async () => {
+    route(['POST', /\/IG1\/media$/, () => ({ id: 'c1' })]);
+    await adapter.advance(target({ format: 'ig_reel', media: [vid], options: { thumbOffsetMs: 3200 } }), acct, deps);
+    expect(fetch.calls.find((c) => c.method === 'POST')!.params).toMatchObject({ media_type: 'REELS', thumb_offset: '3200' });
+    fetch.calls.length = 0;
+    await adapter.advance(target({ format: 'ig_reel', media: [vid] }), acct, deps);
+    expect(fetch.calls.find((c) => c.method === 'POST')!.params.thumb_offset).toBeUndefined();
+  });
+
   it('story não envia caption', async () => {
     route(['POST', /\/IG1\/media$/, () => ({ id: 'c1' })]);
     await adapter.advance(target({ format: 'ig_story' }), acct, deps);

@@ -31,6 +31,15 @@ describe('save_post', () => {
     expect(t).toMatchObject({ format: 'ig_image', caption: 'Olá', title: null, status: 'pending' });
   });
 
+  it('guarda o momento da capa (coverMs) nas opções do destino', async () => {
+    const [{ id }] = await save(payload({ targets: [{ accountId: s.account.id, format: 'ig_image', caption: 'Olá', title: '', coverMs: 3200 }] }));
+    const [t] = await db.sql('select options from post_targets where post_id=$1', [id]);
+    expect(t.options).toEqual({ thumbOffsetMs: 3200 });
+    const [{ id: id2 }] = await save(payload());
+    const [t2] = await db.sql('select options from post_targets where post_id=$1', [id2]);
+    expect(t2.options).toEqual({});
+  });
+
   it('rascunho fica draft', async () => {
     const [{ id }] = await save(payload({ intent: 'draft' }));
     expect((await db.sql('select status from posts where id=$1', [id]))[0].status).toBe('draft');
