@@ -1,6 +1,7 @@
 import { isFreeModel } from '@/lib/ai/types';
 import { aiStatus } from '@/app/(app)/ai/actions';
 import { AiSettingsForm } from './ai-settings-form';
+import { PageHeader } from '@/components/ui-x/page-header';
 
 export const metadata = { title: 'IA — Estúdio' };
 
@@ -11,7 +12,7 @@ export default async function IaPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">IA</h1>
+        <PageHeader title="IA" />
         <p className="mt-1 text-sm text-muted-foreground">Motor usado pelo Assistente e limite de gastos por mês (via OpenRouter).</p>
       </div>
       {!s.ok ? (

@@ -2,6 +2,7 @@ import { createServerClient } from '@/lib/db/clients';
 import { listBrands, selectedBrandId } from '@/lib/db/repo/brands-repo';
 import { fromDeadlineRow } from '@/lib/db/types';
 import { DeadlineForm, DeleteDeadline } from './deadline-form';
+import { PageHeader } from '@/components/ui-x/page-header';
 
 export default async function PrazosPage() {
   const db = await createServerClient();
@@ -13,7 +14,7 @@ export default async function PrazosPage() {
   const deadlines = (data ?? []).map(fromDeadlineRow);
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <h1 className="text-xl font-semibold">Prazos</h1>
+      <PageHeader title="Prazos" />
       <p className="text-sm text-muted-foreground">Os prazos aparecem no calendário para planear o conteúdo antes de cada data.</p>
       {brands.length > 0 && <DeadlineForm brands={brands.map(({ id, name }) => ({ id, name }))} defaultBrandId={brandId} />}
       <ul className="divide-y rounded-xl border">

@@ -2,6 +2,7 @@ import { createServerClient } from '@/lib/db/clients';
 import { listBrands } from '@/lib/db/repo/brands-repo';
 import { listHashtagGroups } from '@/lib/db/repo/hashtag-groups-repo';
 import { BrandsEditor } from './brands-editor';
+import { PageHeader } from '@/components/ui-x/page-header';
 
 // Os pedidos à IA (server actions desta página) podem demorar até ~45 s.
 export const maxDuration = 60;
@@ -16,7 +17,7 @@ export default async function MarcasPage() {
   const withIg = new Set((ig ?? []).map((a) => a.brand_id));
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-4 text-xl font-semibold">Marcas</h1>
+      <div className="mb-4"><PageHeader title="Marcas" description="Nome, cor, fuso, voz e horários de cada marca." /></div>
       <BrandsEditor
         brands={brands.map((b) => ({
           id: b.id, name: b.name, color: b.color, timezone: b.timezone,

@@ -3,6 +3,7 @@ import { listBrands } from '@/lib/db/repo/brands-repo';
 import { serverEnv } from '@/lib/env';
 import { formatInZone } from '@/lib/time/zone';
 import { RevokeButton } from './revoke-button';
+import { PageHeader } from '@/components/ui-x/page-header';
 
 export const metadata = { title: 'Ligações do Claude — Estúdio' };
 
@@ -15,7 +16,7 @@ export default async function LigacoesPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">Ligações do Claude</h1>
+        <PageHeader title="Ligações do Claude" />
         <p className="mt-1 text-sm text-muted-foreground">O Claude pode ler o Estúdio e criar rascunhos. Nunca agenda, publica nem apaga.</p>
       </div>
       {error && <p role="alert" className="text-sm text-destructive">Não foi possível ler as ligações.</p>}

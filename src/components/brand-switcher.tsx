@@ -12,7 +12,7 @@ type B = { id: string; name: string; color: string };
 const Dot = ({ color }: { color: string | null }) =>
   color ? <span className="size-2.5 shrink-0 rounded-full ring-1 ring-border" style={{ background: color }} aria-hidden /> : <span className="size-2.5 shrink-0 rounded-full border border-dashed border-muted-foreground" aria-hidden />;
 
-function setBrandCookie(v: string) {
+export function setBrandCookie(v: string) {
   document.cookie = `${BRAND_COOKIE}=${v}; path=/; max-age=31536000; samesite=lax`;
 }
 

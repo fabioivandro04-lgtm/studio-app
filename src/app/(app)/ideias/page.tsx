@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { EmptyState } from '@/components/empty-state';
 import { GenerateBar } from '@/components/ideas/generate-bar';
 import { IdeaCard, type IdeaCardData } from '@/components/ideas/idea-card';
+import { PickBrand } from '@/components/ideas/pick-brand';
+import { PageHeader } from '@/components/ui-x/page-header';
 import { createServerClient } from '@/lib/db/clients';
 import { listBrands, selectedBrandId } from '@/lib/db/repo/brands-repo';
 import { countIdeas, listIdeas, upcomingDeadlines, type IdeaStatus } from '@/lib/db/repo/ideas-repo';
@@ -44,19 +46,20 @@ export default async function IdeiasPage({ searchParams }: { searchParams: Promi
   });
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">Ideias</h1>
-        <p className="mt-1 text-sm text-muted-foreground">A IA propõe temas, ganchos e guiões. Escolha as que quer e ponha-as no calendário.</p>
-      </div>
-      <GenerateBar key={brand?.id ?? 'todas'} brandId={brand?.id ?? null} deadlines={deadlines.map(({ id, title, dueDate }) => ({ id, title, dueDate }))} />
+    <div className="mx-auto max-w-5xl space-y-4">
+      <PageHeader title="Ideias" description="A IA propõe temas, ganchos e guiões. Escolha as que quer e ponha-as no calendário." />
+      {brand ? (
+        <GenerateBar key={brand.id} brandId={brand.id} deadlines={deadlines.map(({ id, title, dueDate }) => ({ id, title, dueDate }))} />
+      ) : (
+        <PickBrand brands={brands.map((b) => ({ id: b.id, name: b.name, color: b.color }))} />
+      )}
       <nav aria-label="Estado" className="flex gap-2">
         {TABS.map((t) => (
           <Link
             key={t.key}
             href={`/ideias?estado=${t.param}`}
             aria-current={t.key === tab.key ? 'page' : undefined}
-            className={cn('rounded-md border px-3 py-1 text-sm', t.key === tab.key ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-accent')}
+            className={cn('flex min-h-9 items-center rounded-md border px-3 text-sm', t.key === tab.key ? 'border-primary bg-primary text-primary-foreground' : 'bg-card hover:bg-accent')}
           >
             {t.label} ({counts[t.key]})
           </Link>

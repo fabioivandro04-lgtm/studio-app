@@ -8,6 +8,8 @@ import { listBrands, selectedBrandId } from '@/lib/db/repo/brands-repo';
 import { fromAccountMetricsRow } from '@/lib/db/types';
 import { followerSeries, followersGained, summarize, type MetricRow } from '@/lib/metrics/summary';
 import { PLATFORM_LABEL, type Platform } from '@/lib/platforms/types';
+import { PageHeader } from '@/components/ui-x/page-header';
+import { hasPostMetrics, showFollowersChart } from '@/lib/ui/metrics-empty';
 import { cn } from '@/lib/utils';
 
 const PERIODS = [7, 30, 90] as const;
@@ -60,7 +62,7 @@ export default async function MetricasPage({ searchParams }: { searchParams: Pro
   if (accounts.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-semibold">Métricas</h1>
+        <PageHeader title="Métricas" description="Resultados das suas redes, recolhidos 1 vez por dia." />
         <EmptyState
           icon={BarChart3}
           title="Ainda sem redes ligadas"
@@ -73,17 +75,23 @@ export default async function MetricasPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Métricas</h1>
-        <nav aria-label="Período" className="flex rounded-md border text-sm">
-          {PERIODS.map((p) => (
-            <Link key={p} href={`/metricas?dias=${p}`} aria-current={days === p ? 'page' : undefined} className={cn('px-3 py-1', days === p && 'bg-primary text-primary-foreground')}>
-              {p} dias
-            </Link>
-          ))}
-        </nav>
-      </div>
+      <PageHeader title="Métricas" description="Resultados das suas redes, recolhidos 1 vez por dia." actions={
+        <nav aria-label="Período" className="flex h-10 rounded-md border bg-card p-0.5 text-sm">
+            {PERIODS.map((p) => (
+              <Link key={p} href={`/metricas?dias=${p}`} aria-current={days === p ? 'page' : undefined} className={cn('flex items-center rounded px-3', days === p ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent')}>
+                {p} dias
+              </Link>
+            ))}
+          </nav>
+      } />
 
+      {!hasPostMetrics(rows) && (
+        <div className="rounded-xl border bg-card p-4 text-sm shadow-xs" data-testid="metrics-empty">
+          <p className="font-medium">Ainda sem números dos seus posts.</p>
+          <p className="mt-1 text-muted-foreground">Os números aparecem 1 dia depois do primeiro post publicado e atualizam-se todos os dias.</p>
+        </div>
+      )}
+      {hasPostMetrics(rows) && <>
       <section aria-label="Resumo" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {kpis.map((k) => (
           <div key={k.label} className="rounded-xl border p-3" data-testid="kpi">
@@ -101,10 +109,18 @@ export default async function MetricasPage({ searchParams }: { searchParams: Pro
           </div>
         ))}
       </section>
+      </>}
 
-      <section aria-label="Seguidores" className="space-y-2 rounded-xl border p-4">
+      <section aria-label="Seguidores" className="space-y-2 rounded-xl border bg-card p-4 shadow-xs">
         <h2 className="font-medium">Seguidores</h2>
-        <FollowersChart data={followerSeries(accountRows)} series={series} />
+        {showFollowersChart(followerSeries(accountRows)) ? (
+          <FollowersChart data={followerSeries(accountRows)} series={series} />
+        ) : (
+          <p className="text-sm text-muted-foreground">O gráfico aparece a partir do segundo dia de dados. Por agora: {series.map((x) => {
+            const last = [...followerSeries(accountRows)].pop();
+            return `${x.label}: ${last && last[x.key] != null ? fmt.format(Number(last[x.key])) : '—'}`;
+          }).join(' · ')}.</p>
+        )}
         <details className="text-sm">
           <summary className="cursor-pointer text-muted-foreground">Ver tabela</summary>
           <table className="mt-2 w-full text-left">

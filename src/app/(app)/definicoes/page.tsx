@@ -1,5 +1,6 @@
 import { Bot, CalendarClock, ChevronRight, KeyRound, Link2, Palette, ScrollText, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { PageHeader } from '@/components/ui-x/page-header';
 
 const LINKS = [
   { href: '/definicoes/marcas', label: 'Marcas', desc: 'Nome, cor, fuso, contexto e voz de cada marca', icon: Palette },
@@ -14,8 +15,8 @@ const LINKS = [
 export default function DefinicoesPage() {
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-4 text-xl font-semibold">Definições</h1>
-      <ul className="divide-y rounded-xl border">
+      <PageHeader title="Definições" description="Marcas, contas, IA e a sua conta." />
+      <ul className="mt-4 divide-y rounded-xl border bg-card shadow-xs">
         {LINKS.map(({ href, label, desc, icon: Icon }) => (
           <li key={href}>
             <Link href={href} className="flex items-center gap-3 px-4 py-3 hover:bg-accent">

@@ -1,6 +1,7 @@
 'use client';
 
-import { Check, ImagePlus, Tag, Trash2 } from 'lucide-react';
+import { Check, ImagePlus, MoreHorizontal, Tag, Trash2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
@@ -62,42 +63,44 @@ export function MediaGrid({ items, selected, onToggle }: { items: MediaItem[]; s
             </p>
             {m.tags.length > 0 && <p className="truncate text-xs text-primary">{m.tags.map((t) => `#${t}`).join(' ')}</p>}
             {!selecting && (
-              <div className="flex gap-1">
-                <Link href={`/posts/novo?midia=${m.id}`} className="rounded px-1.5 py-0.5 text-xs underline hover:bg-accent">
+              <div className="flex items-center gap-1">
+                <Link href={`/posts/novo?midia=${m.id}`} className="flex min-h-8 items-center rounded-md px-2 text-xs font-medium text-primary hover:bg-accent">
                   Criar post
                 </Link>
-                <button
-                  type="button"
-                  disabled={pending}
-                  aria-label="Etiquetas"
-                  className="rounded p-1 hover:bg-accent"
-                  onClick={() => {
-                    const v = prompt('Etiquetas separadas por vírgulas (ex.: portugal, prazos)', m.tags.join(', '));
-                    if (v == null) return;
-                    start(async () => {
-                      const r = await tagMedia(m.id, v.split(','));
-                      if (!r.ok) toast.error(r.error);
-                    });
-                  }}
-                >
-                  <Tag className="size-3.5" aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  disabled={pending}
-                  aria-label="Apagar"
-                  className="rounded p-1 hover:bg-accent"
-                  onClick={() => {
-                    if (!confirm('Apagar este ficheiro?')) return;
-                    start(async () => {
-                      const r = await deleteMedia(m.id);
-                      if (r.ok) toast.success('Ficheiro apagado.');
-                      else toast.error(r.error);
-                    });
-                  }}
-                >
-                  <Trash2 className="size-3.5" aria-hidden />
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button type="button" disabled={pending} aria-label="Mais ações" className="ml-auto flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent">
+                      <MoreHorizontal className="size-4" aria-hidden />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        const v = prompt('Etiquetas separadas por vírgulas (ex.: portugal, prazos)', m.tags.join(', '));
+                        if (v == null) return;
+                        start(async () => {
+                          const r = await tagMedia(m.id, v.split(','));
+                          if (!r.ok) toast.error(r.error);
+                        });
+                      }}
+                    >
+                      <Tag className="size-4" aria-hidden /> Etiquetas
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onSelect={() => {
+                        if (!confirm('Apagar este ficheiro?')) return;
+                        start(async () => {
+                          const r = await deleteMedia(m.id);
+                          if (r.ok) toast.success('Ficheiro apagado.');
+                          else toast.error(r.error);
+                        });
+                      }}
+                    >
+                      <Trash2 className="size-4" aria-hidden /> Apagar
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             )}
           </li>

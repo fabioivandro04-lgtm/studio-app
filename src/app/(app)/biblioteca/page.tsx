@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/db/clients';
 import { listBrands, selectedBrandId } from '@/lib/db/repo/brands-repo';
 import { listMedia } from '@/lib/db/repo/media-repo';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/ui-x/page-header';
 
 export default async function BibliotecaPage({ searchParams }: { searchParams: Promise<{ tipo?: string; etiqueta?: string }> }) {
   const { tipo, etiqueta } = await searchParams;
@@ -24,7 +25,7 @@ export default async function BibliotecaPage({ searchParams }: { searchParams: P
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Biblioteca</h1>
+        <PageHeader title="Biblioteca" />
         <MediaUploader brands={brands.map(({ id, name }) => ({ id, name }))} defaultBrandId={brandId} />
       </div>
       <nav aria-label="Filtros" className="flex flex-wrap gap-2">

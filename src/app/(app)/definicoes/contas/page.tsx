@@ -5,6 +5,7 @@ import { fromAccountRow } from '@/lib/db/types';
 import { PLATFORM_LABEL, type Platform } from '@/lib/platforms/types';
 import { formatInZone } from '@/lib/time/zone';
 import { DisconnectButton } from './disconnect-button';
+import { PageHeader } from '@/components/ui-x/page-header';
 
 const PLATFORMS: Platform[] = ['instagram', 'tiktok', 'youtube'];
 const STATUS_LABEL = { active: 'Ligada', needs_reauth: 'Volte a ligar', disabled: 'Desligada' } as const;
@@ -22,7 +23,7 @@ export default async function ContasPage({ searchParams }: { searchParams: Promi
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold">Contas ligadas</h1>
+        <PageHeader title="Contas ligadas" />
         <p className="mt-1 text-sm text-muted-foreground">Ligue as redes de cada marca. A app só publica nas contas que ligar aqui.</p>
       </div>
       {ligada && <p role="status" className="rounded-lg bg-[var(--st-published-bg)] px-3 py-2 text-sm text-[var(--st-published-fg)]">Conta {PLATFORM_LABEL[ligada as Platform] ?? ''} ligada com sucesso.</p>}

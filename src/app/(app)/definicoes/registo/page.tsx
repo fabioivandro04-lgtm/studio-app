@@ -4,6 +4,7 @@ import { listBrands, selectedBrandId } from '@/lib/db/repo/brands-repo';
 import { fromActivityRow } from '@/lib/db/types';
 import { formatInZone } from '@/lib/time/zone';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/ui-x/page-header';
 
 const LEVELS = { info: 'Info', warn: 'Aviso', error: 'Erro' } as const;
 const LEVEL_CLASS = { info: 'bg-[var(--st-draft-bg)] text-[var(--st-draft-fg)]', warn: 'bg-[var(--st-action-bg)] text-[var(--st-action-fg)]', error: 'bg-[var(--st-failed-bg)] text-[var(--st-failed-fg)]' } as const;
@@ -23,7 +24,7 @@ export default async function RegistoPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <h1 className="text-xl font-semibold">Registo de atividade</h1>
+      <PageHeader title="Registo de atividade" />
       <nav aria-label="Nível" className="flex gap-2 text-sm">
         <Link href="/definicoes/registo" className={cn('rounded-md border px-3 py-1', !level && 'bg-primary text-primary-foreground')}>Tudo</Link>
         {(Object.keys(LEVELS) as (keyof typeof LEVELS)[]).map((l) => (
