@@ -1,9 +1,10 @@
-import { CalendarClock, ChevronRight, KeyRound, Link2, Palette, ScrollText, Sparkles } from 'lucide-react';
+import { Bot, CalendarClock, ChevronRight, KeyRound, Link2, Palette, ScrollText, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 const LINKS = [
   { href: '/definicoes/marcas', label: 'Marcas', desc: 'Nome, cor, fuso, contexto e voz de cada marca', icon: Palette },
   { href: '/definicoes/contas', label: 'Contas ligadas', desc: 'Instagram, TikTok e YouTube', icon: Link2 },
+  { href: '/definicoes/ligacoes', label: 'Ligações do Claude', desc: 'Claude no claude.ai e no Claude Code', icon: Bot },
   { href: '/definicoes/ia', label: 'IA', desc: 'Motor, limite mensal e gastos', icon: Sparkles },
   { href: '/definicoes/prazos', label: 'Prazos', desc: 'Datas importantes que aparecem no calendário', icon: CalendarClock },
   { href: '/definicoes/registo', label: 'Registo de atividade', desc: 'Publicações, erros e avisos', icon: ScrollText },

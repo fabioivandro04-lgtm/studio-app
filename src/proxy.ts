@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { isPublicPath } from '@/lib/auth/paths';
+import { isPublicPath, loginNext } from '@/lib/auth/paths';
 
 /** Renova a sessão do Supabase e envia quem não tem sessão para /login. */
 export async function proxy(request: NextRequest) {
@@ -23,7 +23,8 @@ export async function proxy(request: NextRequest) {
   if (!data?.claims && !isPublicPath(path)) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    url.search = path === '/' ? '' : `?next=${encodeURIComponent(path)}`;
+    const next = loginNext(path, request.nextUrl.search);
+    url.search = next ? `?next=${encodeURIComponent(next)}` : '';
     return NextResponse.redirect(url);
   }
   return response;
