@@ -117,7 +117,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
   const heading = rawHeading.charAt(0).toUpperCase() + rawHeading.slice(1);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-20 md:pb-0">
       <SetupChecklist progress={progress} dismissed={(await cookies()).get(SETUP_COOKIE)?.value === '1'} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1">

@@ -24,6 +24,7 @@ export function TimeField({ id, value, onChange, disabled, className, ...aria }:
   if (value !== prev) {
     setPrev(value);
     setText(value);
+    setInvalid(false);
   }
 
   const commit = () => {
