@@ -6,6 +6,7 @@ export const TEST_NOW = new Date('2026-10-20T10:00:00Z');
 export function testCtx(db: SupabaseClient, over: Partial<McpCtx> = {}): McpCtx {
   return {
     db, svc: () => db, userId: 'owner', clientId: 'claude-test', rateKey: 't', take: () => true,
-    now: () => TEST_NOW, appUrl: 'https://app.test', maxUploadMb: 50, ...over,
+    now: () => TEST_NOW, appUrl: 'https://app.test', maxUploadMb: 50,
+    fetchLink: async () => { throw new Error('sem rede nos testes'); }, ...over,
   };
 }

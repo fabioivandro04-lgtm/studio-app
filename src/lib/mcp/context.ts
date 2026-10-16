@@ -4,6 +4,7 @@ import { tokenClient } from './auth';
 import { createServiceClient } from '@/lib/db/clients';
 import { clientEnv, serverEnv } from '@/lib/env';
 import { takeToken } from './rate-limit';
+import { safeFetch } from '@/lib/net/safe-fetch';
 
 export interface McpCtx {
   /** Cliente Supabase com o token do Claude: o RLS (dono + defesas de agente) aplica-se. */
@@ -17,6 +18,8 @@ export interface McpCtx {
   now(): Date;
   appUrl: string;
   maxUploadMb: number;
+  /** Descarrega um link público (validado contra endereços internos). */
+  fetchLink(url: string, maxBytes: number): Promise<{ bytes: Uint8Array; mime: string; name: string }>;
 }
 
 export function ctxFrom(auth: AuthInfo): McpCtx {
@@ -30,5 +33,6 @@ export function ctxFrom(auth: AuthInfo): McpCtx {
     now: () => new Date(),
     appUrl: serverEnv().APP_URL,
     maxUploadMb: clientEnv.maxUploadMb,
+    fetchLink: (url, max) => safeFetch(url, max),
   };
 }
