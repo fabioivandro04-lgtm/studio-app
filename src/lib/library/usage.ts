@@ -17,3 +17,11 @@ export function usageOf(rows: UsageRow[]): Map<string, MediaUsage> {
   for (const u of out.values()) u.posts.sort((a, b) => (b.scheduledAt ?? '').localeCompare(a.scheduledAt ?? ''));
   return out;
 }
+
+type PostMediaRow = { media_id: string; post_id: string; posts: { internal_title: string; status: PostStatus; scheduled_at: string | null } | null };
+
+/** Linhas de `post_media` com `posts!inner(...)` → UsageRow. */
+export const fromPostMediaRows = (rows: PostMediaRow[]): UsageRow[] =>
+  rows.flatMap((r) =>
+    r.posts ? [{ mediaId: r.media_id, postId: r.post_id, title: r.posts.internal_title, status: r.posts.status, scheduledAt: r.posts.scheduled_at }] : [],
+  );

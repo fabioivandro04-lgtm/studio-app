@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { createServerClient } from '@/lib/db/clients';
 import { listMedia, type MediaItem } from '@/lib/db/repo/media-repo';
+import { listFolderOptions } from '@/lib/db/repo/folders-repo';
+import * as folders from '@/lib/library/folders';
 import type { ActionResult } from '../definicoes/actions';
 
 export async function tagMedia(id: string, tags: string[]): Promise<ActionResult> {
@@ -32,7 +34,7 @@ export async function deleteMedia(id: string): Promise<ActionResult> {
 
 /** Link temporário (1 h) para ver o ficheiro original (foto ou vídeo). */
 export async function mediaFileUrl(id: string): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: false, error: 'Ficheiro não encontrado.' };
+  if (!UUID.test(id)) return { ok: false, error: 'Ficheiro não encontrado.' };
   const db = await createServerClient();
   const { data: media } = await db.from('media_assets').select('storage_path').eq('id', id).maybeSingle();
   if (!media) return { ok: false, error: 'Ficheiro não encontrado.' };
@@ -42,11 +44,48 @@ export async function mediaFileUrl(id: string): Promise<{ ok: true; url: string 
 }
 
 /** Biblioteca de uma marca para o editor de posts (carregada só quando se abre "Escolher ficheiros"). */
-export async function listBrandMedia(brandId: string): Promise<{ ok: true; items: MediaItem[] } | { ok: false; error: string }> {
-  if (!/^[0-9a-f-]{36}$/i.test(brandId)) return { ok: false, error: 'Marca não encontrada.' };
+export async function listBrandMedia(
+  brandId: string,
+): Promise<{ ok: true; items: MediaItem[]; folders: { id: string; name: string }[] } | { ok: false; error: string }> {
+  if (!UUID.test(brandId)) return { ok: false, error: 'Marca não encontrada.' };
   try {
-    return { ok: true, items: await listMedia(await createServerClient(), { brandId, limit: 300 }) };
+    const db = await createServerClient();
+    const [items, opts] = await Promise.all([listMedia(db, { brandId, limit: 300 }), listFolderOptions(db, brandId)]);
+    return { ok: true, items, folders: opts };
   } catch {
     return { ok: false, error: 'Não foi possível abrir a biblioteca.' };
   }
+}
+
+const UUID = /^[0-9a-f-]{36}$/i;
+const done = <T extends { ok: boolean }>(r: T): T => {
+  if (r.ok) revalidatePath('/biblioteca');
+  return r;
+};
+const bad = { ok: false as const, error: 'Pedido inválido.' };
+
+export async function createFolder(input: { brandId: string; name: string; notes?: string }) {
+  if (!UUID.test(input.brandId)) return bad;
+  return done(await folders.createFolder(await createServerClient(), input));
+}
+
+export async function ensureFolder(input: { brandId: string; name: string }) {
+  if (!UUID.test(input.brandId)) return bad;
+  return done(await folders.ensureFolder(await createServerClient(), input));
+}
+
+export async function updateFolder(input: { id: string; name?: string; notes?: string }) {
+  if (!UUID.test(input.id)) return bad;
+  return done(await folders.updateFolder(await createServerClient(), input));
+}
+
+export async function deleteFolder(id: string) {
+  if (!UUID.test(id)) return bad;
+  return done(await folders.deleteFolder(await createServerClient(), id));
+}
+
+export async function moveMedia(input: { ids: string[]; folderId: string | null }) {
+  if (!Array.isArray(input.ids) || input.ids.length > 300 || !input.ids.every((i) => UUID.test(i))) return bad;
+  if (input.folderId !== null && !UUID.test(input.folderId)) return bad;
+  return done(await folders.moveMedia(await createServerClient(), input));
 }

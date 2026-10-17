@@ -8,13 +8,15 @@ export interface MediaItem extends MediaAsset {
 /** Lista mídia (opcionalmente filtrada) com links assinados para pré-visualização. */
 export async function listMedia(
   db: SupabaseClient,
-  opts: { brandId?: string | null; kind?: 'image' | 'video' | null; tag?: string | null; ids?: string[]; limit?: number } = {},
+  opts: { brandId?: string | null; kind?: 'image' | 'video' | null; tag?: string | null; ids?: string[]; limit?: number; folderId?: string | 'none' | null; oldestFirst?: boolean } = {},
 ): Promise<MediaItem[]> {
-  let q = db.from('media_assets').select('*').order('created_at', { ascending: false }).limit(opts.limit ?? 200);
+  let q = db.from('media_assets').select('*').order('created_at', { ascending: !!opts.oldestFirst }).limit(opts.limit ?? 200);
   if (opts.brandId) q = q.eq('brand_id', opts.brandId);
   if (opts.kind) q = q.eq('kind', opts.kind);
   if (opts.tag) q = q.contains('tags', [opts.tag]);
   if (opts.ids) q = q.in('id', opts.ids);
+  if (opts.folderId === 'none') q = q.is('folder_id', null);
+  else if (opts.folderId) q = q.eq('folder_id', opts.folderId);
   const { data, error } = await q;
   if (error) throw new Error(`media_assets: ${error.message}`);
   const items = (data ?? []).map(fromMediaRow);

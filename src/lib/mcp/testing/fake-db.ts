@@ -6,7 +6,7 @@ type Pred = (r: Row) => boolean;
 
 /**
  * Supabase falso em memória para testes das ferramentas MCP: filtros simples (eq, neq, in, gte, gt, lt, lte,
- * ilike, or-ilike), order, limit, single/maybeSingle, insert/update com select, rpc e storage configuráveis.
+ * ilike, or-ilike), order, delete, limit, single/maybeSingle, insert/update com select, rpc e storage configuráveis.
  * O texto do select é ignorado (devolve linhas completas).
  */
 export function fakeDb(tables: Record<string, Row[]>, opts: { rpc?: Record<string, (args: any) => any>; storage?: Record<string, any> } = {}) {
@@ -15,7 +15,7 @@ export function fakeDb(tables: Record<string, Row[]>, opts: { rpc?: Record<strin
   const from = (table: string) => {
     tables[table] ??= [];
     const preds: Pred[] = [];
-    let op: 'select' | 'insert' | 'update' = 'select';
+    let op: 'select' | 'insert' | 'update' | 'delete' = 'select';
     let payload: Row | Row[] | null = null;
     const orderBy: { col: string; asc: boolean }[] = [];
     let lim: number | null = null;
@@ -32,6 +32,10 @@ export function fakeDb(tables: Record<string, Row[]>, opts: { rpc?: Record<strin
       if (op === 'update') {
         rows.forEach((r) => Object.assign(r, payload));
         calls.push({ table, op, payload });
+      }
+      if (op === 'delete') {
+        tables[table] = tables[table].filter((r) => !rows.includes(r));
+        calls.push({ table, op });
       }
       for (const o of [...orderBy].reverse()) rows = [...rows].sort((a, b) => (a[o.col] > b[o.col] ? 1 : a[o.col] < b[o.col] ? -1 : 0) * (o.asc ? 1 : -1));
       if (lim != null) rows = rows.slice(0, lim);
@@ -50,6 +54,7 @@ export function fakeDb(tables: Record<string, Row[]>, opts: { rpc?: Record<strin
       },
       insert: (p: Row | Row[]) => ((op = 'insert'), (payload = p), b),
       update: (p: Row) => ((op = 'update'), (payload = p), b),
+      delete: () => ((op = 'delete'), b),
       eq: (c: string, v: any) => (preds.push((r) => r[c] === v), b),
       neq: (c: string, v: any) => (preds.push((r) => r[c] !== v), b),
       in: (c: string, v: any[]) => (preds.push((r) => v.includes(r[c])), b),

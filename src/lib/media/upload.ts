@@ -29,7 +29,7 @@ function tusUpload(blob: Blob, path: string, contentType: string, token: string,
 }
 
 /** Valida, prepara e carrega um ficheiro para a marca; cria a linha em media_assets. */
-export async function uploadMedia(file: File, brandId: string, maxMb: number, onProgress: (p: number) => void): Promise<string> {
+export async function uploadMedia(file: File, brandId: string, maxMb: number, onProgress: (p: number) => void, folderId: string | null = null): Promise<string> {
   const check = checkFile(file, maxMb);
   if (!check.ok) throw new Error(check.message);
   const db = browserClient();
@@ -70,7 +70,7 @@ export async function uploadMedia(file: File, brandId: string, maxMb: number, on
   await tusUpload(blob, path, mime, token, onProgress);
   const { error } = await db.from('media_assets').insert({
     id, brand_id: brandId, storage_path: path, kind: check.kind, mime, size_bytes: blob.size,
-    width, height, duration_s: durationS, thumbnail_path: thumbnailPath, original_name: file.name,
+    width, height, duration_s: durationS, thumbnail_path: thumbnailPath, original_name: file.name, folder_id: folderId,
   });
   if (error) {
     await db.storage.from(BUCKET).remove([path, ...(thumbnailPath ? [thumbnailPath] : [])]);
