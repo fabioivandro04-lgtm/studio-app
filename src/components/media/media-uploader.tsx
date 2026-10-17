@@ -11,10 +11,12 @@ import { SelectField } from '@/components/ui-x/select-field';
 
 const MAX_MB = Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB ?? 50);
 
-export function MediaUploader({ brands, defaultBrandId, onUploaded }: {
+export function MediaUploader({ brands, defaultBrandId, onUploaded, folderId = null }: {
   brands: { id: string; name: string }[];
   defaultBrandId: string | null;
   onUploaded?: (ids: string[]) => void;
+  /** Ficheiros enviados ficam nesta pasta (a marca é a da pasta). */
+  folderId?: string | null;
 }) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
@@ -33,7 +35,7 @@ export function MediaUploader({ brands, defaultBrandId, onUploaded }: {
       }
       setProgress((p) => ({ ...p, [file.name]: 0 }));
       try {
-        ids.push(await uploadMedia(file, brandId, MAX_MB, (v) => setProgress((p) => ({ ...p, [file.name]: v }))));
+        ids.push(await uploadMedia(file, brandId, MAX_MB, (v) => setProgress((p) => ({ ...p, [file.name]: v })), folderId));
         toast.success(`"${file.name}" carregado.`);
       } catch (e) {
         toast.error((e as Error).message);

@@ -7,10 +7,36 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { callSafely } from '@/lib/ai/call-safely';
 import type { MediaItem } from '@/lib/db/repo/media-repo';
+import { POST_STATUS_LABEL } from '@/lib/calendar/status';
 import { formatDuration, MediaThumb } from './media-thumb';
 
+function UsedIn({ item, tz }: { item: MediaItem; tz?: string }) {
+  if (item.usage === undefined) return null;
+  const fmt = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: tz });
+  return (
+    <section aria-label="Usado em" className="space-y-2">
+      <h3 className="text-sm font-semibold">Usado em</h3>
+      {!item.usage ? (
+        <p className="text-sm text-muted-foreground">Ainda não foi usado em nenhum post.</p>
+      ) : (
+        <ul className="divide-y rounded-md border text-sm">
+          {item.usage.posts.map((p) => (
+            <li key={p.postId}>
+              <Link href={`/posts/${p.postId}`} className="flex min-h-10 flex-wrap items-center gap-x-3 px-3 py-2 hover:bg-accent">
+                <span className="font-medium">{p.title.trim() || 'Sem título'}</span>
+                <span className="text-muted-foreground">{p.scheduledAt ? fmt.format(new Date(p.scheduledAt)) : 'Sem data'}</span>
+                <span className="ml-auto text-xs text-muted-foreground">{POST_STATUS_LABEL[p.status]}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 /** Miniatura que abre a foto em grande ou o vídeo com leitor. O ficheiro só é pedido ao abrir. */
-export function MediaViewer({ item, showCreatePost = false, className = '' }: { item: MediaItem; showCreatePost?: boolean; className?: string }) {
+export function MediaViewer({ item, showCreatePost = false, className = '', tz }: { item: MediaItem; showCreatePost?: boolean; className?: string; tz?: string }) {
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const name = item.originalName ?? item.storagePath.split('/').pop() ?? '';
@@ -50,6 +76,7 @@ export function MediaViewer({ item, showCreatePost = false, className = '' }: { 
             <img src={url} alt={name} className="max-h-[75dvh] w-auto object-contain" data-testid="media-image" />
           )}
         </div>
+        <UsedIn item={item} tz={tz} />
         {showCreatePost && (
           <div className="flex justify-end">
             <Button asChild size="sm"><Link href={`/posts/novo?midia=${item.id}`}>Criar post</Link></Button>

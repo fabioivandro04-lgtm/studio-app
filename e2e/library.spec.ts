@@ -76,3 +76,30 @@ test('filtrar por etiqueta', async ({ page }) => {
   await page.getByRole('link', { name: '#portugal' }).click();
   await expect(items(page)).toHaveCount(1);
 });
+
+test('pastas: criar, mover ficheiros, abrir e ver onde foram usados', async ({ page }) => {
+  await page.getByLabel('Escolher ficheiros').setInputFiles([fx('photo.png'), fx('clip.mov')]);
+  await expect(items(page)).toHaveCount(2);
+  await page.getByRole('button', { name: 'Nova pasta' }).click();
+  await page.getByLabel('Nome').fill('Prazos 2027');
+  await page.getByLabel('Tema e abordagem').fill('Datas de candidatura em Portugal');
+  await page.getByRole('button', { name: 'Criar pasta' }).click();
+  await expect(page.getByRole('heading', { name: 'Prazos 2027' })).toBeVisible();
+  await expect(page.getByText('Esta pasta está vazia')).toBeVisible();
+
+  await page.goto('/biblioteca?pasta=sem');
+  await page.getByRole('button', { name: 'Selecionar' }).click();
+  for (const b of await page.getByRole('button', { name: /^Selecionar / }).all()) await b.click();
+  await page.getByRole('button', { name: 'Mover para pasta…' }).click();
+  await page.getByRole('list', { name: 'Pastas' }).getByRole('button', { name: 'Prazos 2027' }).click();
+  await expect(page.getByText('2 ficheiros movidos para «Prazos 2027».')).toBeVisible();
+
+  await page.goto('/biblioteca');
+  await expect(page.getByTestId('folder-card')).toContainText('2 ficheiros');
+  await expect(page.getByTestId('folder-loose')).toContainText('Sem pasta (0)');
+  await page.getByTestId('folder-card').click();
+  await expect(items(page)).toHaveCount(2);
+  await expect(items(page).first()).toContainText('Por usar');
+  await page.getByRole('link', { name: 'Criar post com estes ficheiros' }).click();
+  await expect(page).toHaveURL(/\/posts\/novo\?midia=/);
+});

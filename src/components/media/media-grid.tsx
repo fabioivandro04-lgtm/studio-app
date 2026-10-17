@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ImagePlus, MoreHorizontal, Tag, Trash2 } from 'lucide-react';
+import { Check, FolderInput, ImagePlus, MoreHorizontal, Tag, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import { useTransition } from 'react';
@@ -11,8 +11,25 @@ import { cn } from '@/lib/utils';
 import { MediaThumb } from './media-thumb';
 import { MediaViewer } from './media-viewer';
 
-/** Grelha de mídia. Em modo de seleção (`selected` + `onToggle`) serve de seletor no criador de posts. */
-export function MediaGrid({ items, selected, onToggle }: { items: MediaItem[]; selected?: string[]; onToggle?: (id: string) => void }) {
+function UsageBadge({ item }: { item: MediaItem }) {
+  if (item.usage === undefined) return null;
+  return item.usage ? (
+    <span className="rounded bg-accent px-1.5 py-0.5 text-[11px] font-medium text-accent-foreground">Usado {item.usage.count}×</span>
+  ) : (
+    <span className="rounded border border-dashed px-1.5 py-0.5 text-[11px] text-muted-foreground">Por usar</span>
+  );
+}
+
+/** Grelha de mídia. Em modo de seleção (`selected` + `onToggle`) serve de seletor no criador de posts e na Biblioteca. */
+export function MediaGrid({ items, selected, onToggle, onMove, tzByBrand, emptyText }: {
+  items: MediaItem[];
+  selected?: string[];
+  onToggle?: (id: string) => void;
+  /** Mostra "Mover para pasta" no menu de cada ficheiro. */
+  onMove?: (item: MediaItem) => void;
+  tzByBrand?: Record<string, string>;
+  emptyText?: string;
+}) {
   const [pending, start] = useTransition();
   const selecting = !!onToggle;
 
@@ -24,7 +41,7 @@ export function MediaGrid({ items, selected, onToggle }: { items: MediaItem[]; s
         </span>
         <p className="font-medium">Ainda sem ficheiros</p>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          {selecting ? 'Carregue fotos ou vídeos na Biblioteca para os usar nos posts.' : 'Carregue aqui as fotos e vídeos que criou. Depois escolhe-os ao criar cada post.'}
+          {emptyText ?? (selecting ? 'Carregue fotos ou vídeos na Biblioteca para os usar nos posts.' : 'Carregue aqui as fotos e vídeos que criou. Depois escolhe-os ao criar cada post.')}
         </p>
       </div>
     );
@@ -52,7 +69,7 @@ export function MediaGrid({ items, selected, onToggle }: { items: MediaItem[]; s
                 )}
               </button>
             ) : (
-              <MediaViewer item={m} showCreatePost />
+              <MediaViewer item={m} showCreatePost tz={tzByBrand?.[m.brandId]} />
             )}
             <p className="truncate text-xs" title={m.originalName ?? ''}>
               {m.originalName ?? m.storagePath.split('/').pop()}
@@ -62,6 +79,7 @@ export function MediaGrid({ items, selected, onToggle }: { items: MediaItem[]; s
               {m.width && m.height ? ` · ${m.width}×${m.height}` : ''}
             </p>
             {m.tags.length > 0 && <p className="truncate text-xs text-primary">{m.tags.map((t) => `#${t}`).join(' ')}</p>}
+            <UsageBadge item={m} />
             {!selecting && (
               <div className="flex items-center gap-1">
                 <Link href={`/posts/novo?midia=${m.id}`} className="flex min-h-8 items-center rounded-md px-2 text-xs font-medium text-primary hover:bg-accent">
@@ -74,6 +92,11 @@ export function MediaGrid({ items, selected, onToggle }: { items: MediaItem[]; s
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    {onMove && (
+                      <DropdownMenuItem onSelect={() => onMove(m)}>
+                        <FolderInput className="size-4" aria-hidden /> Mover para pasta
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       onSelect={() => {
                         const v = prompt('Etiquetas separadas por vírgulas (ex.: portugal, prazos)', m.tags.join(', '));

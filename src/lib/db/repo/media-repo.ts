@@ -1,8 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { fromMediaRow, type MediaAsset } from '@/lib/db/types';
+import type { MediaUsage } from '@/lib/library/usage';
 
 export interface MediaItem extends MediaAsset {
   previewUrl: string | null;
+  /** Onde foi usado; só preenchido na Biblioteca (null = por usar). */
+  usage?: MediaUsage | null;
 }
 
 /** Lista mídia (opcionalmente filtrada) com links assinados para pré-visualização. */
