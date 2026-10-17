@@ -30,6 +30,10 @@ Os ficheiros da pasta sobem diretamente: o Claude pede um link de envio (`pedir_
 confirma (`confirmar_envio`). No claude.ai, use ficheiros que já estão na Biblioteca ou um link público
 (`importar_de_link`). Imagens só em JPG (o Instagram não aceita PNG).
 
+Pastas: peça ao Claude para juntar os ficheiros de um post numa pasta (ex.: "põe as 8 fotos na pasta «Prazos 2027»").
+Ele cria a pasta (`criar_pasta`) e envia os ficheiros já para dentro dela (`pastaId`). O Claude vê as pastas
+(`pastas`, `biblioteca`) mas não muda o nome, a nota, nem apaga pastas — isso faz na app, na Biblioteca.
+
 ## Exemplos de pedidos
 - "Vê os horários livres da Unidreamity na próxima semana e monta estes 3 Reels (pasta ./posts) em rascunho,
   com legendas na voz da marca."

@@ -7,7 +7,8 @@ import { TOOLS } from './tools';
 export const INSTRUCTIONS =
   'Estúdio: planeador de posts (Instagram, TikTok, YouTube Shorts) do dono. Comece por "marcas" para saber ids, fusos e contas. ' +
   'Datas AAAA-MM-DD e horas HH:MM no fuso da marca. Tudo o que cria fica como rascunho: o dono revê e agenda na app. ' +
-  'Antes de criar, use "horarios_livres" e "verificar_post". Responda ao dono em português de Portugal.';
+  'Antes de criar, use "horarios_livres" e "verificar_post". Junte os ficheiros de um carrossel numa pasta com o tema do post ' +
+  '("criar_pasta" e pastaId no envio). Responda ao dono em português de Portugal.';
 
 /** Corre uma ferramenta: limite de pedidos, validação da entrada e erros sem detalhes internos. */
 export async function runTool(tool: ToolDef, raw: unknown, ctx: McpCtx): Promise<CallToolResult> {

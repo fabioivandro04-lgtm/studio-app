@@ -27,13 +27,13 @@ export async function createFolder(db: SupabaseClient, o: { brandId: string; nam
   return { ok: true, id: data.id as string };
 }
 
-/** Pasta com este nome na marca: a existente ou uma nova. */
-export async function ensureFolder(db: SupabaseClient, o: { brandId: string; name: string }): Promise<Result<{ id: string; created: boolean }>> {
+/** Pasta com este nome na marca: a existente (sem mexer na nota) ou uma nova com `notes`. */
+export async function ensureFolder(db: SupabaseClient, o: { brandId: string; name: string; notes?: string }): Promise<Result<{ id: string; created: boolean }>> {
   const name = cleanFolderName(o.name);
   if (!name) return { ok: false, error: BAD_NAME };
   const existing = await findByName(db, o.brandId, name);
   if (existing) return { ok: true, id: existing, created: false };
-  const r = await createFolder(db, { brandId: o.brandId, name });
+  const r = await createFolder(db, { brandId: o.brandId, name, notes: o.notes });
   return r.ok ? { ok: true, id: r.id, created: true } : r;
 }
 

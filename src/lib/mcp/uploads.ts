@@ -27,8 +27,16 @@ export function acceptType(name: string, mime: string, size: number, maxMb: numb
 const magicOk = (b: Uint8Array, kind: 'image' | 'video') =>
   kind === 'image' ? b[0] === 0xff && b[1] === 0xd8 : b.length > 12 && String.fromCharCode(b[4], b[5], b[6], b[7]) === 'ftyp';
 
+/** Pasta de destino: tem de existir nesta marca. */
+export async function resolveFolder(ctx: McpCtx, brandId: string, pastaId: string | undefined): Promise<string | null> {
+  if (!pastaId) return null;
+  const { data } = await ctx.db.from('media_folders').select('id').eq('id', pastaId).eq('brand_id', brandId).maybeSingle();
+  if (!data) throw new ToolError('Pasta não encontrada nesta marca.');
+  return pastaId;
+}
+
 /** Valida o conteúdo já guardado em `path`, lê medidas e cria a linha em media_assets. Conteúdo inválido é apagado. */
-export async function registerUpload(ctx: McpCtx, o: { brandId: string; id: string; path: string; bytes: Uint8Array; mime: string; name: string }) {
+export async function registerUpload(ctx: McpCtx, o: { brandId: string; id: string; path: string; bytes: Uint8Array; mime: string; name: string; folderId?: string | null }) {
   if (!o.path.startsWith(`${o.brandId}/mcp/`)) throw new Error('caminho fora da pasta do MCP');
   const t = UPLOAD_TYPES[o.mime];
   const remove = () => ctx.svc().storage.from(BUCKET).remove([o.path]);
@@ -43,7 +51,7 @@ export async function registerUpload(ctx: McpCtx, o: { brandId: string; id: stri
   const probe = probeBuffer(o.bytes, o.mime);
   const { error } = await ctx.db.from('media_assets').insert({
     id: o.id, brand_id: o.brandId, storage_path: o.path, kind: t.kind, mime: o.mime, size_bytes: o.bytes.byteLength,
-    width: probe.width, height: probe.height, duration_s: probe.durationS, original_name: o.name.slice(0, 200),
+    width: probe.width, height: probe.height, duration_s: probe.durationS, original_name: o.name.slice(0, 200), folder_id: o.folderId ?? null,
   });
   if (error) {
     // Outra chamada registou o mesmo envio ao mesmo tempo: o ficheiro é dela, não apagar.

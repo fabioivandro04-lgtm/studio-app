@@ -72,7 +72,7 @@ describe('biblioteca', () => {
     const r = await runTool(biblioteca, { brandId: B, texto: 'bolsa' }, testCtx(db));
     expect((r.structuredContent as { ficheiros: { id: string }[] }).ficheiros.map((f) => f.id)).toEqual(['2', '1']);
     const v = await runTool(biblioteca, { brandId: B, tipo: 'video', limite: 1 }, testCtx(db));
-    expect(v.structuredContent).toEqual({ ficheiros: [{ id: '2', nome: 'reel.mp4', tipo: 'video', mime: 'video/mp4', largura: 1080, altura: 1920, duracaoS: 12.5, etiquetas: ['bolsa'], criadoEm: '2026-10-02' }] });
+    expect(v.structuredContent).toEqual({ ficheiros: [{ id: '2', nome: 'reel.mp4', tipo: 'video', mime: 'video/mp4', largura: 1080, altura: 1920, duracaoS: 12.5, etiquetas: ['bolsa'], criadoEm: '2026-10-02', pasta: null }] });
     expect((await runTool(biblioteca, { brandId: B, limite: 51 }, testCtx(db))).isError).toBe(true);
   });
 });
