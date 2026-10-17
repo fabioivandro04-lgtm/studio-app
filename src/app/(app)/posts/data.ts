@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { listBrands } from '@/lib/db/repo/brands-repo';
 import { listHashtagGroups, type HashtagGroup } from '@/lib/db/repo/hashtag-groups-repo';
 import { listMedia, type MediaItem } from '@/lib/db/repo/media-repo';
+import { parseMidia, pickPrefilled } from '@/lib/library/midia-param';
 import type { Platform, TargetFormat } from '@/lib/platforms/types';
 import { utcToLocalParts } from '@/lib/time/zone';
 
@@ -40,7 +41,7 @@ export async function loadComposer(
   // aqui vêm apenas as mídias do post (ou a escolhida na Biblioteca).
   const postMedia = opts.postId
     ? db.from('post_media').select('media_id').eq('post_id', opts.postId).order('position').then(({ data }) => (data ?? []).map((m) => m.media_id as string))
-    : Promise.resolve(opts.mediaId && /^[0-9a-f-]{36}$/i.test(opts.mediaId) ? [opts.mediaId] : []);
+    : Promise.resolve(parseMidia(opts.mediaId));
   const [allBrands, { data: acc }, mediaIds, hashtagGroups] = await Promise.all([
     listBrands(db),
     db.from('social_accounts').select('id, brand_id, platform, handle, status').neq('status', 'disabled').order('created_at'),
@@ -71,14 +72,14 @@ export async function loadComposer(
     };
   }
 
-  const fromMedia = opts.mediaId ? media.find((m) => m.id === opts.mediaId) : undefined;
-  const brandId = fromMedia?.brandId ?? opts.brandId ?? brands[0]?.id ?? '';
+  const prefilled = pickPrefilled(mediaIds, media);
+  const brandId = prefilled.brandId ?? opts.brandId ?? brands[0]?.id ?? '';
   const tz = brands.find((b) => b.id === brandId)?.timezone ?? 'Africa/Maputo';
   const when = tomorrowAt9(tz);
   return {
-    brands, accounts, media, hashtagGroups,
+    brands, accounts, media: media.filter((m) => prefilled.mediaIds.includes(m.id)), hashtagGroups,
     initial: {
-      brandId, internalTitle: '', mediaIds: fromMedia ? [fromMedia.id] : [], targets: [], locked: false,
+      brandId, internalTitle: '', mediaIds: prefilled.mediaIds, targets: [], locked: false,
       date: opts.date && /^\d{4}-\d{2}-\d{2}$/.test(opts.date) ? opts.date : when.date,
       time: opts.time && /^([01]\d|2[0-3]):[0-5]\d$/.test(opts.time) ? opts.time : when.time,
     },

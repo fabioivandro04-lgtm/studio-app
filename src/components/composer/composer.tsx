@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { listBrandMedia } from '@/app/(app)/biblioteca/actions';
+import { ensureFolder, listBrandMedia, moveMedia } from '@/app/(app)/biblioteca/actions';
+import { defaultFolderName } from '@/lib/library/folder-name';
 import { cancelPost, deletePost, duplicatePost, savePost } from '@/app/(app)/posts/actions';
 import type { ComposerData } from '@/app/(app)/posts/data';
 import { MediaGrid } from '@/components/media/media-grid';
@@ -51,16 +52,38 @@ export function Composer({ data }: { data: ComposerData }) {
   // A biblioteca só é pedida ao abrir "Escolher ficheiros"; as mídias do post já vêm com a página.
   const [library, setLibrary] = useState<MediaItem[] | null>(null);
   const [libraryBrand, setLibraryBrand] = useState<string | null>(null);
+  const [libFolders, setLibFolders] = useState<{ id: string; name: string }[]>([]);
+  const [pickerFolder, setPickerFolder] = useState('all');
+  // Ficheiros guardados numa pasta nesta sessão (a linha "não estão numa pasta" deixa de os contar).
+  const [filed, setFiled] = useState<string[]>([]);
   const loadLibrary = async () => {
     const r = await callSafely(() => listBrandMedia(s.brandId));
     if (r.ok) {
       setLibrary(r.items);
+      setLibFolders(r.folders);
       setLibraryBrand(s.brandId);
     } else toast.error(r.error);
   };
   const known = [...(library ?? []), ...data.media];
   const brandMedia = libraryBrand === s.brandId ? (library ?? []) : [];
+  const pickerMedia = pickerFolder === 'all' ? brandMedia : brandMedia.filter((m) => (m.folderId ?? 'none') === pickerFolder);
+  const useWholeFolder = () => {
+    const ids = [...pickerMedia].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()).map((m) => m.id);
+    update({ mediaIds: [...s.mediaIds, ...ids.filter((id) => !s.mediaIds.includes(id))] });
+  };
   const selectedMedia = s.mediaIds.map((id) => known.find((m) => m.id === id)).filter((m) => !!m);
+  const loose = selectedMedia.filter((m) => !m.folderId && !filed.includes(m.id));
+  const folderName = defaultFolderName(s.internalTitle, s.date);
+  const saveToFolder = () =>
+    start(async () => {
+      const f = await callSafely(() => ensureFolder({ brandId: s.brandId, name: folderName }));
+      if (!f.ok) return void toast.error(f.error);
+      const ids = loose.map((m) => m.id);
+      const r = await callSafely(() => moveMedia({ ids, folderId: f.id }));
+      if (!r.ok) return void toast.error(r.error);
+      setFiled((x) => [...x, ...ids]);
+      toast.success(`Guardado na pasta «${folderName}».`);
+    });
   const mediaInfo: MediaInfo[] = selectedMedia.map((m) => ({
     id: m.id, kind: m.kind, mime: m.mime, sizeBytes: m.sizeBytes, width: m.width, height: m.height, durationS: m.durationS, storagePath: m.storagePath,
   }));
@@ -271,8 +294,22 @@ export function Composer({ data }: { data: ComposerData }) {
                 <DialogContent className="max-h-[85dvh] max-w-3xl overflow-y-auto">
                   <DialogHeader><DialogTitle>Biblioteca — {brand?.name}</DialogTitle></DialogHeader>
                   <MediaUploader brands={brand ? [brand] : []} defaultBrandId={s.brandId} onUploaded={(ids) => { update({ mediaIds: [...s.mediaIds, ...ids] }); void loadLibrary(); }} />
+                  {libraryBrand === s.brandId && libFolders.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <SelectField
+                        className="w-56"
+                        aria-label="Pasta"
+                        value={pickerFolder}
+                        onChange={setPickerFolder}
+                        options={[{ value: 'all', label: 'Todas as pastas' }, ...libFolders.map((f) => ({ value: f.id, label: f.name })), { value: 'none', label: 'Sem pasta' }]}
+                      />
+                      {pickerFolder !== 'all' && pickerFolder !== 'none' && pickerMedia.length > 0 && (
+                        <Button type="button" size="sm" variant="outline" onClick={useWholeFolder}>Usar a pasta toda</Button>
+                      )}
+                    </div>
+                  )}
                   {libraryBrand === s.brandId ? (
-                    <MediaGrid items={brandMedia} selected={s.mediaIds} onToggle={toggleMedia} />
+                    <MediaGrid items={pickerMedia} selected={s.mediaIds} onToggle={toggleMedia} />
                   ) : (
                     <p role="status" className="py-8 text-center text-sm text-muted-foreground">A abrir a biblioteca…</p>
                   )}
@@ -297,6 +334,16 @@ export function Composer({ data }: { data: ComposerData }) {
                 </li>
               ))}
             </ol>
+          )}
+          {!ro && loose.length > 0 && (
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-muted px-3 py-2 text-sm" data-testid="loose-files">
+              <span className="text-muted-foreground">
+                {loose.length === 1 ? 'Este ficheiro não está numa pasta' : `Estes ${loose.length} ficheiros não estão numa pasta`} —
+              </span>
+              <Button type="button" size="sm" variant="link" className="h-auto p-0" disabled={pending} onClick={saveToFolder}>
+                Guardar na pasta «{folderName}»
+              </Button>
+            </p>
           )}
           {errorsFor(null).filter((e) => e.field === 'mediaIds').map((e) => <p key={e.message} className="text-sm text-destructive">{e.message}</p>)}
         </section>
