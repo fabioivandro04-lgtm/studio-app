@@ -34,13 +34,13 @@ export const fromAccountRow = (r: Row): SocialAccount => ({
 export interface MediaAsset {
   id: string; brandId: string; storagePath: string; kind: 'image' | 'video'; mime: string; sizeBytes: number;
   width: number | null; height: number | null; durationS: number | null; thumbnailPath: string | null;
-  originalName: string | null; tags: string[]; createdAt: Date;
+  originalName: string | null; tags: string[]; folderId: string | null; createdAt: Date;
 }
 export const fromMediaRow = (r: Row): MediaAsset => ({
   id: r.id, brandId: r.brand_id, storagePath: r.storage_path, kind: r.kind, mime: r.mime,
   sizeBytes: Number(r.size_bytes), width: num(r.width), height: num(r.height), durationS: num(r.duration_s),
   thumbnailPath: r.thumbnail_path ?? null, originalName: r.original_name ?? null, tags: r.tags ?? [],
-  createdAt: new Date(r.created_at),
+  folderId: r.folder_id ?? null, createdAt: new Date(r.created_at),
 });
 
 export interface Post {
