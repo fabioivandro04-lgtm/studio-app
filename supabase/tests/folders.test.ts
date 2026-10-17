@@ -73,6 +73,22 @@ describe('pastas (agente)', () => {
   });
 });
 
+describe('media_folder_stats', () => {
+  it('conta ficheiros, posts não cancelados e até 4 miniaturas por pasta', async () => {
+    const id = await newFolder();
+    const ins = (n: number) =>
+      db.sql(`insert into media_assets(brand_id,storage_path,kind,mime,size_bytes,folder_id) values ($1,$2,'image','image/jpeg',1,$3) returning id`, [s.brand.id, `b/f${n}.jpg`, id]);
+    const ids: string[] = [];
+    for (let n = 0; n < 5; n++) ids.push((await ins(n))[0].id);
+    const [p1] = await db.sql(`insert into posts(brand_id, status) values ($1,'draft') returning id`, [s.brand.id]);
+    const [p2] = await db.sql(`insert into posts(brand_id, status) values ($1,'cancelled') returning id`, [s.brand.id]);
+    await db.sql(`insert into post_media(post_id, media_id, position) values ($1,$2,0),($1,$3,1),($4,$2,0)`, [p1.id, ids[0], ids[1], p2.id]);
+    const rows = await owner().sql('select * from media_folder_stats($1)', [s.brand.id]);
+    expect(rows).toEqual([{ folder_id: id, files: 5, used_in: 1, previews: ['b/f0.jpg', 'b/f1.jpg', 'b/f2.jpg', 'b/f3.jpg'] }]);
+    expect(await db.asUser(s.strangerId).sql('select * from media_folder_stats(null)')).toEqual([]);
+  });
+});
+
 it('migração 0015 é reaplicável', async () => {
   const sql = readFileSync(path.join(__dirname, '../migrations/0015_pastas.sql'), 'utf8');
   await db.sql(sql);

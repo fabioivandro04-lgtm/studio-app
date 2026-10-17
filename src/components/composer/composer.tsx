@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { ensureFolder, listBrandMedia, moveMedia } from '@/app/(app)/biblioteca/actions';
 import { defaultFolderName } from '@/lib/library/folder-name';
+import { pickerFilter } from '@/lib/library/picker';
 import { cancelPost, deletePost, duplicatePost, savePost } from '@/app/(app)/posts/actions';
 import type { ComposerData } from '@/app/(app)/posts/data';
 import { MediaGrid } from '@/components/media/media-grid';
@@ -61,12 +62,14 @@ export function Composer({ data }: { data: ComposerData }) {
     if (r.ok) {
       setLibrary(r.items);
       setLibFolders(r.folders);
+      setPickerFolder('all');
       setLibraryBrand(s.brandId);
     } else toast.error(r.error);
   };
   const known = [...(library ?? []), ...data.media];
   const brandMedia = libraryBrand === s.brandId ? (library ?? []) : [];
-  const pickerMedia = pickerFolder === 'all' ? brandMedia : brandMedia.filter((m) => (m.folderId ?? 'none') === pickerFolder);
+  const picker = pickerFilter(brandMedia, pickerFolder, libFolders.map((f) => f.id));
+  const pickerMedia = picker.items;
   const useWholeFolder = () => {
     const ids = [...pickerMedia].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()).map((m) => m.id);
     update({ mediaIds: [...s.mediaIds, ...ids.filter((id) => !s.mediaIds.includes(id))] });
@@ -299,11 +302,11 @@ export function Composer({ data }: { data: ComposerData }) {
                       <SelectField
                         className="w-56"
                         aria-label="Pasta"
-                        value={pickerFolder}
+                        value={picker.value}
                         onChange={setPickerFolder}
                         options={[{ value: 'all', label: 'Todas as pastas' }, ...libFolders.map((f) => ({ value: f.id, label: f.name })), { value: 'none', label: 'Sem pasta' }]}
                       />
-                      {pickerFolder !== 'all' && pickerFolder !== 'none' && pickerMedia.length > 0 && (
+                      {picker.value !== 'all' && picker.value !== 'none' && pickerMedia.length > 0 && (
                         <Button type="button" size="sm" variant="outline" onClick={useWholeFolder}>Usar a pasta toda</Button>
                       )}
                     </div>

@@ -11,16 +11,16 @@ export const pastas = defineTool({
   readOnly: true,
   async run({ brandId }, ctx) {
     await loadBrand(ctx.db, brandId);
-    const [{ data: fs, error: fe }, { data: ms, error: me }] = await Promise.all([
+    const [{ data: fs, error: fe }, { data: stats, error: se }, { count: loose }] = await Promise.all([
       ctx.db.from('media_folders').select('id, name, notes').eq('brand_id', brandId).order('name'),
-      ctx.db.from('media_assets').select('folder_id').eq('brand_id', brandId).limit(5000),
+      ctx.db.rpc('media_folder_stats', { p_brand: brandId }),
+      ctx.db.from('media_assets').select('id', { count: 'exact', head: true }).eq('brand_id', brandId).is('folder_id', null),
     ]);
     if (fe) throw new Error(`media_folders: ${fe.message}`);
-    if (me) throw new Error(`media_assets: ${me.message}`);
-    const count = new Map<string | null, number>();
-    for (const m of ms ?? []) count.set((m.folder_id as string) ?? null, (count.get((m.folder_id as string) ?? null) ?? 0) + 1);
-    const list = (fs ?? []).map((f) => ({ id: f.id as string, nome: f.name as string, tema: (f.notes as string) ?? '', ficheiros: count.get(f.id as string) ?? 0 }));
-    const semPasta = count.get(null) ?? 0;
+    if (se) throw new Error(`media_folder_stats: ${se.message}`);
+    const files = new Map(((stats ?? []) as { folder_id: string; files: number }[]).map((r) => [r.folder_id, r.files]));
+    const list = (fs ?? []).map((f) => ({ id: f.id as string, nome: f.name as string, tema: (f.notes as string) ?? '', ficheiros: files.get(f.id as string) ?? 0 }));
+    const semPasta = loose ?? 0;
     const text = list.length
       ? `${list.map((f) => `${f.id} · ${f.nome} · ${f.ficheiros} ficheiros`).join('\n')}\nSem pasta: ${semPasta}`
       : `Ainda sem pastas. Sem pasta: ${semPasta}`;

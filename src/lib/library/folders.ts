@@ -8,12 +8,11 @@ const BAD_NAME = 'O nome tem de ter entre 1 e 80 caracteres.';
 const BAD_NOTES = 'A nota pode ter até 2000 caracteres.';
 const DUPLICATE = 'Já existe uma pasta com esse nome.';
 
-// ilike sem curingas: o nome é comparado tal e qual (sem distinguir maiúsculas).
-const likeExact = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
-
+// Compara no servidor da app: no ilike do PostgREST, % * _ seriam curingas.
 async function findByName(db: SupabaseClient, brandId: string, name: string): Promise<string | null> {
-  const { data } = await db.from('media_folders').select('id').eq('brand_id', brandId).ilike('name', likeExact(name)).maybeSingle();
-  return (data?.id as string) ?? null;
+  const { data } = await db.from('media_folders').select('id, name').eq('brand_id', brandId);
+  const key = name.toLowerCase();
+  return ((data ?? []).find((f) => String(f.name).toLowerCase() === key)?.id as string) ?? null;
 }
 
 export async function createFolder(db: SupabaseClient, o: { brandId: string; name: string; notes?: string }): Promise<Result<{ id: string }>> {

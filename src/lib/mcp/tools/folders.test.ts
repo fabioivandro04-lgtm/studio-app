@@ -20,7 +20,10 @@ const fx = (f: string) => new Uint8Array(readFileSync(path.join(import.meta.dirn
 
 describe('pastas', () => {
   it('lista as pastas da marca com nº de ficheiros', async () => {
-    const { db } = fakeDb({ brands: [brand], media_folders: folders(), media_assets: [media('a', F), media('b', F), media('c', null)] });
+    const { db } = fakeDb(
+      { brands: [brand], media_folders: folders(), media_assets: [media('a', F), media('b', F), media('c', null)] },
+      { rpc: { media_folder_stats: ({ p_brand }: { p_brand: string }) => (p_brand === B ? [{ folder_id: F, files: 2, used_in: 0, previews: [] }] : []) } },
+    );
     const r = await runTool(pastas, { brandId: B }, testCtx(db));
     expect(r.structuredContent).toEqual({ pastas: [{ id: F, nome: 'Prazos 2027', tema: 'Datas', ficheiros: 2 }], semPasta: 1 });
   });

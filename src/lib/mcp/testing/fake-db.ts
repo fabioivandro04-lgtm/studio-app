@@ -4,6 +4,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 type Row = Record<string, any>;
 type Pred = (r: Row) => boolean;
 
+// Como o PostgREST: % e * são "qualquer coisa", _ é "um carácter", \ escapa.
+const likeRe = (v: string) =>
+  new RegExp(`^${v.replace(/\\(.)|([%*])|(_)|([.+?^${}()|[\]\\])/g, (_m, esc, many, one, lit) => (esc ? esc.replace(/[.+?^${}()|[\]\\*]/g, '\\$&') : many ? '.*' : one ? '.' : `\\${lit}`))}$`, 'i');
+
 /**
  * Supabase falso em memória para testes das ferramentas MCP: filtros simples (eq, neq, in, gte, gt, lt, lte,
  * ilike, or-ilike), order, delete, limit, single/maybeSingle, insert/update com select, rpc e storage configuráveis.
@@ -64,7 +68,7 @@ export function fakeDb(tables: Record<string, Row[]>, opts: { rpc?: Record<strin
       lte: (c: string, v: any) => (preds.push((r) => r[c] != null && r[c] <= v), b),
       not: (c: string, operator: string, v: any) => (preds.push((r) => (operator === 'is' ? r[c] !== v : r[c] !== v)), b),
       is: (c: string, v: any) => (preds.push((r) => (r[c] ?? null) === v), b),
-      ilike: (c: string, v: string) => (preds.push((r) => new RegExp(`^${v.replace(/%/g, '.*')}$`, 'i').test(String(r[c] ?? ''))), b),
+      ilike: (c: string, v: string) => (preds.push((r) => likeRe(v).test(String(r[c] ?? ''))), b),
       order: (col: string, o?: { ascending?: boolean }) => (orderBy.push({ col, asc: o?.ascending !== false }), b),
       limit: (n: number) => ((lim = n), b),
       single: () => ((mode = 'single'), b),

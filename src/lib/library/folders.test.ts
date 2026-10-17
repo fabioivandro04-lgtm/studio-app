@@ -92,3 +92,11 @@ describe('moveMedia', () => {
     expect(await moveMedia(db, { ids: [], folderId: null })).toEqual({ ok: false, error: 'Escolha pelo menos um ficheiro.' });
   });
 });
+
+describe('nomes com curingas', () => {
+  it('"A*" e "Pr_zos" não apanham "Abc" nem "Prazos"', async () => {
+    const { db } = fakeDb({ media_folders: [{ id: 'f1', brand_id: B1, name: 'Abc', notes: '' }, { id: 'f3', brand_id: B1, name: 'Prazos', notes: '' }] });
+    expect(await ensureFolder(db, { brandId: B1, name: 'A*' })).toMatchObject({ ok: true, created: true });
+    expect(await ensureFolder(db, { brandId: B1, name: 'Pr_zos' })).toMatchObject({ ok: true, created: true });
+  });
+});
