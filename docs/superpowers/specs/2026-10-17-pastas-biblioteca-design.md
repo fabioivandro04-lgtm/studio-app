@@ -21,7 +21,7 @@ Escolhas do dono: pastas manuais **e** sugestão a partir do post (C); cada fich
   Botão "Nova pasta" (nome + "Tema e abordagem").
 - Com "Todas as marcas": pastas de todas as marcas, cada cartão com a bolinha da cor da marca.
 - `/biblioteca?pasta=<id>`: cabeçalho com nome e nota "Tema e abordagem" (editáveis), ficheiros por ordem de envio,
-  ações **Criar post com estes ficheiros** (`/posts/novo?media=id1,id2,…` pela mesma ordem), **Mudar nome**,
+  ações **Criar post com estes ficheiros** (`/posts/novo?midia=id1,id2,…` pela mesma ordem), **Mudar nome**,
   **Apagar pasta** (confirmação: "Os ficheiros passam para Sem pasta. Nada é apagado.").
   `?pasta=sem` mostra os ficheiros soltos. Pasta inexistente → "Pasta não encontrada" + voltar.
 - Enviar ficheiros dentro de uma pasta grava-os nessa pasta.
@@ -42,7 +42,7 @@ Escolhas do dono: pastas manuais **e** sugestão a partir do post (C); cada fich
   existente com o mesmo nome) e move os ficheiros soltos. Ficheiros já numa pasta não mudam.
 - "Escolher da Biblioteca": filtro por pasta + botão **"Usar a pasta toda"** (junta os ficheiros pela ordem de envio,
   sem repetir os já escolhidos).
-- `/posts/novo?media=…`: pré-escolhe esses ficheiros (só ids válidos da marca; os outros são ignorados).
+- `/posts/novo?midia=…` (lista separada por vírgulas): pré-escolhe esses ficheiros (só ids válidos da marca; os outros são ignorados).
 
 ## 5. MCP (Claude)
 - `biblioteca`: devolve `pasta` (id, nome) de cada ficheiro e aceita filtro `pastaId`.
