@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { instagramAccess } from '@/lib/db/repo/instagram-access';
 import { serverEnv } from '@/lib/env';
 import { getMessaging } from './registry';
-import type { DmConversation, DmConversationSummary } from './types';
+import type { DmConversation, DmConversationSummary, IgCommentedPost } from './types';
 
 export interface InboxAccount {
   id: string;
@@ -24,12 +24,16 @@ export interface Inbox {
 
 const userMessage = (e: unknown, fallback: string) => (e as { userMessage?: string }).userMessage ?? fallback;
 
-/** Conversas de todas as contas de Instagram ativas da marca (ou de todas as marcas), mais recentes primeiro. */
-export async function loadInbox(db: SupabaseClient, brandId: string | null): Promise<Inbox> {
+/** Contas de Instagram ativas da marca (ou de todas as marcas). */
+export async function listInboxAccounts(db: SupabaseClient, brandId: string | null): Promise<InboxAccount[]> {
   let q = db.from('social_accounts').select('id, brand_id, handle').eq('platform', 'instagram').eq('status', 'active');
   if (brandId) q = q.eq('brand_id', brandId);
   const { data } = await q.order('handle');
-  const accounts: InboxAccount[] = (data ?? []).map((a) => ({ id: a.id, brandId: a.brand_id, handle: a.handle }));
+  return (data ?? []).map((a) => ({ id: a.id, brandId: a.brand_id, handle: a.handle }));
+}
+
+/** Conversas de todas as contas, mais recentes primeiro. */
+export async function loadInbox(db: SupabaseClient, accounts: InboxAccount[]): Promise<Inbox> {
   const messaging = getMessaging(serverEnv());
   const errors: Inbox['errors'] = [];
   const lists = await Promise.all(
@@ -60,4 +64,32 @@ export async function loadConversation(db: SupabaseClient, accountId: string, co
   } catch (e) {
     return { ok: false, error: userMessage(e, 'Não foi possível abrir a conversa.') };
   }
+}
+
+export interface CommentsPost extends IgCommentedPost {
+  accountId: string;
+  accountHandle: string;
+}
+
+/** Comentários dos posts recentes de todas as contas; posts com comentários por responder primeiro. */
+export async function loadComments(db: SupabaseClient, accounts: InboxAccount[]): Promise<{ posts: CommentsPost[]; errors: Inbox['errors'] }> {
+  const messaging = getMessaging(serverEnv());
+  const errors: Inbox['errors'] = [];
+  const lists = await Promise.all(
+    accounts.map(async (acc): Promise<CommentsPost[]> => {
+      try {
+        const access = await instagramAccess(db, acc.id);
+        if (!access) return [];
+        const posts = await messaging.listComments(access, { fetch });
+        return posts.map((p) => ({ ...p, accountId: acc.id, accountHandle: acc.handle }));
+      } catch (e) {
+        errors.push({ handle: acc.handle, message: userMessage(e, 'Não foi possível ler os comentários.') });
+        return [];
+      }
+    }),
+  );
+  const pending = (p: CommentsPost) => p.comments.some((c) => !c.answered && !c.hidden);
+  const latest = (p: CommentsPost) => Math.max(...p.comments.map((c) => c.createdAt.getTime()));
+  const posts = lists.flat().sort((a, b) => Number(pending(b)) - Number(pending(a)) || latest(b) - latest(a));
+  return { posts, errors };
 }

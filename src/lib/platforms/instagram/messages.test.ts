@@ -66,4 +66,33 @@ describe('Instagram: mensagens diretas', () => {
     expect(err).toBeInstanceOf(PermanentError);
     expect(err.userMessage).toContain('24 h');
   });
+
+  it('lista comentários dos posts recentes, sem os da própria conta, e marca os respondidos', async () => {
+    const fetch = fakeFetch([
+      ['GET', /\/1784\/media\?/, () => ({ data: [
+        { id: 'p1', caption: 'Inscrições abertas', permalink: 'https://ig/p1', timestamp: '2026-10-19T10:00:00+0000', media_type: 'IMAGE', media_url: 'https://cdn/p1.jpg', comments_count: 3 },
+        { id: 'p2', caption: 'Sem comentários', timestamp: '2026-10-18T10:00:00+0000', comments_count: 0 },
+      ] })],
+      ['GET', /\/p1\/comments\?/, () => ({ data: [
+        { id: 'c1', text: 'Qual o preço?', username: 'ana', timestamp: '2026-10-19T11:00:00+0000', from: { id: '9', username: 'ana' },
+          replies: { data: [{ id: 'r1', text: '@ana 50 €', username: 'unidreamity', timestamp: '2026-10-19T12:00:00+0000', from: { id: '1784', username: 'unidreamity' } }] } },
+        { id: 'c2', text: 'Obrigado a todos!', username: 'unidreamity', timestamp: '2026-10-19T13:00:00+0000', from: { id: '1784' } },
+        { id: 'c3', text: 'Ainda há vagas?', username: 'rui', timestamp: '2026-10-19T14:00:00+0000', hidden: true },
+      ] })],
+    ]);
+    const posts = await messaging.listComments(account, { fetch });
+    expect(posts).toHaveLength(1);
+    expect(posts[0]).toMatchObject({ id: 'p1', thumbnailUrl: 'https://cdn/p1.jpg' });
+    expect(posts[0].comments.map((c) => [c.id, c.answered, c.hidden])).toEqual([['c3', false, true], ['c1', true, false]]);
+  });
+
+  it('responde e esconde comentários', async () => {
+    const fetch = fakeFetch([
+      ['POST', /\/c1\/replies$/, () => ({ id: 'r2' })],
+      ['POST', /\/c1$/, () => ({ success: true })],
+    ]);
+    await messaging.replyToComment(account, 'c1', '@ana Obrigado!', { fetch });
+    await messaging.hideComment(account, 'c1', true, { fetch });
+    expect(fetch.calls.map((c) => c.params)).toMatchObject([{ message: '@ana Obrigado!' }, { hide: 'true' }]);
+  });
 });

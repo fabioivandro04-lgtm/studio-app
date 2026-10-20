@@ -30,6 +30,7 @@ export async function saveBrandAi(input: {
   goal: 'contacts' | 'reach';
   postsPerWeek: number;
   postingSlots: { weekday: number; time: string }[];
+  replyKnowledge?: string;
 }): Promise<ActionResult> {
   const parsed = BrandAiInput.safeParse(input);
   if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
@@ -37,7 +38,7 @@ export async function saveBrandAi(input: {
   const db = await createServerClient();
   const { error } = await db
     .from('brands')
-    .update({ ai_context: parsed.data.aiContext.trim(), ai_voice: parsed.data.aiVoice.trim(), ai_hashtags: hashtags, goal: parsed.data.goal, posts_per_week: parsed.data.postsPerWeek, posting_slots: parsed.data.postingSlots })
+    .update({ ai_context: parsed.data.aiContext.trim(), ai_voice: parsed.data.aiVoice.trim(), ai_hashtags: hashtags, goal: parsed.data.goal, posts_per_week: parsed.data.postsPerWeek, posting_slots: parsed.data.postingSlots, reply_knowledge: parsed.data.replyKnowledge.trim() })
     .eq('id', input.brandId);
   if (error) return { ok: false, error: 'Não foi possível guardar as definições de IA da marca.' };
   revalidatePath('/', 'layout');

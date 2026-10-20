@@ -3,6 +3,8 @@ import { AI_MESSAGES, AiError } from './errors';
 import { buildIdeasMessages, type IdeasMode } from './ideas-prompts';
 import { IdeasSpec, postprocessIdeas, type IdeaDraft } from './ideas-schema';
 import { buildRefineMessages, buildSuggestMessages, buildVoiceMessages } from './prompts';
+import { buildReplyMessages, REPLY_MAX, ReplySpec, type ReplyChannel, type ReplyTurn } from './reply-prompts';
+import { buildReportMessages, postprocessReport, ReportSpec, type WeekFacts, type WeeklyReport } from './report-prompts';
 import { AI_RULES } from './rules';
 import { postprocessSuggestions, RefinedSpec, SuggestionsSpec, VoiceSpec } from './schemas';
 import { FREE_MODEL, isFreeModel, type AiProvider, type AiUsage, type BrandAi, type JsonSchemaSpec, type RefineAction, type Suggestions } from './types';
@@ -12,7 +14,7 @@ export interface AiDeps {
   model: string;
   limitUsd: number;
   spentUsd: number;
-  recordUsage(u: { brandId: string | null; kind: 'suggest' | 'refine' | 'voice' | 'ideas'; model: string; usage: AiUsage }): Promise<void>;
+  recordUsage(u: { brandId: string | null; kind: 'suggest' | 'refine' | 'voice' | 'ideas' | 'reply' | 'report'; model: string; usage: AiUsage }): Promise<void>;
 }
 
 const VOICE_MAX = 2000;
@@ -113,4 +115,25 @@ export async function runIdeas(
   const ideas = postprocessIdeas(data, { count: i.count, platforms: i.platforms });
   if (ideas.length === 0) throw new AiError('invalid_response', AI_MESSAGES.invalid_response);
   return ideas;
+}
+
+/** Resposta sugerida a uma mensagem direta ou a um comentário. Só sugere: quem envia é sempre a pessoa. */
+export async function runReply(
+  d: AiDeps,
+  i: { brandId: string; brand: BrandAi; knowledge: string; channel: ReplyChannel; customer: string; turns: ReplyTurn[]; postCaption?: string },
+): Promise<string> {
+  const provider = ready(d);
+  if (!i.turns.some((t) => !t.fromBusiness && t.text.trim())) throw invalid('Não há texto do cliente para responder.');
+  const data = await chatRecorded(d, provider, i.brandId, 'reply', { messages: buildReplyMessages(i), spec: ReplySpec, maxTokens: 500 });
+  const text = data.text.trim().slice(0, REPLY_MAX[i.channel]);
+  if (!text) throw new AiError('invalid_response', AI_MESSAGES.invalid_response);
+  return text;
+}
+
+export async function runWeeklyReport(d: AiDeps, i: { brandId: string; brand: BrandAi; facts: WeekFacts }): Promise<WeeklyReport> {
+  const provider = ready(d);
+  const data = await chatRecorded(d, provider, i.brandId, 'report', { messages: buildReportMessages(i), spec: ReportSpec, maxTokens: 1200 });
+  const report = postprocessReport(data);
+  if (!report.headline) throw new AiError('invalid_response', AI_MESSAGES.invalid_response);
+  return report;
 }

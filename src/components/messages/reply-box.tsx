@@ -1,25 +1,44 @@
 'use client';
 
-import { Send } from 'lucide-react';
+import { Send, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { sendMessage } from '@/app/(app)/mensagens/actions';
+import { sendMessage, suggestDmReply } from '@/app/(app)/mensagens/actions';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { callSafely } from '@/lib/ai/call-safely';
 
 /** Caixa de resposta de uma conversa. Fechada quando já passaram 24 h desde a última mensagem do cliente. */
-export function ReplyBox({ accountId, conversationId, open, closesLabel }: {
+export function ReplyBox({ accountId, conversationId, open, closesLabel, autoSuggest }: {
   accountId: string;
   conversationId: string;
   open: boolean;
   /** Ex.: "Pode responder até hoje às 14:30." */
   closesLabel: string | null;
+  /** A última mensagem é do cliente: a IA escreve logo uma resposta (só sugere; quem envia é a pessoa). */
+  autoSuggest: boolean;
 }) {
   const router = useRouter();
   const [text, setText] = useState('');
   const [pending, start] = useTransition();
+  const [suggesting, startSuggest] = useTransition();
+  const asked = useRef(false);
+
+  const suggest = (quiet: boolean) =>
+    startSuggest(async () => {
+      const r = await callSafely(() => suggestDmReply({ accountId, conversationId }));
+      if (r.ok) setText((cur) => (cur.trim() && quiet ? cur : r.text));
+      else if (!quiet) toast.error(r.error);
+    });
+
+  useEffect(() => {
+    if (open && autoSuggest && !asked.current) {
+      asked.current = true;
+      suggest(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, autoSuggest]);
 
   if (!open) {
     return (
@@ -58,14 +77,19 @@ export function ReplyBox({ accountId, conversationId, open, closesLabel }: {
           }
         }}
         maxLength={1000}
-        placeholder="Escreva a resposta…"
+        placeholder={suggesting ? 'A IA está a escrever uma resposta…' : 'Escreva a resposta…'}
         disabled={pending}
       />
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">{closesLabel}</p>
-        <Button type="submit" size="sm" disabled={pending || !text.trim()}>
-          <Send className="size-3.5" aria-hidden /> {pending ? 'A enviar…' : 'Enviar'}
-        </Button>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" disabled={pending || suggesting} onClick={() => suggest(false)}>
+            <Sparkles className="size-3.5" aria-hidden /> {suggesting ? 'A escrever…' : text.trim() ? 'Outra sugestão' : 'Sugerir com IA'}
+          </Button>
+          <Button type="submit" size="sm" disabled={pending || suggesting || !text.trim()}>
+            <Send className="size-3.5" aria-hidden /> {pending ? 'A enviar…' : 'Enviar'}
+          </Button>
+        </div>
       </div>
     </form>
   );

@@ -12,5 +12,5 @@ export function getMessaging(env: ServerEnv): MessagingClient {
   const fail = async (): Promise<never> => {
     throw new PermanentError('O Instagram ainda não está configurado nesta app (ver docs/SETUP.md).');
   };
-  return { listConversations: fail, getConversation: fail, send: fail };
+  return { listConversations: fail, getConversation: fail, send: fail, listComments: fail, getComment: fail, replyToComment: fail, hideComment: fail };
 }

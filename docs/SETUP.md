@@ -66,9 +66,10 @@ O projeto **studio app** já tem as tabelas, a segurança e as funções aplicad
 5. Em **App roles → Roles**, adicione a sua conta de Instagram como **Instagram Tester** e aceite o convite
    no Instagram (**Definições → Apps e sites → Convites de testador**).
 6. Em **Permissions**, confirme `instagram_business_basic` e ative `instagram_business_content_publish`,
-   `instagram_business_manage_insights` (métricas) e `instagram_business_manage_messages` (página Mensagens).
+   `instagram_business_manage_insights` (métricas), `instagram_business_manage_messages` e
+   `instagram_business_manage_comments` (página Mensagens: mensagens diretas e comentários).
    Se ligou o Instagram antes de existir a página Mensagens, volte a ligar a conta em
-   **Definições → Contas ligadas** para dar a nova permissão.
+   **Definições → Contas ligadas** para dar as novas permissões.
 7. Copie o **Instagram App ID** e **Instagram App Secret** para a Vercel (`IG_APP_ID`, `IG_APP_SECRET`).
 
 Como só usa as suas contas, o **acesso padrão** chega e não precisa de revisão da Meta.
@@ -88,6 +89,14 @@ Para ver nas **Métricas** o gasto e os resultados das campanhas do Instagram/Fa
 6. Em **Definições → Contas ligadas**, em cada marca, carregue em **Ligar anúncios da Meta**.
 
 O acesso dura cerca de 60 dias; depois a página de contas avisa e é só voltar a ligar.
+
+### 3c. Respostas com IA e resumo semanal
+
+No Supabase, em **SQL Editor**, execute `supabase/migrations/0016_replies_report.sql` (uma vez). Depois, em
+**Definições → Marcas → Assistente de IA**, preencha **Respostas guardadas** com as perguntas frequentes e as
+respostas certas (preços, vagas, prazos, como marcar): a IA só usa isto e o contexto da empresa para sugerir
+respostas a mensagens e comentários. O resumo da semana aparece nas **Métricas** (com uma marca escolhida) a
+partir de cada segunda-feira.
 
 ## 4. TikTok (TikTok for Developers)
 

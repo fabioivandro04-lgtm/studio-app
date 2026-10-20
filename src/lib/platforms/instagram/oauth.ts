@@ -7,6 +7,7 @@ const SCOPES = [
   'instagram_business_content_publish',
   'instagram_business_manage_insights',
   'instagram_business_manage_messages',
+  'instagram_business_manage_comments',
 ];
 
 export function igAuthorizeUrl(cfg: IgConfig, state: string, redirectUri: string): string {
