@@ -1,6 +1,7 @@
 import { BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { EmptyState } from '@/components/empty-state';
+import { AdsSection } from '@/components/metrics/ads-section';
 import { FollowersChart } from '@/components/metrics/followers-chart';
 import { PlatformIcon } from '@/components/platform-icon';
 import { createServerClient } from '@/lib/db/clients';
@@ -175,6 +176,8 @@ export default async function MetricasPage({ searchParams }: { searchParams: Pro
           </table>
         </section>
       )}
+
+      <AdsSection db={db} brandId={brandId} from={from} to={to} />
     </div>
   );
 }
