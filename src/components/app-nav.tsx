@@ -1,6 +1,6 @@
 'use client';
 
-import { BarChart3, CalendarDays, Images, Inbox, Lightbulb, Settings } from 'lucide-react';
+import { BarChart3, CalendarDays, Images, Inbox, Lightbulb, MessageCircle, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -10,6 +10,7 @@ const ITEMS = [
   { href: '/ideias', label: 'Ideias', icon: Lightbulb },
   { href: '/biblioteca', label: 'Biblioteca', icon: Images },
   { href: '/caixa', label: 'Caixa', icon: Inbox },
+  { href: '/mensagens', label: 'Mensagens', icon: MessageCircle },
   { href: '/metricas', label: 'Métricas', icon: BarChart3 },
   { href: '/definicoes', label: 'Definições', icon: Settings },
 ] as const;
@@ -37,7 +38,7 @@ export function AppNav({ inboxCount = 0 }: { inboxCount?: number }) {
             )}
           >
             <Icon className="size-5 md:size-4" aria-hidden />
-            <span>{label}</span>
+            <span className="max-w-full truncate">{label}</span>
             {href === '/caixa' && inboxCount > 0 && (
               <span className="absolute right-[22%] top-1 rounded-full bg-brand-amber px-1.5 text-[10px] font-semibold text-[#0B1F45] md:static md:ml-auto">
                 <span className="sr-only">À espera: </span>{inboxCount}

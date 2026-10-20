@@ -11,7 +11,7 @@ describe('Instagram OAuth', () => {
     expect(u.origin + u.pathname).toBe('https://www.instagram.com/oauth/authorize');
     expect(Object.fromEntries(u.searchParams)).toEqual({
       client_id: 'app', redirect_uri: 'https://app/cb', response_type: 'code', state: 'st',
-      scope: 'instagram_business_basic,instagram_business_content_publish,instagram_business_manage_insights',
+      scope: 'instagram_business_basic,instagram_business_content_publish,instagram_business_manage_insights,instagram_business_manage_messages',
     });
   });
 
@@ -30,7 +30,7 @@ describe('Instagram OAuth', () => {
     const r = await adapter.exchangeCode('CODE', 'https://app/cb', { fetch, now: () => NOW });
     expect(r.tokens).toEqual({
       accessToken: 'long', refreshToken: null, expiresAt: new Date('2026-12-14T10:00:00Z'), refreshExpiresAt: null,
-      scopes: ['instagram_business_basic', 'instagram_business_content_publish', 'instagram_business_manage_insights'],
+      scopes: ['instagram_business_basic', 'instagram_business_content_publish', 'instagram_business_manage_insights', 'instagram_business_manage_messages'],
     });
     expect(r.profile).toEqual({ externalId: '1784', handle: 'unidreamity', displayName: 'Unidreamity', avatarUrl: 'https://pic' });
   });

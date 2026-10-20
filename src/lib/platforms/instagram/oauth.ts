@@ -2,7 +2,12 @@ import { requestJson } from '../http';
 import type { AccountProfile, TokenSet } from '../types';
 import { igApi, type IgConfig } from './api';
 
-const SCOPES = ['instagram_business_basic', 'instagram_business_content_publish', 'instagram_business_manage_insights'];
+const SCOPES = [
+  'instagram_business_basic',
+  'instagram_business_content_publish',
+  'instagram_business_manage_insights',
+  'instagram_business_manage_messages',
+];
 
 export function igAuthorizeUrl(cfg: IgConfig, state: string, redirectUri: string): string {
   const qs = new URLSearchParams({
