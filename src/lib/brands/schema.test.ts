@@ -24,7 +24,12 @@ describe('BrandAiInput', () => {
   const ok = { aiContext: 'Consultoria de candidaturas.', aiVoice: 'Próxima e confiável.', aiHashtags: ['#unidreamity', 'estudarfora'], goal: 'contacts', postsPerWeek: 3, postingSlots: [] };
 
   it('aceita valores válidos', () => {
-    expect(BrandAiInput.parse(ok)).toEqual(ok);
+    expect(BrandAiInput.parse(ok)).toEqual({ ...ok, replyKnowledge: '' });
+  });
+
+  it('recusa respostas guardadas acima de 4000', () => {
+    const r = BrandAiInput.safeParse({ ...ok, replyKnowledge: 'a'.repeat(4001) });
+    expect(r.error?.issues[0].message).toBe('As respostas guardadas podem ter no máximo 4000 caracteres.');
   });
 
   it('recusa contexto acima de 4000', () => {

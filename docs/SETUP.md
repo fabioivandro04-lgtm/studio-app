@@ -48,6 +48,7 @@ O projeto **studio app** já tem as tabelas, a segurança e as funções aplicad
 | `PLATFORM_MODE` | `real` |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | o email de contacto que aparece nas páginas legais |
 | `IG_APP_ID`, `IG_APP_SECRET` | do passo 3 |
+| `META_APP_ID`, `META_APP_SECRET` | do passo 3b (opcional, anúncios) |
 | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | do passo 4 |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | do passo 5 |
 
@@ -64,11 +65,38 @@ O projeto **studio app** já tem as tabelas, a segurança e as funções aplicad
 4. Em **Business login settings**, adicione o redirect: `APP_URL/api/oauth/instagram/callback`.
 5. Em **App roles → Roles**, adicione a sua conta de Instagram como **Instagram Tester** e aceite o convite
    no Instagram (**Definições → Apps e sites → Convites de testador**).
-6. Em **Permissions**, confirme `instagram_business_basic` e ative `instagram_business_content_publish` e
-   `instagram_business_manage_insights` (métricas).
+6. Em **Permissions**, confirme `instagram_business_basic` e ative `instagram_business_content_publish`,
+   `instagram_business_manage_insights` (métricas), `instagram_business_manage_messages` e
+   `instagram_business_manage_comments` (página Mensagens: mensagens diretas e comentários).
+   Se ligou o Instagram antes de existir a página Mensagens, volte a ligar a conta em
+   **Definições → Contas ligadas** para dar as novas permissões.
 7. Copie o **Instagram App ID** e **Instagram App Secret** para a Vercel (`IG_APP_ID`, `IG_APP_SECRET`).
 
 Como só usa as suas contas, o **acesso padrão** chega e não precisa de revisão da Meta.
+
+### 3b. Anúncios da Meta (opcional)
+
+Para ver nas **Métricas** o gasto e os resultados das campanhas do Instagram/Facebook:
+
+0. No Supabase, em **SQL Editor**, execute `supabase/migrations/0015_ads.sql` (uma vez).
+1. Na mesma app da Meta, adicione o produto **Facebook Login for Business**.
+2. Em **Settings**, adicione o redirect: `APP_URL/api/oauth/meta-ads/callback`.
+3. Em **App roles → Roles**, confirme que o seu perfil do Facebook é administrador da app; esse perfil
+   tem de ser administrador da conta de anúncios (no Gestor de Negócios).
+4. Em **Permissions**, ative `ads_read` (só leitura; a app não cria nem altera anúncios).
+5. Copie o **App ID** e o **App Secret** da app (em **App settings → Basic**, não os do Instagram) para a
+   Vercel: `META_APP_ID`, `META_APP_SECRET`.
+6. Em **Definições → Contas ligadas**, em cada marca, carregue em **Ligar anúncios da Meta**.
+
+O acesso dura cerca de 60 dias; depois a página de contas avisa e é só voltar a ligar.
+
+### 3c. Respostas com IA e resumo semanal
+
+No Supabase, em **SQL Editor**, execute `supabase/migrations/0016_replies_report.sql` (uma vez). Depois, em
+**Definições → Marcas → Assistente de IA**, preencha **Respostas guardadas** com as perguntas frequentes e as
+respostas certas (preços, vagas, prazos, como marcar): a IA só usa isto e o contexto da empresa para sugerir
+respostas a mensagens e comentários. O resumo da semana aparece nas **Métricas** (com uma marca escolhida) a
+partir de cada segunda-feira.
 
 ## 4. TikTok (TikTok for Developers)
 

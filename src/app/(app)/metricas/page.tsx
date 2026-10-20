@@ -1,7 +1,11 @@
 import { BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { EmptyState } from '@/components/empty-state';
+import { AdsSection } from '@/components/metrics/ads-section';
 import { FollowersChart } from '@/components/metrics/followers-chart';
+import { WeeklyReportCard } from '@/components/metrics/weekly-report';
+import { loadReport } from '@/lib/reports/repo';
+import { lastFullWeek } from '@/lib/reports/week';
 import { PlatformIcon } from '@/components/platform-icon';
 import { createServerClient } from '@/lib/db/clients';
 import { listBrands, selectedBrandId } from '@/lib/db/repo/brands-repo';
@@ -59,6 +63,10 @@ export default async function MetricasPage({ searchParams }: { searchParams: Pro
     { label: 'Seguidores ganhos', value: followersGained(accountRows) },
   ];
 
+  const brand = brandId ? brands.find((b) => b.id === brandId) ?? null : null;
+  const week = brand ? lastFullWeek(new Date(), brand.timezone) : null;
+  const savedReport = brand && week ? await loadReport(db, brand.id, week.weekStart) : null;
+
   if (accounts.length === 0) {
     return (
       <div className="space-y-6">
@@ -84,6 +92,12 @@ export default async function MetricasPage({ searchParams }: { searchParams: Pro
             ))}
           </nav>
       } />
+
+      {brand ? (
+        <WeeklyReportCard brandId={brand.id} initial={savedReport ? { ok: true, weekStart: savedReport.weekStart, weekEnd: week!.weekEnd, facts: savedReport.facts, report: savedReport.report } : null} />
+      ) : (
+        <p className="rounded-xl border bg-card p-4 text-sm text-muted-foreground shadow-xs">Escolha uma marca no topo para ver o resumo da semana escrito pela IA.</p>
+      )}
 
       {!hasPostMetrics(rows) && (
         <div className="rounded-xl border bg-card p-4 text-sm shadow-xs" data-testid="metrics-empty">
@@ -175,6 +189,8 @@ export default async function MetricasPage({ searchParams }: { searchParams: Pro
           </table>
         </section>
       )}
+
+      <AdsSection db={db} brandId={brandId} from={from} to={to} />
     </div>
   );
 }

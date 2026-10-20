@@ -11,6 +11,11 @@ describe('estado OAuth', () => {
     expect(readOAuthState(s, SECRET, NOW)).toEqual({ brandId, platform: 'tiktok' });
   });
 
+  it('aceita a conta de anúncios da Meta', () => {
+    const s = createOAuthState(brandId, 'meta_ads', SECRET, NOW);
+    expect(readOAuthState(s, SECRET, NOW)).toEqual({ brandId, platform: 'meta_ads' });
+  });
+
   it('adulterado → null', () => {
     const s = createOAuthState(brandId, 'tiktok', SECRET, NOW);
     const forged = s.replace('tiktok', 'youtube');

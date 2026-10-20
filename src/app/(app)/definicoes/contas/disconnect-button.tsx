@@ -2,9 +2,9 @@
 
 import { useTransition } from 'react';
 import { toast } from 'sonner';
-import { disconnectAccount } from '../actions';
+import { disconnectAccount, disconnectAdAccount } from '../actions';
 
-export function DisconnectButton({ id }: { id: string }) {
+export function DisconnectButton({ id, kind = 'social' }: { id: string; kind?: 'social' | 'ads' }) {
   const [pending, start] = useTransition();
   return (
     <button
@@ -12,9 +12,9 @@ export function DisconnectButton({ id }: { id: string }) {
       disabled={pending}
       className="text-muted-foreground underline hover:text-foreground disabled:opacity-50"
       onClick={() => {
-        if (!confirm('Desligar esta conta? Os tokens de acesso são apagados.')) return;
+        if (!confirm(kind === 'ads' ? 'Desligar esta conta de anúncios? O acesso é apagado.' : 'Desligar esta conta? Os tokens de acesso são apagados.')) return;
         start(async () => {
-          const r = await disconnectAccount(id);
+          const r = await (kind === 'ads' ? disconnectAdAccount(id) : disconnectAccount(id));
           if (r.ok) toast.success('Conta desligada.');
           else toast.error(r.error);
         });

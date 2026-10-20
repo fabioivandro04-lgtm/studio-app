@@ -38,6 +38,15 @@ export function createFakeAi(): AiProvider {
             platforms: ['instagram', 'tiktok'],
           })),
         };
+      } else if (spec.name === 'reply') {
+        raw = { text: 'Olá! Obrigado pela mensagem 😊 Vou confirmar e já te respondo com todos os detalhes.' };
+      } else if (spec.name === 'report') {
+        raw = {
+          headline: 'Semana estável: as visualizações mantiveram-se e o melhor post foi um Reel.',
+          good: ['O Reel da semana teve o maior alcance.', 'Ganhaste novos seguidores.'],
+          improve: ['Publicaste menos do que o planeado.'],
+          nextWeek: ['Publica 2 Reels com um gancho forte nos primeiros 3 segundos.', 'Responde aos comentários no próprio dia.'],
+        };
       } else raw = { voice: '- Tom próximo e confiável\n- Trata o público por tu\n- Termina com convite para falar connosco' };
       return { data: spec.parse(raw), usage };
     },

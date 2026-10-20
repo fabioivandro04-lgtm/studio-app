@@ -30,6 +30,7 @@ export async function saveBrandAi(input: {
   goal: 'contacts' | 'reach';
   postsPerWeek: number;
   postingSlots: { weekday: number; time: string }[];
+  replyKnowledge?: string;
 }): Promise<ActionResult> {
   const parsed = BrandAiInput.safeParse(input);
   if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
@@ -37,7 +38,7 @@ export async function saveBrandAi(input: {
   const db = await createServerClient();
   const { error } = await db
     .from('brands')
-    .update({ ai_context: parsed.data.aiContext.trim(), ai_voice: parsed.data.aiVoice.trim(), ai_hashtags: hashtags, goal: parsed.data.goal, posts_per_week: parsed.data.postsPerWeek, posting_slots: parsed.data.postingSlots })
+    .update({ ai_context: parsed.data.aiContext.trim(), ai_voice: parsed.data.aiVoice.trim(), ai_hashtags: hashtags, goal: parsed.data.goal, posts_per_week: parsed.data.postsPerWeek, posting_slots: parsed.data.postingSlots, reply_knowledge: parsed.data.replyKnowledge.trim() })
     .eq('id', input.brandId);
   if (error) return { ok: false, error: 'Não foi possível guardar as definições de IA da marca.' };
   revalidatePath('/', 'layout');
@@ -81,6 +82,16 @@ export async function disconnectAccount(id: string): Promise<ActionResult> {
           .eq('id', id);
   if (res.error) return { ok: false, error: 'Não foi possível desligar a conta.' };
   revalidatePath('/', 'layout');
+  return { ok: true };
+}
+
+/** Desliga uma conta de anúncios (apaga o token). Os resultados são lidos na hora, por isso não se perde histórico. */
+export async function disconnectAdAccount(id: string): Promise<ActionResult> {
+  const db = await createServerClient();
+  const { data, error } = await db.from('ad_accounts').delete().eq('id', id).select('id');
+  if (error || !data?.length) return { ok: false, error: 'Não foi possível desligar a conta de anúncios.' };
+  revalidatePath('/definicoes/contas');
+  revalidatePath('/metricas');
   return { ok: true };
 }
 

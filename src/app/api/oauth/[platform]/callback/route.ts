@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ platfor
   const stateParam = q.get('state') ?? '';
   const cookie = request.cookies.get('oauth_state')?.value ?? '';
   const state = stateParam && stateParam === cookie ? readOAuthState(stateParam, env.TOKEN_ENC_KEY) : null;
-  if (!state || state.platform !== platform) return fail('O pedido de ligação expirou. Tente de novo.');
+  if (!state || state.platform !== platform || state.platform === 'meta_ads') return fail('O pedido de ligação expirou. Tente de novo.');
 
   const label = PLATFORM_LABEL[state.platform];
   if (q.get('error')) return fail(`O ${label} não autorizou a ligação (${q.get('error_description') ?? q.get('error')}).`);

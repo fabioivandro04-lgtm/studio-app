@@ -34,6 +34,7 @@ export const BrandAiInput = z.object({
   goal: z.enum(['contacts', 'reach'], { message: 'Escolha o objetivo da marca.' }),
   postsPerWeek: z.number({ message: PPW_MSG }).int(PPW_MSG).min(1, PPW_MSG).max(21, PPW_MSG),
   postingSlots: PostingSlots.default([]),
+  replyKnowledge: z.string().max(4000, 'As respostas guardadas podem ter no máximo 4000 caracteres.').default(''),
 });
 export type BrandAiInput = z.infer<typeof BrandAiInput>;
 

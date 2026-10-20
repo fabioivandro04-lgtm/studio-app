@@ -19,6 +19,9 @@ const base = z.object({
   IG_APP_ID: z.string().optional(),
   IG_APP_SECRET: z.string().optional(),
   IG_API_VERSION: z.string().default('v23.0'),
+  // App da Meta com "Facebook Login for Business" (anúncios). Não é o Instagram App ID.
+  META_APP_ID: z.string().optional(),
+  META_APP_SECRET: z.string().optional(),
   TIKTOK_CLIENT_KEY: z.string().optional(),
   TIKTOK_CLIENT_SECRET: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
