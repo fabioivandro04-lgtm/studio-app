@@ -1,4 +1,4 @@
-import { Bot, CalendarClock, ChevronRight, KeyRound, Link2, Palette, ScrollText, Sparkles } from 'lucide-react';
+import { Bot, CalendarClock, CalendarX, ChevronRight, KeyRound, Link2, Palette, ScrollText, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { PageHeader } from '@/components/ui-x/page-header';
 
@@ -8,6 +8,7 @@ const LINKS = [
   { href: '/definicoes/ligacoes', label: 'Ligações do Claude', desc: 'Claude no claude.ai e no Claude Code', icon: Bot },
   { href: '/definicoes/ia', label: 'IA', desc: 'Motor, limite mensal e gastos', icon: Sparkles },
   { href: '/definicoes/prazos', label: 'Prazos', desc: 'Datas importantes que aparecem no calendário', icon: CalendarClock },
+  { href: '/definicoes/limpar', label: 'Limpar calendário', desc: 'Apagar rascunhos e agendados para recomeçar', icon: CalendarX },
   { href: '/definicoes/registo', label: 'Registo de atividade', desc: 'Publicações, erros e avisos', icon: ScrollText },
   { href: '/definicoes/conta', label: 'A minha conta', desc: 'Mudar a palavra-passe', icon: KeyRound },
 ];
