@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { CalendarFilterBar } from '@/components/calendar/calendar-filters';
 import { CalendarList } from '@/components/calendar/calendar-list';
+import { CalendarSelection } from '@/components/calendar/selection';
 import { InstagramGrid } from '@/components/calendar/instagram-grid';
 import { CalendarView, type CalendarDeadline, type CalendarPost } from '@/components/calendar/calendar-view';
 import { applyFilters, parseFilters } from '@/lib/calendar/filters';
@@ -10,7 +11,8 @@ import { SetupChecklist } from '@/components/setup-checklist';
 import { buildMonthGrid, buildWeek, shiftDate } from '@/lib/calendar/grid';
 import { createServerClient } from '@/lib/db/clients';
 import { listBrands, selectedBrandId } from '@/lib/db/repo/brands-repo';
-import { FORMAT_PLATFORM, type Platform, type TargetFormat } from '@/lib/platforms/types';
+import { FORMAT_PLATFORM, type Platform, type TargetFormat, type TargetStatus } from '@/lib/platforms/types';
+import { canRemoveFromCalendar } from '@/lib/posts/delete-rules';
 import { formatInZone, localToUtc, utcToLocalParts } from '@/lib/time/zone';
 import { cn } from '@/lib/utils';
 import { cookies } from 'next/headers';
@@ -58,7 +60,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
 
   let pq = db
     .from('posts')
-    .select('id, brand_id, internal_title, scheduled_at, status, origin, post_targets(format), post_media(position, media_assets(storage_path, thumbnail_path, kind))')
+    .select('id, brand_id, internal_title, scheduled_at, status, origin, post_targets(format, status), post_media(position, media_assets(storage_path, thumbnail_path, kind))')
     .gte('scheduled_at', new Date(from.getTime() - 14 * 3_600_000).toISOString())
     .lt('scheduled_at', to.toISOString());
   if (brandId) pq = pq.eq('brand_id', brandId);
@@ -76,7 +78,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
 
   type Row = {
     id: string; brand_id: string; internal_title: string; scheduled_at: string; status: CalendarPost['status']; origin: string | null;
-    post_targets: { format: TargetFormat }[];
+    post_targets: { format: TargetFormat; status: TargetStatus }[];
     post_media: { position: number; media_assets: { storage_path: string; thumbnail_path: string | null; kind: string } | null }[];
   };
   const thumbPaths = (rows as Row[] | null ?? []).map((r) => {
@@ -99,6 +101,7 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
       platforms: [...new Set(r.post_targets.map((t) => FORMAT_PLATFORM[t.format]))] as Platform[],
       thumbUrl: thumbPaths[i] ? (signed.get(thumbPaths[i]!) ?? null) : null,
       movable: r.status === 'draft' || r.status === 'scheduled',
+      deletable: canRemoveFromCalendar(r.status, r.post_targets.map((t) => t.status)),
       byClaude: r.origin === 'claude',
     };
   });
@@ -137,11 +140,13 @@ export default async function CalendarioPage({ searchParams }: { searchParams: P
       <Link href="/posts/novo" aria-label="Novo post" className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:hidden">
         <Plus className="size-6" aria-hidden />
       </Link>
-      {view === 'lista' ? (
-        <CalendarList days={listDays} today={today} posts={posts} deadlines={deadlines} freeSlots={freeSlots} />
-      ) : (
-        <CalendarView weeks={weeks} month={view === 'mes' ? Number(date.slice(5, 7)) : null} today={today} posts={posts} deadlines={deadlines} freeSlots={freeSlots} />
-      )}
+      <CalendarSelection posts={posts}>
+        {view === 'lista' ? (
+          <CalendarList days={listDays} today={today} posts={posts} deadlines={deadlines} freeSlots={freeSlots} />
+        ) : (
+          <CalendarView weeks={weeks} month={view === 'mes' ? Number(date.slice(5, 7)) : null} today={today} posts={posts} deadlines={deadlines} freeSlots={freeSlots} />
+        )}
+      </CalendarSelection>
     </div>
   );
 }
