@@ -10,7 +10,9 @@ Endereço: `https://studio-app-five-phi.vercel.app/api/mcp`
   Ideias, Prazos, métricas, estado das publicações, grelha do Instagram (em texto) e resumo da semana.
 - Criar: carregar ficheiros (JPG, MP4, MOV), criar e editar rascunhos, guardar ideias, criar prazos.
 - Verificar: corre as regras da app (duração, medidas, legenda, data) e avisa antes de criar.
-- Nunca: agendar, publicar, apagar, nem mexer em Definições, contas ligadas ou chaves.
+- Agendar: agendar rascunhos na data/hora que têm (mesmas regras da Caixa; publicar já = rascunho para daqui a uns
+  minutos) e voltar a pôr em rascunho um post agendado que ainda não começou a publicar.
+- Nunca: apagar, nem mexer em Definições, contas ligadas ou chaves.
 
 Os rascunhos do Claude aparecem no calendário com um pequeno robô e no editor com "Criado pelo Claude".
 Cada ação fica em **Definições → Registo de atividade**.
@@ -40,6 +42,6 @@ confirma (`confirmar_envio`). No claude.ai, use ficheiros que já estão na Bibl
 Definições → **Ligações do Claude** → Cortar acesso.
 
 ## Configuração (uma vez, no Supabase do projeto "studio app")
-1. SQL Editor: correr `supabase/migrations/0014_mcp.sql`.
+1. SQL Editor: correr `supabase/migrations/0014_mcp.sql` e `0017_mcp_agendar.sql`.
 2. Authentication → **OAuth Server**: ligar; **Dynamic client registration**: ligar;
    Authorization path: `/oauth/autorizar` (Site URL = endereço da app).

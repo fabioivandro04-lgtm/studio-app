@@ -1,4 +1,5 @@
 import type { ToolDef } from '../tool';
+import { agendarRascunhos, desagendarPost } from './agendar';
 import { biblioteca } from './biblioteca';
 import { calendario } from './calendario';
 import { confirmarEnvio } from './confirmar-envio';
@@ -21,5 +22,5 @@ import { verificarPost } from './verificar-post';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const TOOLS: ToolDef<any>[] = [marcas, contextoMarca, calendario, horariosLivres, biblioteca, ideias, prazos, estadoPublicacoes, metricas, grelhaInstagram, resumoSemana, pedirEnvio, confirmarEnvio, importarDeLink,
-  verificarPost, criarRascunho, editarRascunho, guardarIdeia, criarPrazo,
+  verificarPost, criarRascunho, editarRascunho, guardarIdeia, criarPrazo, agendarRascunhos, desagendarPost,
 ];
