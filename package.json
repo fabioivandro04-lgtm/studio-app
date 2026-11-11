@@ -10,7 +10,7 @@
     "test": "vitest run src/",
     "test:db": "vitest run supabase/tests/",
     "e2e": "playwright test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.3.1",

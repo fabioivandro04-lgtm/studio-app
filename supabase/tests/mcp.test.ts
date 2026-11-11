@@ -125,3 +125,43 @@ describe('revisão final: agente', () => {
     expect((await db.sql('select status from posts where id=$1', [id]))[0].status).toBe('scheduled');
   });
 });
+
+describe('0017: agente agenda e volta a rascunho', () => {
+  const sched = (who: ReturnType<typeof agent>, id: string, at = '2030-11-02T07:00:00Z') => who.sql('select agent_schedule_post($1, $2)', [id, at]);
+  const unsched = (who: ReturnType<typeof agent>, id: string) => who.sql('select agent_unschedule_post($1)', [id]);
+  const status = async (id: string) => (await db.sql('select status from posts where id=$1', [id]))[0].status;
+
+  it('agenda um rascunho e volta a pô-lo em rascunho', async () => {
+    const [{ id }] = await saveAs(agent(), payload());
+    await sched(agent(), id);
+    expect(await status(id)).toBe('scheduled');
+    expect((await db.sql('select scheduled_at from posts where id=$1', [id]))[0].scheduled_at.toISOString()).toBe('2030-11-02T07:00:00.000Z');
+    await unsched(agent(), id);
+    expect(await status(id)).toBe('draft');
+  });
+
+  it('recusa hora passada, não-rascunho, post sem redes e quem não é dono', async () => {
+    const [{ id }] = await saveAs(agent(), payload());
+    await expect(sched(agent(), id, '2020-01-01T00:00:00Z')).rejects.toThrow(/past_time/);
+    const [{ id: noTargets }] = await saveAs(agent(), payload({ targets: [] }));
+    await expect(sched(agent(), noTargets)).rejects.toThrow(/no_targets/);
+    await expect(sched(db.asUser('99999999-9999-4999-8999-999999999999'), id)).rejects.toThrow(/not_owner/);
+    await expect(unsched(agent(), id)).rejects.toThrow(/not_scheduled/);
+    await owner().sql(`update posts set status='cancelled' where id=$1`, [id]);
+    await expect(sched(agent(), id)).rejects.toThrow(/not_draft/);
+  });
+
+  it('não volta atrás se uma rede já começou a publicar', async () => {
+    const [{ id }] = await saveAs(agent(), payload());
+    await sched(agent(), id);
+    await db.sql(`update post_targets set status='uploading' where post_id=$1`, [id]);
+    await expect(unsched(agent(), id)).rejects.toThrow(/post_locked/);
+    expect(await status(id)).toBe('scheduled');
+  });
+
+  it('continua sem poder apagar nem mudar o estado à mão', async () => {
+    const [{ id }] = await saveAs(agent(), payload());
+    await expect(agent().sql(`update posts set status='scheduled' where id=$1`, [id])).rejects.toThrow(/row-level security/);
+    expect(await agent().sql('delete from posts where id=$1 returning id', [id])).toEqual([]);
+  });
+});
